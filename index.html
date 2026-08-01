@@ -108,6 +108,26 @@ td input[type=checkbox],th input[type=checkbox]{width:16px;height:16px;min-width
 .lock{max-width:380px;margin:40px auto;text-align:center}
 .lock .ico{font-size:42px;margin-bottom:10px}
 
+/* Login de acceso */
+#loginWrap{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px}
+#loginWrap .lbox{width:100%;max-width:390px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:28px}
+#loginWrap .lhead{text-align:center;margin-bottom:22px}
+#loginWrap .lhead .adl{font-family:'Barlow Condensed';font-weight:700;font-size:32px;background:var(--accent);color:var(--accent-ink);padding:2px 12px;border-radius:8px;display:inline-block}
+#loginWrap .lhead .tt{display:block;font-family:'Barlow Condensed';font-weight:600;font-size:20px;letter-spacing:.06em;text-transform:uppercase;margin-top:10px}
+#loginWrap .lfield{margin-bottom:14px}
+#loginWrap .lerr{color:var(--bad);font-size:13px;font-weight:600;min-height:19px;margin-bottom:10px;text-align:center}
+body.locked>header,body.locked>nav,body.locked>main{display:none}
+.userchip{font-size:12px;font-weight:600;padding:5px 12px;border-radius:99px;background:rgba(255,255,255,.12);white-space:nowrap}
+
+/* Modal de aviso */
+#modalWrap{position:fixed;inset:0;z-index:210;background:rgba(9,14,24,.55);display:none;align-items:center;justify-content:center;padding:20px}
+#modalWrap.show{display:flex}
+#modalWrap .mbox{width:100%;max-width:460px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.3);padding:26px;text-align:center}
+#modalWrap .mico{font-size:40px;margin-bottom:8px}
+#modalWrap h3{font-size:20px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
+#modalWrap .mtxt{font-size:14px;color:var(--ink2);line-height:1.55;margin-bottom:20px}
+#modalWrap .mtxt b{color:var(--ink)}
+
 .printArea{display:none}
 @media print{
   body{background:#fff}
@@ -123,12 +143,29 @@ td input[type=checkbox],th input[type=checkbox]{width:16px;height:16px;min-width
 .prLbl{background:#F2F2F2;font-weight:bold;width:32%}
 </style>
 </head>
-<body>
+<body class="locked">
+
+<!-- ============ LOGIN ============ -->
+<div id="loginWrap">
+  <div class="lbox">
+    <div class="lhead">
+      <span class="adl">ADL</span>
+      <span class="tt">Master de Ruta</span>
+    </div>
+    <div class="lfield"><label>Usuario</label><input id="logUser" autocomplete="username" placeholder="Usuario"></div>
+    <div class="lfield"><label>Contraseña</label><input id="logPass" type="password" autocomplete="current-password" placeholder="Contraseña"></div>
+    <div class="lerr" id="logErr"></div>
+    <button class="btn btn-p" id="btnLogin" style="width:100%">Entrar</button>
+    <div class="mini" id="logHint" style="text-align:center;margin-top:14px"></div>
+  </div>
+</div>
 
 <header>
   <div class="hbar">
     <div class="logo"><span class="adl">ADL</span><span class="tt">Master de Ruta</span></div>
     <div class="hspacer"></div>
+    <span class="userchip" id="userChip"></span>
+    <button class="hbtn" id="btnLogout" title="Cerrar sesión">Salir</button>
     <button class="hbtn" id="btnRefrescar" title="Volver a leer el Google Sheet">⟳ Actualizar</button>
     <span class="pill" id="connPill"><span class="dot"></span><span id="connTxt">Conectando…</span></span>
     <button class="hbtn" id="themeBtn" title="Cambiar tema">◐</button>
@@ -139,10 +176,10 @@ td input[type=checkbox],th input[type=checkbox]{width:16px;height:16px;min-width
 <nav><div class="tabs">
   <button class="tab active" data-sec="rutas">Rutas</button>
   <button class="tab" data-sec="solicitud">Solicitud de Gasto</button>
-  <button class="tab" data-sec="prenomina">Pre-Nómina</button>
   <button class="tab" data-sec="liquidacion">Liquidación</button>
+  <button class="tab" data-sec="prenomina">Pre-Nómina</button>
   <button class="tab" data-sec="indicadores">Indicadores</button>
-  <button class="tab" data-sec="admin">Administración</button>
+  <button class="tab tab-admin" data-sec="admin">Administración</button>
 </div></nav>
 
 <main>
@@ -168,13 +205,23 @@ td input[type=checkbox],th input[type=checkbox]{width:16px;height:16px;min-width
       <div><label>Tipo de unidad</label><select id="rTipoUnidad"></select></div>
       <div><label>Equipo de arrastre</label><select id="rEquipo"><option>SECA</option><option>REFRIGERADA</option><option>CONTENEDOR</option></select></div>
       <div><label>Total de KM (automático)</label><input id="rTotalKm" class="num" readonly></div>
-      <div><label>Costo de casetas ($)</label><input id="rCostoCasetas" type="number" step="0.01" min="0" value="0"></div>
+      <div><label>Costo de casetas ($) (automático)</label><input id="rCostoCasetas" class="num" readonly></div>
+    </div>
+
+    <hr class="sep">
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--surface2);border:1px dashed var(--road);border-radius:10px;padding:12px 14px">
+      <label style="display:flex;gap:10px;align-items:center;font-size:14px;text-transform:none;letter-spacing:0;font-weight:700;color:var(--ink);margin:0">
+        <input type="checkbox" id="rOptFull" style="width:18px;height:18px;min-width:18px"> Optimizada para Full
+      </label>
+      <span class="mini" style="flex:1;min-width:220px">Al activarlo, esta ruta queda bloqueada en Solicitud de Gasto para cualquier unidad que no sea Full.</span>
     </div>
 
     <hr class="sep">
     <label>Casetas de la ruta</label>
-    <div id="casetasWrap" class="grid g3" style="margin-bottom:10px"></div>
+    <div class="sub" style="margin-bottom:10px">Se toman del catálogo <b>Casetas</b> (Administración). El costo se calcula solo según el tipo de unidad.</div>
+    <div id="casetasWrap" style="margin-bottom:10px"></div>
     <button class="btn btn-s btn-sm" id="btnAddCaseta">＋ Agregar caseta</button>
+    <div class="mini" id="rCasetasDesglose" style="margin-top:10px"></div>
 
     <hr class="sep">
     <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -259,9 +306,10 @@ td input[type=checkbox],th input[type=checkbox]{width:16px;height:16px;min-width
       <div id="ureaDBox" style="display:none"><label>Depósito de urea ($)</label><input id="sDepUrea" type="number" step="0.01" min="0" value="0"></div>
       <div><label>Pensión ($)</label><input id="sPension" type="number" step="0.01" min="0" value="0"></div>
       <div><label>Comida ($)</label><input id="sComida" type="number" step="0.01" min="0" value="0"></div>
-      <div><label>Casetas ($) (de la ruta)</label><input id="sCasetas" class="num" type="number" step="0.01" min="0" value="0"></div>
+      <div><label>Casetas ($) (según tipo de unidad)</label><input id="sCasetas" class="num" readonly value="0"></div>
       <div><label>Quien realizó el servicio</label><select id="sEjecutivo"></select></div>
     </div>
+    <div class="mini" id="sCasetasDesglose" style="margin-top:10px"></div>
 
     <hr class="sep">
     <div class="grid g2">
@@ -283,6 +331,76 @@ td input[type=checkbox],th input[type=checkbox]{width:16px;height:16px;min-width
     <div class="twrap"><table>
       <thead><tr><th>Folio</th><th>Fecha serv.</th><th>Ruta</th><th>Operador</th><th>Económico</th><th class="right">KM</th><th class="right">Total</th><th></th></tr></thead>
       <tbody id="tbodySol"></tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============ LIQUIDACIÓN ============ -->
+<section class="sec" id="sec-liquidacion">
+  <div class="card">
+    <h2>Liquidación de viajes</h2>
+    <div class="sub">Busca el servicio por carta porte, folio, operador o ruta. Captura los datos reales y los gastos adicionales. Un viaje <b>no liquidado</b> no contará para el pago en pre-nómina.</div>
+    <div class="grid g3">
+      <div style="grid-column:1/3"><label>Buscar</label><input id="xBusca" placeholder="🔍 Carta porte, folio, operador o ruta…"></div>
+      <div><label>Estado</label><select id="xEstado"><option value="todos">Todos</option><option value="pendientes">Pendientes</option><option value="liquidados">Liquidados</option></select></div>
+    </div>
+  </div>
+
+  <div class="card" id="liqDetalle" style="display:none">
+    <h3>Liquidar servicio · <span id="liqFolioTit"></span></h3>
+    <div class="grid g4" style="margin-bottom:12px">
+      <div><label>Folio</label><input id="lqFolio" readonly></div>
+      <div><label>Carta(s) porte</label><input id="lqCP" readonly></div>
+      <div><label>Fecha de carga</label><input id="lqFechaCarga" readonly></div>
+      <div><label>Fecha finalizado (manual)</label><input id="lqFechaFin" type="date"></div>
+    </div>
+    <div class="grid g4" style="margin-bottom:12px">
+      <div><label>Ruta</label><input id="lqRuta" readonly></div>
+      <div><label>Cliente</label><input id="lqCliente" readonly></div>
+      <div><label>Operador</label><input id="lqOperador" readonly></div>
+    </div>
+
+    <h3 style="margin-top:10px">Kilometraje real (odómetro)</h3>
+    <div class="grid g4" style="margin-bottom:8px">
+      <div><label>Odómetro inicial</label><input id="lqOdoIni" type="number" step="1" min="0" class="num" placeholder="0"></div>
+      <div><label>Odómetro final</label><input id="lqOdoFin" type="number" step="1" min="0" class="num" placeholder="0"></div>
+      <div><label>Total KM odómetro (automático)</label><input id="lqOdoKm" class="num" readonly></div>
+      <div><label>KM de la ruta registrada</label><input id="lqKmRuta" class="num" readonly></div>
+    </div>
+    <div id="lqOdoAviso" class="mini" style="margin-bottom:12px"></div>
+
+    <h3 style="margin-top:10px">Conciliación</h3>
+    <div class="grid g4" style="margin-bottom:12px">
+      <div><label>Combustible proyectado ($)</label><input id="lqCombP" readonly class="num"></div>
+      <div><label>Combustible real ($)</label><input id="lqCombR" type="number" step="0.01" min="0" class="num" placeholder="0"></div>
+      <div><label>Casetas proyectado ($)</label><input id="lqCasP" readonly class="num"></div>
+      <div><label>Casetas real ($)</label><input id="lqCasR" type="number" step="0.01" min="0" class="num" placeholder="0"></div>
+    </div>
+    <h3 style="margin-top:10px">Gastos adicionales</h3>
+    <div class="grid g3" style="margin-bottom:12px">
+      <div><label>Pensión ($)</label><input id="lqPension" type="number" step="0.01" min="0" class="num" value="0"></div>
+      <div><label>Viáticos ($)</label><input id="lqViaticos" type="number" step="0.01" min="0" class="num" value="0"></div>
+      <div><label>Maniobras ($)</label><input id="lqManiobras" type="number" step="0.01" min="0" class="num" value="0"></div>
+      <div><label>Talachas ($)</label><input id="lqTalachas" type="number" step="0.01" min="0" class="num" value="0"></div>
+      <div><label>Dádivas ($)</label><input id="lqDadivas" type="number" step="0.01" min="0" class="num" value="0"></div>
+      <div><label>Estacionamientos ($)</label><input id="lqEstac" type="number" step="0.01" min="0" class="num" value="0"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:8px">
+      <label style="display:flex;gap:10px;align-items:center;font-size:14px;text-transform:none;letter-spacing:0;font-weight:700;color:var(--ink)"><input type="checkbox" id="lqEvidencia" style="width:18px;height:18px;min-width:18px"> Entregó evidencia completa</label>
+      <button class="btn btn-p" id="btnLiquidar">✔ Liquidar viaje</button>
+      <button class="btn btn-s" id="btnLiqCancelar">Cancelar</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="twrap" style="max-height:500px;overflow-y:auto"><table>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
+        <th>Folio</th><th>CP</th><th>Operador</th><th>Ruta</th><th>Cliente</th><th>Fecha carga</th>
+        <th class="right">Comb. proy.</th><th class="right">Casetas proy.</th>
+        <th class="right">KM ruta</th><th class="right">KM odóm.</th>
+        <th>Estado</th><th></th>
+      </tr></thead>
+      <tbody id="tbodyLiq"></tbody>
     </table></div>
   </div>
 </section>
@@ -379,79 +497,6 @@ td input[type=checkbox],th input[type=checkbox]{width:16px;height:16px;min-width
   </div>
 </section>
 
-<!-- ============ LIQUIDACIÓN ============ -->
-<section class="sec" id="sec-liquidacion">
-  <div class="card">
-    <h2>Liquidación de viajes</h2>
-    <div class="sub">Busca el servicio por carta porte, folio, operador o ruta. Captura los datos reales y los gastos adicionales. Un viaje <b>no liquidado</b> no contará para el pago en pre-nómina.</div>
-    <div class="grid g3">
-      <div style="grid-column:1/3"><label>Buscar</label><input id="xBusca" placeholder="🔍 Carta porte, folio, operador o ruta…"></div>
-      <div><label>Estado</label><select id="xEstado"><option value="todos">Todos</option><option value="pendientes">Pendientes</option><option value="liquidados">Liquidados</option></select></div>
-    </div>
-  </div>
-
-  <div class="card" id="liqDetalle" style="display:none">
-    <h3>Liquidar servicio · <span id="liqFolioTit"></span></h3>
-    <div class="grid g4" style="margin-bottom:12px">
-      <div><label>Folio</label><input id="lqFolio" readonly></div>
-      <div><label>Carta(s) porte</label><input id="lqCP" readonly></div>
-      <div><label>Fecha de carga</label><input id="lqFechaCarga" readonly></div>
-      <div><label>Fecha finalizado (manual)</label><input id="lqFechaFin" type="date"></div>
-    </div>
-    <div class="grid g4" style="margin-bottom:12px">
-      <div><label>Ruta</label><input id="lqRuta" readonly></div>
-      <div><label>Cliente</label><input id="lqCliente" readonly></div>
-      <div><label>Operador</label><input id="lqOperador" readonly></div>
-    </div>
-    <h3 style="margin-top:10px">Conciliación</h3>
-    <div class="grid g4" style="margin-bottom:12px">
-      <div><label>Combustible proyectado ($)</label><input id="lqCombP" readonly class="num"></div>
-      <div><label>Combustible real ($)</label><input id="lqCombR" type="number" step="0.01" min="0" class="num" placeholder="0"></div>
-      <div><label>Casetas proyectado ($)</label><input id="lqCasP" readonly class="num"></div>
-      <div><label>Casetas real ($)</label><input id="lqCasR" type="number" step="0.01" min="0" class="num" placeholder="0"></div>
-    </div>
-    <h3 style="margin-top:10px">Gastos adicionales</h3>
-    <div class="grid g3" style="margin-bottom:12px">
-      <div><label>Pensión ($)</label><input id="lqPension" type="number" step="0.01" min="0" class="num" value="0"></div>
-      <div><label>Viáticos ($)</label><input id="lqViaticos" type="number" step="0.01" min="0" class="num" value="0"></div>
-      <div><label>Maniobras ($)</label><input id="lqManiobras" type="number" step="0.01" min="0" class="num" value="0"></div>
-      <div><label>Talachas ($)</label><input id="lqTalachas" type="number" step="0.01" min="0" class="num" value="0"></div>
-      <div><label>Dádivas ($)</label><input id="lqDadivas" type="number" step="0.01" min="0" class="num" value="0"></div>
-      <div><label>Estacionamientos ($)</label><input id="lqEstac" type="number" step="0.01" min="0" class="num" value="0"></div>
-    </div>
-    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:8px">
-      <label style="display:flex;gap:10px;align-items:center;font-size:14px;text-transform:none;letter-spacing:0;font-weight:700;color:var(--ink)"><input type="checkbox" id="lqEvidencia" style="width:18px;height:18px;min-width:18px"> Entregó evidencia completa</label>
-      <button class="btn btn-p" id="btnLiquidar">✔ Liquidar viaje</button>
-      <button class="btn btn-s" id="btnLiqCancelar">Cancelar</button>
-    </div>
-  </div>
-
-  <div class="card">
-    <div class="twrap" style="max-height:500px;overflow-y:auto"><table>
-      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
-        <th>Folio</th><th>CP</th><th>Operador</th><th>Ruta</th><th>Cliente</th><th>Fecha carga</th>
-        <th class="right">Comb. proy.</th><th class="right">Casetas proy.</th>
-        <th>Estado</th><th></th>
-      </tr></thead>
-      <tbody id="tbodyLiq"></tbody>
-    </table></div>
-  </div>
-
-  <h2 style="font-family:'Barlow Condensed';font-size:22px;text-transform:uppercase;letter-spacing:.05em;margin:6px 0 12px">Indicadores Liquidación · Proyectado vs Real</h2>
-  <div class="kpis">
-    <div class="kpi"><div class="v num" id="xkCombP">$0</div><div class="l">Combustible proyectado</div></div>
-    <div class="kpi"><div class="v num" id="xkCombR">$0</div><div class="l">Combustible real</div></div>
-    <div class="kpi" id="xkCombDBox"><div class="v num" id="xkCombD">$0</div><div class="l">Diferencia combustible</div></div>
-    <div class="kpi"><div class="v num" id="xkCasP">$0</div><div class="l">Casetas proyectado</div></div>
-    <div class="kpi"><div class="v num" id="xkCasR">$0</div><div class="l">Casetas real</div></div>
-    <div class="kpi" id="xkCasDBox"><div class="v num" id="xkCasD">$0</div><div class="l">Diferencia casetas</div></div>
-  </div>
-  <div class="grid g2">
-    <div class="chartbox"><h3>Costo total (comb + casetas) por cliente</h3><div class="cv"><canvas id="chLiqCliente"></canvas></div></div>
-    <div class="chartbox"><h3>Costo total (comb + casetas) por ruta</h3><div class="cv"><canvas id="chLiqRuta"></canvas></div></div>
-  </div>
-</section>
-
 <!-- ============ INDICADORES ============ -->
 <section class="sec" id="sec-indicadores">
   <div class="card" style="margin-bottom:16px">
@@ -479,10 +524,8 @@ td input[type=checkbox],th input[type=checkbox]{width:16px;height:16px;min-width
 <section class="sec" id="sec-admin">
   <div class="card lock" id="adminLock">
     <div class="ico">🔒</div>
-    <h2>Administración</h2>
-    <div class="sub">Ingresa la contraseña para gestionar catálogos, precios y conexión.</div>
-    <input type="password" id="adminPass" placeholder="Contraseña" style="margin-bottom:12px">
-    <button class="btn btn-p" id="btnAdminLogin" style="width:100%">Entrar</button>
+    <h2>Solo administradores</h2>
+    <div class="sub">Tu usuario no tiene permiso para gestionar catálogos, precios y conexión. Solicítalo al administrador.</div>
   </div>
 
   <div id="adminPanel" style="display:none">
@@ -539,6 +582,8 @@ td input[type=checkbox],th input[type=checkbox]{width:16px;height:16px;min-width
     <div class="card">
       <div class="tabs" style="padding:0;margin-bottom:14px;border-bottom:1px solid var(--line)">
         <button class="tab atab active" data-adm="UNIDADES">Unidades</button>
+        <button class="tab atab" data-adm="CASETAS">Casetas</button>
+        <button class="tab atab" data-adm="USUARIOS">Usuarios</button>
         <button class="tab atab" data-adm="OPERADORES">Operadores</button>
         <button class="tab atab" data-adm="EJECUTIVOS">Ejecutivos</button>
         <button class="tab atab" data-adm="REMOLQUES">Remolques</button>
@@ -564,6 +609,16 @@ td input[type=checkbox],th input[type=checkbox]{width:16px;height:16px;min-width
 </main>
 
 <div id="toast"></div>
+
+<!-- ============ MODAL DE AVISO ============ -->
+<div id="modalWrap">
+  <div class="mbox">
+    <div class="mico" id="modIco">⚠</div>
+    <h3 id="modTit">Aviso</h3>
+    <div class="mtxt" id="modTxt"></div>
+    <button class="btn btn-p" id="modOk" style="min-width:140px">Entendido</button>
+  </div>
+</div>
 
 <!-- ============ PLANTILLA PDF: SOLICITUD (OPE-FOR-06) ============ -->
 <div class="printArea" id="prSol">
@@ -670,7 +725,21 @@ const CFG_OBJ_REND = { 'FULL':'OBJ_REND_FULL','SENCILLO':'OBJ_REND_SENCILLO','RA
 const DEF_OBJ_KM = { 'FULL':2500,'SENCILLO':2500,'RABÓN':1000,'3.5 T':800,'1.5 T':800,'UTILITARIA':500 };
 const DEF_OBJ_REND = { 'FULL':1.8,'SENCILLO':2.5,'RABÓN':3.5,'3.5 T':3,'1.5 T':8,'UTILITARIA':10 };
 
-const DB = { UNIDADES:[], OPERADORES:[], EJECUTIVOS:[], REMOLQUES:[], CLIENTES:[], RUTAS:[], SOLICITUDES:[], NOMINAS:[], LIQUIDACION:[], CONFIG:{} };
+/* Tarifa de casetas por tipo de unidad (categoría de ejes) */
+const TARIFA_CASETA = {
+  'FULL':      { campo:'COSTO_9E', etiqueta:'Full · 9 ejes' },
+  'SENCILLO':  { campo:'COSTO_5E', etiqueta:'Sencillo · 5 ejes' },
+  'RABÓN':     { campo:'COSTO_2E', etiqueta:'Rabón / camioneta · 2 ejes' },
+  '3.5 T':     { campo:'COSTO_2E', etiqueta:'Rabón / camioneta · 2 ejes' },
+  '1.5 T':     { campo:'COSTO_2E', etiqueta:'Rabón / camioneta · 2 ejes' },
+  'UTILITARIA':{ campo:'COSTO_2E', etiqueta:'Rabón / camioneta · 2 ejes' }
+};
+const CAMPOS_CASETA = ['COSTO_2E','COSTO_5E','COSTO_9E'];
+
+/* Tolerancia de KM entre la ruta registrada y el odómetro (Liquidación) */
+const TOLERANCIA_KM = 20;
+
+const DB = { UNIDADES:[], OPERADORES:[], EJECUTIVOS:[], REMOLQUES:[], CLIENTES:[], RUTAS:[], SOLICITUDES:[], NOMINAS:[], LIQUIDACION:[], CASETAS:[], USUARIOS:[], CONFIG:{} };
 
 const $  = id => document.getElementById(id);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
@@ -730,10 +799,63 @@ async function apiEnviar(payload){
   }
 }
 function aplicarDatos(data){
-  ['UNIDADES','OPERADORES','EJECUTIVOS','REMOLQUES','CLIENTES','RUTAS','SOLICITUDES','NOMINAS','LIQUIDACION'].forEach(k=>{ DB[k] = data[k]||[]; });
+  ['UNIDADES','OPERADORES','EJECUTIVOS','REMOLQUES','CLIENTES','RUTAS','SOLICITUDES','NOMINAS','LIQUIDACION','CASETAS','USUARIOS'].forEach(k=>{ DB[k] = data[k]||[]; });
   DB.CONFIG = data.CONFIG||{};
   refrescarTodo();
 }
+
+/* ---------- Modal de aviso ---------- */
+function modal(titulo, html, ico){
+  $('modTit').textContent = titulo;
+  $('modTxt').innerHTML = html;
+  $('modIco').textContent = ico || '⚠';
+  $('modalWrap').classList.add('show');
+}
+$('modOk').addEventListener('click',()=>$('modalWrap').classList.remove('show'));
+$('modalWrap').addEventListener('click',e=>{ if(e.target===$('modalWrap')) $('modalWrap').classList.remove('show'); });
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') $('modalWrap').classList.remove('show'); });
+
+/* ---------- Casetas: costo por tipo de unidad ---------- */
+function campoTarifa(tipoUnidad){
+  const t = TARIFA_CASETA[String(tipoUnidad||'').toUpperCase()];
+  return t? t.campo : 'COSTO_2E';
+}
+function etiquetaTarifa(tipoUnidad){
+  const t = TARIFA_CASETA[String(tipoUnidad||'').toUpperCase()];
+  return t? t.etiqueta : '';
+}
+function casetaPorId(id){ return DB.CASETAS.find(c=>String(c.ID)===String(id)); }
+/* Acepta el formato nuevo [{ID,NOMBRE}] y el viejo ["NOMBRE", …] */
+function leerCasetasRuta(ruta){
+  let arr=[];
+  try{ arr = JSON.parse((ruta && ruta.CASETAS_JSON) || '[]'); }catch(e){ arr=[]; }
+  if(!Array.isArray(arr)) return [];
+  return arr.map(x=> typeof x==='string' ? {ID:'', NOMBRE:x} : {ID:x.ID||'', NOMBRE:x.NOMBRE||''});
+}
+/* Suma el costo de las casetas de una ruta para un tipo de unidad dado.
+   Las casetas sin ID (capturadas antes del catálogo) suman 0 y se reportan aparte. */
+function costoCasetas(lista, tipoUnidad){
+  const campo = campoTarifa(tipoUnidad);
+  let total=0, sinCatalogo=0;
+  const detalle=[];
+  (lista||[]).forEach(c=>{
+    const cat = c.ID? casetaPorId(c.ID) : null;
+    if(cat){ const v=nf(cat[campo]); total+=v; detalle.push({nombre:cat.NOMBRE, monto:v}); }
+    else { sinCatalogo++; detalle.push({nombre:c.NOMBRE||'(sin nombre)', monto:null}); }
+  });
+  return { total, sinCatalogo, detalle };
+}
+function textoDesglose(res, tipoUnidad){
+  if(!res.detalle.length) return 'Sin casetas capturadas.';
+  const et = etiquetaTarifa(tipoUnidad);
+  const partes = res.detalle.map(d=> d.monto===null
+    ? `${esc(d.nombre)} <span style="color:var(--bad)">(no está en el catálogo)</span>`
+    : `${esc(d.nombre)} ${money(d.monto)}`);
+  let txt = `Tarifa aplicada: <b>${esc(et||'—')}</b> · ${partes.join(' &nbsp;·&nbsp; ')} &nbsp;→&nbsp; <b>${money(res.total)}</b>`;
+  if(res.sinCatalogo) txt += `<br><span style="color:var(--bad)">${res.sinCatalogo} caseta(s) no están en el catálogo y suman $0. Edita la ruta y selecciónalas del catálogo Casetas.</span>`;
+  return txt;
+}
+function esRutaSoloFull(ruta){ return !!ruta && String(ruta.OPTIMIZADA_FULL||'').toUpperCase()==='SI'; }
 function cfgNum(clave, def){ const v = parseFloat(DB.CONFIG[clave]); return isFinite(v)?v:def; }
 function objKm(tipo){ return cfgNum(CFG_OBJ_KM[tipo]||'', DEF_OBJ_KM[tipo]??0); }
 function objRend(tipo){ return cfgNum(CFG_OBJ_REND[tipo]||'', DEF_OBJ_REND[tipo]??0); }
@@ -796,17 +918,29 @@ function pintarTramos(){
 }
 function pintarCasetas(){
   const w=$('casetasWrap'); w.innerHTML='';
+  if(!DB.CASETAS.length){
+    w.innerHTML='<div class="mini" style="color:var(--bad)">El catálogo de casetas está vacío. Ve a <b>Administración → Casetas</b> y captura las casetas con su costo por tipo de unidad.</div>';
+    if(!casetasRuta.length) return;
+  }
+  const campo = campoTarifa($('rTipoUnidad').value);
   casetasRuta.forEach((c,i)=>{
     const d=document.createElement('div');
-    d.innerHTML=`<label>Caseta ${i+1}</label>
-      <div style="display:flex;gap:6px">
-        <input value="${esc(c)}" data-ci="${i}" placeholder="Nombre de la caseta" style="flex:1">
-        <button class="xbtn" data-cdel="${i}">✕</button>
-      </div>`;
+    d.style.cssText='display:flex;gap:8px;align-items:end;margin-bottom:10px';
+    const opts = DB.CASETAS.map(x=>`<option value="${esc(x.ID)}"${String(x.ID)===String(c.ID)?' selected':''}>${esc(x.NOMBRE)} · ${money(nf(x[campo]))}</option>`).join('');
+    const huerfana = c.ID? '' : `<option value="" selected>${esc(c.NOMBRE||'— Selecciona —')}${c.NOMBRE?' (fuera del catálogo)':''}</option>`;
+    d.innerHTML=`
+      <div style="flex:1"><label>Caseta ${i+1}</label>
+        <select data-ci="${i}">${huerfana||'<option value="">— Selecciona —</option>'}${opts}</select>
+      </div>
+      <button class="xbtn" data-cdel="${i}" style="margin-bottom:9px">✕</button>`;
     w.appendChild(d);
   });
-  w.querySelectorAll('input').forEach(el=>el.addEventListener('input',()=>{ casetasRuta[+el.dataset.ci]=el.value.toUpperCase(); el.value=el.value.toUpperCase(); }));
-  w.querySelectorAll('[data-cdel]').forEach(el=>el.addEventListener('click',()=>{ casetasRuta.splice(+el.dataset.cdel,1); pintarCasetas(); }));
+  w.querySelectorAll('select[data-ci]').forEach(el=>el.addEventListener('change',()=>{
+    const cat = casetaPorId(el.value);
+    casetasRuta[+el.dataset.ci] = cat? {ID:cat.ID, NOMBRE:cat.NOMBRE} : {ID:'', NOMBRE:''};
+    pintarCasetas(); calcularRuta();
+  }));
+  w.querySelectorAll('[data-cdel]').forEach(el=>el.addEventListener('click',()=>{ casetasRuta.splice(+el.dataset.cdel,1); pintarCasetas(); calcularRuta(); }));
 }
 function nombreRuta(){
   const partes = tramos.filter(t=>t.origen).map(t=>t.origen.trim());
@@ -819,9 +953,20 @@ function calcularRuta(){
   const total = tramos.reduce((s,t)=>s+nf(t.km),0);
   $('rTotalKm').value = num(total,1);
   $('rTotalKm').dataset.v = total;
+  // Costo de casetas automático según el tipo de unidad de la ruta
+  const tipo = $('rTipoUnidad').value;
+  const res = costoCasetas(casetasRuta.filter(c=>c.ID), tipo);
+  $('rCostoCasetas').value = money(res.total);
+  $('rCostoCasetas').dataset.v = res.total;
+  const conNombre = casetasRuta.filter(c=>c.ID || c.NOMBRE);
+  $('rCasetasDesglose').innerHTML = conNombre.length? textoDesglose(costoCasetas(conNombre, tipo), tipo) : '';
 }
+$('rTipoUnidad').addEventListener('change',()=>{ pintarCasetas(); calcularRuta(); });
 $('btnAddTramo').addEventListener('click',()=>{ tramos.push(nuevoTramo()); pintarTramos(); });
-$('btnAddCaseta').addEventListener('click',()=>{ casetasRuta.push(''); pintarCasetas(); });
+$('btnAddCaseta').addEventListener('click',()=>{
+  if(!DB.CASETAS.length){ modal('Catálogo vacío','Primero captura las casetas en <b>Administración → Casetas</b>, con su costo para 2, 5 y 9 ejes. Después podrás agregarlas a las rutas.','🛣'); return; }
+  casetasRuta.push({ID:'',NOMBRE:''}); pintarCasetas();
+});
 $('btnLimpiarRuta').addEventListener('click', limpiarRuta);
 function limpiarRuta(){
   editandoRutaId=null;
@@ -829,14 +974,32 @@ function limpiarRuta(){
   tramos=[nuevoTramo()]; casetasRuta=[];
   $('rCliente').value='';
   $('rTipoServicio').value='LOCAL'; $('rTipoViaje').value='REDONDO';
-  $('rTipoUnidad').value='FULL'; $('rEquipo').value='SECA'; $('rCostoCasetas').value='0';
-  pintarTramos(); pintarCasetas();
+  $('rTipoUnidad').value='FULL'; $('rEquipo').value='SECA';
+  $('rOptFull').checked=false;
+  pintarTramos(); pintarCasetas(); calcularRuta();
 }
+/* Al marcar "Optimizada para Full" la ruta pasa a ser de tipo Full */
+$('rOptFull').addEventListener('change',()=>{
+  if($('rOptFull').checked && $('rTipoUnidad').value!=='FULL'){
+    $('rTipoUnidad').value='FULL';
+    toast('La ruta se cambió a tipo de unidad FULL.');
+    pintarCasetas(); calcularRuta();
+  }
+});
 $('btnGuardarRuta').addEventListener('click', async ()=>{
   const nombre = nombreRuta();
   if(!nombre){ toast('Captura al menos un tramo con origen y destino.', true); return; }
   const totalKm = nf($('rTotalKm').dataset.v);
   if(totalKm<=0){ toast('Los KM de los tramos deben ser mayores a 0.', true); return; }
+  if($('rOptFull').checked && $('rTipoUnidad').value!=='FULL'){
+    modal('Ruta optimizada para Full','Marcaste <b>Optimizada para Full</b>, pero el tipo de unidad de la ruta es <b>'+esc($('rTipoUnidad').value)+'</b>. Cambia el tipo de unidad a <b>FULL</b> o desactiva el interruptor.','🚛');
+    return;
+  }
+  const huerfanas = casetasRuta.filter(c=>!c.ID);
+  if(huerfanas.length){
+    modal('Casetas sin catálogo','Hay '+huerfanas.length+' caseta(s) sin seleccionar del catálogo. Selecciónalas o quítalas para que el costo se calcule correctamente.','🛣');
+    return;
+  }
   const suma = est => tramos.filter(t=>t.estado===est).reduce((s,t)=>s+nf(t.km),0);
   const reg = {
     ID: editandoRutaId || uid(),
@@ -851,8 +1014,12 @@ $('btnGuardarRuta').addEventListener('click', async ()=>{
     KM_CARGADOS: suma('CARGADO'),
     KM_VACIOS: suma('VACÍO'),
     KM_POSICIONAMIENTO: suma('POSICIONAMIENTO'),
-    CASETAS_JSON: JSON.stringify(casetasRuta.filter(Boolean)),
-    COSTO_CASETAS: nf($('rCostoCasetas').value)
+    OPTIMIZADA_FULL: $('rOptFull').checked? 'SI' : 'NO',
+    CASETAS_JSON: JSON.stringify(casetasRuta.filter(c=>c.ID)),
+    COSTO_CASETAS: r2(nf($('rCostoCasetas').dataset.v)),
+    COSTO_CASETAS_2E: r2(costoCasetas(casetasRuta,'RABÓN').total),
+    COSTO_CASETAS_5E: r2(costoCasetas(casetasRuta,'SENCILLO').total),
+    COSTO_CASETAS_9E: r2(costoCasetas(casetasRuta,'FULL').total)
   };
   if(await apiEnviar({action:'upsert', sheet:'RUTAS', record:reg})){
     toast(editandoRutaId?'Ruta actualizada':'Ruta guardada');
@@ -866,7 +1033,8 @@ function pintarListaRutas(){
     .filter(r=>!q || String(r.RUTA).toUpperCase().includes(q) || String(r.CLIENTE).toUpperCase().includes(q))
     .forEach(r=>{
       const tr=document.createElement('tr');
-      tr.innerHTML=`<td><b>${esc(r.RUTA)}</b></td><td>${esc(r.CLIENTE)}</td><td>${esc(r.TIPO_SERVICIO)}</td><td>${esc(r.TIPO_VIAJE)}</td><td>${esc(r.TIPO_UNIDAD)}</td>
+      const badge = esRutaSoloFull(r)? ' <span class="tag" style="background:var(--accent);color:var(--accent-ink)">Solo Full</span>' : '';
+      tr.innerHTML=`<td><b>${esc(r.RUTA)}</b>${badge}</td><td>${esc(r.CLIENTE)}</td><td>${esc(r.TIPO_SERVICIO)}</td><td>${esc(r.TIPO_VIAJE)}</td><td>${esc(r.TIPO_UNIDAD)}</td>
         <td class="right num">${num(r.TOTAL_KM,1)}</td><td class="right num">${money(r.COSTO_CASETAS)}</td>
         <td style="white-space:nowrap"><button class="btn btn-s btn-sm" data-ed="${r.ID}">Editar</button> <button class="btn btn-d btn-sm" data-rm="${r.ID}">✕</button></td>`;
       tb.appendChild(tr);
@@ -883,13 +1051,12 @@ function editarRuta(id){
   $('rutaFormTitulo').textContent='Editar ruta';
   try{ tramos = JSON.parse(r.TRAMOS_JSON||'[]'); }catch(e){ tramos=[]; }
   if(!Array.isArray(tramos) || !tramos.length) tramos=[nuevoTramo()];
-  try{ casetasRuta = JSON.parse(r.CASETAS_JSON||'[]'); }catch(e){ casetasRuta=[]; }
-  if(!Array.isArray(casetasRuta)) casetasRuta=[];
+  casetasRuta = leerCasetasRuta(r);
   $('rCliente').value=r.CLIENTE||''; $('rTipoServicio').value=r.TIPO_SERVICIO||'LOCAL';
   $('rTipoViaje').value=r.TIPO_VIAJE||'REDONDO'; $('rTipoUnidad').value=r.TIPO_UNIDAD||'FULL';
   $('rEquipo').value=r.EQUIPO_ARRASTRE||'SECA';
-  $('rCostoCasetas').value=r.COSTO_CASETAS||0;
-  pintarTramos(); pintarCasetas();
+  $('rOptFull').checked = esRutaSoloFull(r);
+  pintarTramos(); pintarCasetas(); calcularRuta();
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
@@ -970,6 +1137,8 @@ function alCambiarUnidad(){
   const urea = u && String(u.UREA).toUpperCase()==='SI';
   $('ureaLBox').style.display = urea?'':'none';
   $('ureaDBox').style.display = urea?'':'none';
+  actualizarCasetasSolicitud();
+  if(u) avisarRutaSoloFull();
   recalcularSolicitud();
 }
 $('sEco').addEventListener('change', alCambiarUnidad);
@@ -978,14 +1147,53 @@ function aplicarTipoUnidad(){
   $('sRem2').disabled = !esFull; $('sDolly').disabled = !esFull;
   if(!esFull){ $('sRem2').value=''; $('sDolly').value=''; }
 }
-$('sTipoUnidad').addEventListener('change', aplicarTipoUnidad);
+$('sTipoUnidad').addEventListener('change',()=>{
+  aplicarTipoUnidad();
+  actualizarCasetasSolicitud();
+  avisarRutaSoloFull();
+  recalcularSolicitud();
+});
+
+/* Casetas de la solicitud: se recalculan con la tarifa del tipo de unidad elegido */
+function actualizarCasetasSolicitud(){
+  const r = rutaSel();
+  const tipo = $('sTipoUnidad').value;
+  if(!r){ $('sCasetas').value = money(0); $('sCasetas').dataset.v = 0; $('sCasetasDesglose').innerHTML=''; return; }
+  const lista = leerCasetasRuta(r);
+  if(!lista.length){
+    // Ruta antigua sin casetas capturadas: se respeta el costo guardado en la ruta
+    const v = nf(r.COSTO_CASETAS);
+    $('sCasetas').value = money(v); $('sCasetas').dataset.v = v;
+    $('sCasetasDesglose').innerHTML = v
+      ? 'Esta ruta no tiene casetas del catálogo; se usa el costo guardado en la ruta. Edítala para desglosarlas por tipo de unidad.'
+      : 'La ruta no tiene casetas capturadas.';
+    return;
+  }
+  const res = costoCasetas(lista, tipo);
+  $('sCasetas').value = money(res.total);
+  $('sCasetas').dataset.v = res.total;
+  $('sCasetasDesglose').innerHTML = tipo? textoDesglose(res, tipo) : 'Selecciona el tipo de unidad para calcular el costo de las casetas.';
+}
+
+/* Candado: una ruta "Optimizada para Full" solo puede usarse con unidades Full */
+function avisarRutaSoloFull(){
+  const r = rutaSel();
+  const tipo = $('sTipoUnidad').value;
+  if(!r || !tipo || !esRutaSoloFull(r) || tipo==='FULL') return false;
+  if($('modalWrap').classList.contains('show')) return true;
+  modal('Ruta exclusiva para Full',
+    `La ruta <b>${esc(r.RUTA)}</b> está marcada como <b>Optimizada para Full</b> y solo puede usarse con unidades tipo <b>FULL</b>.<br><br>`+
+    `Elegiste una unidad <b>${esc(tipo)}</b>. Solicita al Administrador que cree una ruta nueva para ese tipo de unidad.`, '🚛');
+  return true;
+}
 
 function alCambiarRuta(){
   const r = rutaSel();
   $('sTipoServicio').value = r? r.TIPO_SERVICIO:'';
   $('sTipoViaje').value = r? r.TIPO_VIAJE:'';
   $('sKm').value = r? num(r.TOTAL_KM,1):''; $('sKm').dataset.v = r? nf(r.TOTAL_KM):0;
-  $('sCasetas').value = r? nf(r.COSTO_CASETAS):0;
+  actualizarCasetasSolicitud();
+  avisarRutaSoloFull();
   recalcularSolicitud();
 }
 // sRuta ahora es hidden; el cambio se dispara desde resolverRutaBusca
@@ -1004,12 +1212,12 @@ function recalcularSolicitud(){
   }
   const dispComb = litros * precioComb(u? u.COMBUSTIBLE:'DIESEL');
   const depUrea = llevaUrea? nf($('sDepUrea').value) : 0;
-  const dispEfec = nf($('sCasetas').value)+nf($('sPension').value)+nf($('sComida').value)+depUrea;
+  const dispEfec = nf($('sCasetas').dataset.v)+nf($('sPension').value)+nf($('sComida').value)+depUrea;
   $('tDispComb').textContent = money(dispComb);
   $('tDispEfec').textContent = money(dispEfec);
   $('tTotal').textContent = money(dispComb+dispEfec);
 }
-['sCasetas','sPension','sComida'].forEach(id=>$(id).addEventListener('input',recalcularSolicitud));
+['sPension','sComida'].forEach(id=>$(id).addEventListener('input',recalcularSolicitud));
 $('sLitrosUrea').addEventListener('input',()=>{ $('sLitrosUrea').dataset.manual='1'; if(!$('sDepUrea').dataset.manual){ $('sDepUrea').value=(nf($('sLitrosUrea').value)*cfgNum('PRECIO_UREA',20)).toFixed(2);} recalcularSolicitud(); });
 $('sDepUrea').addEventListener('input',()=>{ $('sDepUrea').dataset.manual='1'; recalcularSolicitud(); });
 
@@ -1055,7 +1263,8 @@ function armarSolicitud(){
     DEPOSITO_UREA: llevaUrea? nf($('sDepUrea').value):0,
     PENSION: nf($('sPension').value),
     COMIDA: nf($('sComida').value),
-    COSTO_CASETAS: nf($('sCasetas').value),
+    COSTO_CASETAS: r2(nf($('sCasetas').dataset.v)),
+    TARIFA_CASETAS: etiquetaTarifa($('sTipoUnidad').value),
     EJECUTIVO: ej? ej.NOMBRE:'',
     TOTAL: dispComb+dispEfec
   };
@@ -1075,6 +1284,7 @@ $('btnGuardarSol').addEventListener('click', async ()=>{
   if(!$('sEco').value){ toast('Selecciona la unidad (económico).', true); return; }
   if(!$('sRuta').value){ toast('Selecciona la ruta a seguir. Escribe para buscar por nombre o cliente.', true); return; }
   if(!$('sOperador').value){ toast('Selecciona al operador.', true); return; }
+  if(avisarRutaSoloFull()) return;   // candado: ruta optimizada para Full
   const reg = armarSolicitud();
   if(await apiEnviar({action:'upsert', sheet:'SOLICITUDES', record:reg})){
     toast('Solicitud '+reg.FOLIO+' guardada en el Sheet');
@@ -1088,7 +1298,8 @@ function nuevaSolicitud(){
   $('sRutaBusca').value='';
   ['sPlacas','sTipoServicio','sTipoViaje','sKm','sCombustible','sRend','sLitros'].forEach(id=>$(id).value='');
   $('sKm').dataset.v=0; $('sLitros').dataset.v=0;
-  ['sPension','sComida','sCasetas','sDepUrea'].forEach(id=>{ $(id).value='0'; delete $(id).dataset.manual; });
+  ['sPension','sComida','sDepUrea'].forEach(id=>{ $(id).value='0'; delete $(id).dataset.manual; });
+  $('sCasetas').value=money(0); $('sCasetas').dataset.v=0; $('sCasetasDesglose').innerHTML='';
   $('sLitrosUrea').value=''; delete $('sLitrosUrea').dataset.manual;
   $('sArrastre').value='CARGADO';
   $('sFechaServ').value=hoyISO(); $('sFechaSol').value=fmtFecha(hoyISO()); $('sFechaServ').min=hoyISO();
@@ -1113,10 +1324,13 @@ $('btnPdfSol').addEventListener('click',()=>{
   $('pvLUrea').textContent=num(d.LITROS_UREA,1); $('pvDUrea').textContent=money(d.DEPOSITO_UREA);
   $('pvPension').textContent=money(d.PENSION); $('pvComida').textContent=money(d.COMIDA);
   $('pvCasetas').textContent=money(d.COSTO_CASETAS);
-  const r = rutaSel(); let lista=[];
-  if(r){ try{ lista=JSON.parse(r.CASETAS_JSON||'[]'); }catch(e){} }
-  if(!Array.isArray(lista)) lista=[];
-  $('pvListaCasetas').innerHTML = lista.length? lista.map(c=>'• '+esc(c)).join('<br>') : '—';
+  const r = rutaSel();
+  const lista = leerCasetasRuta(r);
+  const campo = campoTarifa(d.TIPO_UNIDAD);
+  $('pvListaCasetas').innerHTML = lista.length
+    ? lista.map(c=>{ const cat=casetaPorId(c.ID); return '• '+esc(cat? cat.NOMBRE : c.NOMBRE)+(cat? ' — '+money(nf(cat[campo])) : ''); }).join('<br>')
+      + (d.TARIFA_CASETAS? '<br><br><b>Tarifa: '+esc(d.TARIFA_CASETAS)+'</b>' : '')
+    : '—';
   $('pvDispComb').textContent=$('tDispComb').textContent;
   $('pvDispEfec').textContent=$('tDispEfec').textContent;
   $('pvTotal').textContent=$('tTotal').textContent;
@@ -1400,8 +1614,40 @@ function abrirLiq(id){
   $('lqDadivas').value = l? nf(l.DADIVAS) : 0;
   $('lqEstac').value = l? nf(l.ESTACIONAMIENTOS) : 0;
   $('lqEvidencia').checked = l? String(l.EVIDENCIA).toUpperCase()==='SI' : false;
+  $('lqOdoIni').value = l && l.ODOMETRO_INICIAL!==''? nf(l.ODOMETRO_INICIAL) : '';
+  $('lqOdoFin').value = l && l.ODOMETRO_FINAL!==''? nf(l.ODOMETRO_FINAL) : '';
+  $('lqKmRuta').value = num(nf(s.KM),1);
+  $('lqKmRuta').dataset.v = nf(s.KM);
+  calcOdometro();
   $('liqDetalle').scrollIntoView({behavior:'smooth',block:'start'});
 }
+
+/* Total de KM por odómetro y validación contra los KM de la ruta registrada */
+function calcOdometro(){
+  const ini = nf($('lqOdoIni').value), fin = nf($('lqOdoFin').value);
+  const kmRuta = nf($('lqKmRuta').dataset.v);
+  const hayDatos = $('lqOdoIni').value!=='' && $('lqOdoFin').value!=='';
+  const total = fin - ini;
+  $('lqOdoKm').value = hayDatos? num(total,1) : '';
+  $('lqOdoKm').dataset.v = hayDatos? total : '';
+  const av = $('lqOdoAviso');
+  if(!hayDatos){ av.innerHTML=''; av.style.color=''; return; }
+  if(total<0){
+    av.innerHTML='⚠ El odómetro final es menor que el inicial. Revisa la captura.';
+    av.style.color='var(--bad)';
+    return;
+  }
+  const dif = total - kmRuta;
+  if(dif > TOLERANCIA_KM){
+    av.innerHTML = `⚠ <b>Revisar el servicio.</b> La ruta registró <b>${num(kmRuta,1)} km</b> y el odómetro da <b>${num(total,1)} km</b>: `+
+                   `<b>${num(dif,1)} km de más</b>, por encima de la tolerancia de ${TOLERANCIA_KM} km.`;
+    av.style.color='var(--bad)';
+  } else {
+    av.innerHTML = `Diferencia contra la ruta registrada: <b>${dif>=0?'+':''}${num(dif,1)} km</b> (dentro de la tolerancia de ${TOLERANCIA_KM} km).`;
+    av.style.color='var(--ok)';
+  }
+}
+['lqOdoIni','lqOdoFin'].forEach(id=>$(id).addEventListener('input', calcOdometro));
 $('btnLiqCancelar').addEventListener('click',()=>{ $('liqDetalle').style.display='none'; liqEditando=null; });
 
 $('btnLiquidar').addEventListener('click', async ()=>{
@@ -1414,6 +1660,21 @@ $('btnLiquidar').addEventListener('click', async ()=>{
   if(!$('lqEvidencia').checked){ toast('Debes confirmar que el operador entregó evidencia completa.', true); return; }
   if(!$('lqFechaFin').value){ toast('Ingresa la fecha de servicio finalizado.', true); return; }
 
+  // Odómetro
+  if($('lqOdoIni').value===''||$('lqOdoFin').value===''){ toast('Captura el odómetro inicial y final.', true); $('lqOdoIni').focus(); return; }
+  const odoIni = nf($('lqOdoIni').value), odoFin = nf($('lqOdoFin').value);
+  const odoKm = odoFin - odoIni;
+  if(odoKm < 0){ toast('El odómetro final no puede ser menor que el inicial.', true); $('lqOdoFin').focus(); return; }
+  const kmRuta = nf($('lqKmRuta').dataset.v);
+  const difKm = odoKm - kmRuta;
+  if(difKm > TOLERANCIA_KM){
+    if(!confirm(
+      '⚠ REVISAR EL SERVICIO\n\n'+
+      'La ruta registrada tiene '+num(kmRuta,1)+' km y el odómetro da '+num(odoKm,1)+' km.\n'+
+      'Son '+num(difKm,1)+' km de más, por encima de la tolerancia de '+TOLERANCIA_KM+' km.\n\n'+
+      '¿Deseas liquidar el viaje de todos modos?')) return;
+  }
+
   const s = DB.SOLICITUDES.find(x=>String(x.ID)===String(liqEditando)); if(!s) return;
   const reg = {
     ID: s.ID, FOLIO: s.FOLIO, CARTAS_PORTE: s.CARTAS_PORTE,
@@ -1424,6 +1685,9 @@ $('btnLiquidar').addEventListener('click', async ()=>{
     PENSION_LIQ: r2(nf($('lqPension').value)), VIATICOS: r2(nf($('lqViaticos').value)),
     MANIOBRAS: r2(nf($('lqManiobras').value)), TALACHAS: r2(nf($('lqTalachas').value)),
     DADIVAS: r2(nf($('lqDadivas').value)), ESTACIONAMIENTOS: r2(nf($('lqEstac').value)),
+    ODOMETRO_INICIAL: r2(odoIni), ODOMETRO_FINAL: r2(odoFin),
+    KM_ODOMETRO: r2(odoKm), KM_RUTA: r2(kmRuta), DIFERENCIA_KM: r2(difKm),
+    REVISAR_KM: difKm > TOLERANCIA_KM? 'SI' : 'NO',
     EVIDENCIA: 'SI', ESTADO: 'LIQUIDADO', FECHA_LIQUIDACION: hoyISO()
   };
   if(await apiEnviar({action:'liquidar', record:reg})){
@@ -1448,65 +1712,23 @@ function pintarLiquidacion(){
     const l = liqDe(s.ID);
     const liq = l && String(l.ESTADO).toUpperCase()==='LIQUIDADO';
     const proyC = combProyectado(s), proyK = nf(s.COSTO_CASETAS);
+    const odo = l && l.KM_ODOMETRO!==''&&l.KM_ODOMETRO!==undefined? nf(l.KM_ODOMETRO) : null;
+    const revisar = l && String(l.REVISAR_KM).toUpperCase()==='SI';
     const tr=document.createElement('tr');
     tr.innerHTML=`<td><b>${esc(s.FOLIO)}</b></td><td>${esc(s.CARTAS_PORTE)}</td><td>${esc(s.OPERADOR)}</td>
       <td>${esc(s.RUTA)}</td><td>${esc(clienteDeSol(s))}</td><td>${fmtFecha(s.FECHA_SERVICIO)}</td>
       <td class="right num">${money(proyC)}</td><td class="right num">${money(proyK)}</td>
+      <td class="right num">${num(nf(s.KM),1)}</td>
+      <td class="right num"${revisar?' style="color:var(--bad);font-weight:700"':''}>${odo===null?'—':num(odo,1)+(revisar?' ⚠':'')}</td>
       <td>${liq? '<span class="tag ok">Liquidado</span>':'<span class="tag">Pendiente</span>'}</td>
       <td><button class="btn btn-${liq?'s':'p'} btn-sm" data-xliq="${s.ID}">${liq?'Ver':'✔ Liquidar'}</button></td>`;
     tb.appendChild(tr);
   });
-  if(!filas.length) tb.innerHTML='<tr><td colspan="10" class="mini">Sin solicitudes que coincidan.</td></tr>';
+  if(!filas.length) tb.innerHTML='<tr><td colspan="12" class="mini">Sin solicitudes que coincidan.</td></tr>';
   tb.querySelectorAll('[data-xliq]').forEach(b=>b.addEventListener('click',()=>abrirLiq(b.dataset.xliq)));
-  pintarKpisLiq();
 }
 $('xBusca').addEventListener('input', pintarLiquidacion);
 $('xEstado').addEventListener('change', pintarLiquidacion);
-
-let chartsLiq={};
-function pintarKpisLiq(){
-  const conc = DB.LIQUIDACION.filter(x=>String(x.ESTADO).toUpperCase()==='LIQUIDADO');
-  const sum = (arr,f)=>arr.reduce((a,x)=>a+nf(f(x)),0);
-  const cp=sum(conc,x=>x.COMB_PROYECTADO), cr=sum(conc,x=>x.COMB_REAL);
-  const kp=sum(conc,x=>x.CASETAS_PROYECTADO), kr=sum(conc,x=>x.CASETAS_REAL);
-  $('xkCombP').textContent=money(cp); $('xkCombR').textContent=money(cr);
-  $('xkCombD').textContent=money(cr-cp);
-  $('xkCombDBox').className='kpi '+((cr-cp)>0?'rojo':'verde');
-  $('xkCasP').textContent=money(kp); $('xkCasR').textContent=money(kr);
-  $('xkCasD').textContent=money(kr-kp);
-  $('xkCasDBox').className='kpi '+((kr-kp)>0?'rojo':'verde');
-
-  const css=getComputedStyle(document.documentElement);
-  Chart.defaults.color=css.getPropertyValue('--ink').trim();
-  Chart.defaults.borderColor=css.getPropertyValue('--line').trim();
-  Chart.defaults.font.family="'Barlow',sans-serif";
-  const acc=css.getPropertyValue('--accent').trim();
-
-  const porGrupo = keyFn => {
-    const m={};
-    conc.forEach(x=>{
-      const k=keyFn(x)||'SIN DATO';
-      if(!m[k]) m[k]={p:0,r:0};
-      m[k].p += nf(x.COMB_PROYECTADO)+nf(x.CASETAS_PROYECTADO);
-      m[k].r += nf(x.COMB_REAL)+nf(x.CASETAS_REAL);
-    });
-    return m;
-  };
-  const dibujar=(id, mapa, limite)=>{
-    let claves=Object.keys(mapa).sort((a,b)=>mapa[b].r-mapa[a].r);
-    if(limite) claves=claves.slice(0,limite);
-    if(chartsLiq[id]) chartsLiq[id].destroy();
-    chartsLiq[id]=new Chart($(id),{ type:'bar',
-      data:{ labels:claves, datasets:[
-        {label:'Proyectado', data:claves.map(k=>mapa[k].p), backgroundColor:'#4C7DD9', borderRadius:5},
-        {label:'Real', data:claves.map(k=>mapa[k].r), backgroundColor:acc, borderRadius:5}
-      ]},
-      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top'}}}
-    });
-  };
-  dibujar('chLiqCliente', porGrupo(x=>x.CLIENTE));
-  dibujar('chLiqRuta', porGrupo(x=>x.RUTA), 8);
-}
 
 /* =====================================================
    INDICADORES
@@ -1574,6 +1796,13 @@ const ADMIN = {
       {k:'ECONOMICO'},{k:'PLACAS'},{k:'TIPO_UNIDAD',opts:TIPOS_UNIDAD},{k:'MODELO'},{k:'ANIO',tipo:'number'},
       {k:'COMBUSTIBLE',opts:COMBUSTIBLES},{k:'RENDIMIENTO',tipo:'number'},{k:'UREA',opts:['SI','NO']}],
     csv:'ECONOMICO, PLACAS, TIPO_UNIDAD, MODELO, ANIO, COMBUSTIBLE, RENDIMIENTO, UREA' },
+  CASETAS:{ cols:[
+      {k:'NOMBRE'},{k:'CARRETERA'},
+      {k:'COSTO_2E',tipo:'number'},{k:'COSTO_5E',tipo:'number'},{k:'COSTO_9E',tipo:'number'}],
+    csv:'NOMBRE, CARRETERA, COSTO_2E, COSTO_5E, COSTO_9E' },
+  USUARIOS:{ cols:[
+      {k:'USUARIO',raw:true},{k:'NOMBRE'},{k:'PASSWORD',raw:true},
+      {k:'ROL',opts:['OPERATIVO','ADMIN']},{k:'ACTIVO',opts:['SI','NO']}] },
   OPERADORES:{ cols:[{k:'NOMBRE'},{k:'PAGO_NOMINAL_SEMANAL',tipo:'number'},{k:'ACTIVO',opts:['SI','NO']}],
     csv:'NOMBRE, PAGO_NOMINAL_SEMANAL, ACTIVO' },
   EJECUTIVOS:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
@@ -1588,13 +1817,14 @@ const ADMIN = {
 let admHoja='UNIDADES';
 let adminOk=false;
 
-$('btnAdminLogin').addEventListener('click',()=>{
-  if($('adminPass').value==='poncho'){
-    adminOk=true; $('adminLock').style.display='none'; $('adminPanel').style.display='';
-    cargarConfigAdmin(); pintarAdmin();
-  } else toast('Contraseña incorrecta', true);
-});
-$('adminPass').addEventListener('keydown',e=>{ if(e.key==='Enter') $('btnAdminLogin').click(); });
+/* El acceso a Administración depende del rol del usuario con sesión iniciada */
+function aplicarPermisos(){
+  adminOk = !!(usuarioActual && String(usuarioActual.ROL).toUpperCase()==='ADMIN');
+  $('adminLock').style.display = adminOk? 'none' : '';
+  $('adminPanel').style.display = adminOk? '' : 'none';
+  document.querySelectorAll('.tab-admin').forEach(t=>t.style.display = adminOk? '' : 'none');
+  if(adminOk){ cargarConfigAdmin(); pintarAdmin(); }
+}
 
 const CFG_MAP = [
   ['PRECIO_DIESEL','cfgDiesel',26.31],['PRECIO_GASOLINA','cfgGasolina',23.46],['PRECIO_GAS','cfgGas',12.5],
@@ -1651,7 +1881,12 @@ function pintarAdmin(){
   if(selAll) selAll.addEventListener('change',()=>{ tb.querySelectorAll('input[type=checkbox][data-sel]').forEach(c=>c.checked=selAll.checked); });
   tb.querySelectorAll('input[data-k],select[data-k]').forEach(el=>el.addEventListener('change', async ()=>{
     const reg=(DB[admHoja]||[]).find(x=>String(x.ID)===el.dataset.id); if(!reg) return;
-    reg[el.dataset.k]= el.type==='number'? nf(el.value) : el.value.toUpperCase();
+    const colDef = (ADMIN[admHoja].cols||[]).find(c=>c.k===el.dataset.k) || {};
+    reg[el.dataset.k]= el.type==='number'? nf(el.value) : (colDef.raw? el.value.trim() : el.value.toUpperCase());
+    if(admHoja==='USUARIOS' && el.dataset.k==='USUARIO'){
+      const dup = DB.USUARIOS.find(u=>String(u.ID)!==String(reg.ID) && String(u.USUARIO||'').toLowerCase()===String(reg.USUARIO||'').toLowerCase());
+      if(dup){ modal('Usuario repetido','Ya existe otro usuario con el nombre <b>'+esc(reg.USUARIO)+'</b>. Los usuarios deben ser únicos.','👤'); pintarAdmin(); return; }
+    }
     if(await apiEnviar({action:'upsert', sheet:admHoja, record:reg})) toast('Registro actualizado');
   }));
   tb.querySelectorAll('[data-adel]').forEach(b=>b.addEventListener('click', async ()=>{
@@ -1729,6 +1964,76 @@ function parseCSV(txt){
 }
 
 /* =====================================================
+   ACCESO (USUARIO Y CONTRASEÑA)
+   Los usuarios se administran en Administración → Usuarios.
+   Si la hoja USUARIOS está vacía se habilita un acceso inicial
+   admin/admin para poder crear el primer administrador.
+===================================================== */
+let usuarioActual = null;
+const USUARIO_INICIAL = { ID:'bootstrap', USUARIO:'admin', NOMBRE:'ADMINISTRADOR INICIAL', ROL:'ADMIN', ACTIVO:'SI' };
+
+function usuariosActivos(){
+  return DB.USUARIOS.filter(u=>String(u.ACTIVO||'SI').toUpperCase()!=='NO');
+}
+function buscarUsuario(user, pass){
+  const u = String(user||'').trim().toLowerCase();
+  const p = String(pass||'');
+  if(!DB.USUARIOS.length){
+    return (u==='admin' && p==='admin')? USUARIO_INICIAL : null;
+  }
+  return usuariosActivos().find(x=>
+    String(x.USUARIO||'').trim().toLowerCase()===u && String(x.PASSWORD??'')===p
+  ) || null;
+}
+function pistaLogin(){
+  $('logHint').innerHTML = DB.USUARIOS.length
+    ? ''
+    : 'No hay usuarios dados de alta. Entra con <b>admin</b> / <b>admin</b> y crea los usuarios en Administración → Usuarios.';
+}
+function abrirSesion(u, recordar){
+  usuarioActual = u;
+  if(recordar!==false){ try{ sessionStorage.setItem('adl_user', String(u.ID)); }catch(e){} }
+  $('loginWrap').style.display='none';
+  document.body.classList.remove('locked');
+  $('userChip').textContent = (u.NOMBRE || u.USUARIO) + ' · ' + String(u.ROL||'OPERATIVO').toUpperCase();
+  refrescarTodo();
+}
+function cerrarSesion(){
+  try{ sessionStorage.removeItem('adl_user'); }catch(e){}
+  usuarioActual = null;
+  document.body.classList.add('locked');
+  $('loginWrap').style.display='';
+  $('logUser').value=''; $('logPass').value=''; $('logErr').textContent='';
+  pistaLogin();
+  $('logUser').focus();
+}
+function intentarLogin(){
+  const u = buscarUsuario($('logUser').value, $('logPass').value);
+  if(!u){
+    $('logErr').textContent = 'Usuario o contraseña incorrectos.';
+    $('logPass').value=''; $('logPass').focus();
+    return;
+  }
+  $('logErr').textContent='';
+  abrirSesion(u);
+}
+$('btnLogin').addEventListener('click', intentarLogin);
+['logUser','logPass'].forEach(id=>$(id).addEventListener('keydown',e=>{ if(e.key==='Enter') intentarLogin(); }));
+$('btnLogout').addEventListener('click',()=>{ if(confirm('¿Cerrar sesión?')) cerrarSesion(); });
+
+/* Restaura la sesión de la pestaña cuando ya se cargaron los datos */
+function restaurarSesion(){
+  let id=null; try{ id = sessionStorage.getItem('adl_user'); }catch(e){}
+  if(!id) return false;
+  const u = id==='bootstrap'
+    ? (DB.USUARIOS.length? null : USUARIO_INICIAL)
+    : usuariosActivos().find(x=>String(x.ID)===String(id));
+  if(!u) return false;
+  abrirSesion(u, false);
+  return true;
+}
+
+/* =====================================================
    REFRESCO GLOBAL E INICIO
 ===================================================== */
 function refrescarTodo(){
@@ -1743,8 +2048,11 @@ function refrescarTodo(){
   if(document.querySelector('#sec-prenomina.active')) pintarPrenomina(); else pintarNominas();
   if(document.querySelector('#sec-liquidacion.active')) pintarLiquidacion();
   if(document.querySelector('#sec-indicadores.active')) pintarIndicadores();
-  if(adminOk) pintarAdmin();
+  if(usuarioActual){ aplicarPermisos(); return; }
+  pistaLogin();
+  if(!sesionRestaurada){ sesionRestaurada=true; restaurarSesion(); }
 }
+let sesionRestaurada = false;
 
 (function iniciar(){
   const selU=$('rTipoUnidad'); TIPOS_UNIDAD.forEach(t=>{const o=document.createElement('option');o.textContent=t;selU.appendChild(o);});
@@ -1753,6 +2061,8 @@ function refrescarTodo(){
   tramos=[nuevoTramo()]; pintarTramos(); pintarCasetas();
   $('sFechaSol').value=fmtFecha(hoyISO()); $('sFechaServ').value=hoyISO(); $('sFechaServ').min=hoyISO();
   pintarCP();
+  document.querySelectorAll('.tab-admin').forEach(t=>t.style.display='none');
+  $('logUser').focus();
   apiCargar();
 })();
 </script>
