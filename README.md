@@ -7,6 +7,7 @@ conecta mediante un Google Apps Script publicado como `/exec`.
 ## Contenido
 
 - `index.html` — la aplicación completa (HTML, CSS y JS en un único archivo).
+- `apps-script/Codigo.gs` — el backend que va en el Apps Script del Sheet.
 
 ## Uso local
 
@@ -25,13 +26,27 @@ build: no hay dependencias ni paso de compilación.
 
 ---
 
-## Hojas que deben existir en el Google Sheet
+## Instalación del backend (Apps Script)
 
-Además de las hojas que ya usabas (`UNIDADES`, `OPERADORES`, `EJECUTIVOS`,
+1. Abre el Google Sheet → **Extensiones → Apps Script**.
+2. Reemplaza todo el contenido del archivo por `apps-script/Codigo.gs`.
+3. Ejecuta una vez la función **`configurarHojas()`**. Crea las hojas y columnas
+   que falten sin tocar los datos que ya existan: las columnas nuevas se agregan
+   al final de la fila de encabezados y no se reordena nada.
+4. **Implementar → Nueva implementación → Aplicación web**, con
+   *Ejecutar como: Yo* y *Quién tiene acceso: Cualquier persona*.
+5. Copia la URL `/exec` y pégala en **Administración → URL de conexión**, o
+   actualiza la constante `WEBHOOK` en `index.html`.
+
+Cada vez que cambies el código del Apps Script hay que crear una implementación
+nueva (o actualizar la existente) para que la URL `/exec` sirva la versión nueva.
+
+## Hojas del Google Sheet
+
+`configurarHojas()` las crea solo, pero conviene saber qué espera cada una.
+Además de las que ya usabas (`UNIDADES`, `OPERADORES`, `EJECUTIVOS`,
 `REMOLQUES`, `CLIENTES`, `RUTAS`, `SOLICITUDES`, `NOMINAS`, `LIQUIDACION`,
-`CONFIG`), la app ahora lee y escribe dos hojas nuevas. **Hay que crearlas en el
-Sheet con estos encabezados exactos en la fila 1**, y asegurarse de que el Apps
-Script las devuelva en `doGet`:
+`CONFIG`), la app lee y escribe dos hojas nuevas:
 
 ### Hoja `CASETAS`
 
@@ -61,8 +76,7 @@ usuario, ese acceso inicial deja de funcionar.
 
 ### Columnas nuevas en hojas existentes
 
-La app las escribe sola al guardar; conviene agregarlas al encabezado para que
-queden ordenadas:
+`configurarHojas()` las agrega solo:
 
 - `RUTAS`: `OPTIMIZADA_FULL`, `COSTO_CASETAS_2E`, `COSTO_CASETAS_5E`, `COSTO_CASETAS_9E`
 - `SOLICITUDES`: `TARIFA_CASETAS`
