@@ -53,12 +53,24 @@ var HOJAS = {
             'SUELDO_NETO','BONO_CUMPLIMIENTO','KM','OBJETIVO_KM','KM_EXTRA','PAGO_KM_EXTRA',
             'REND_OBJETIVO','REND_REAL','LITROS_AHORRADOS','PAGO_RENDIMIENTO','TOTAL','FECHA_REGISTRO'],
 
+  /* ESTADO: LIQUIDADO | ACLARACION */
   LIQUIDACION: ['ID','FOLIO','CARTAS_PORTE','FECHA_CARGA','FECHA_FINALIZADO','RUTA','CLIENTE','OPERADOR',
                 'COMB_PROYECTADO','CASETAS_PROYECTADO','COMB_REAL','CASETAS_REAL',
                 'PENSION_LIQ','VIATICOS','MANIOBRAS','TALACHAS','DADIVAS','ESTACIONAMIENTOS',
                 'ODOMETRO_INICIAL','ODOMETRO_FINAL','KM_ODOMETRO','KM_RUTA','DIFERENCIA_KM','REVISAR_KM',
-                'EVIDENCIA','ESTADO','FECHA_LIQUIDACION']
+                'EVIDENCIA','ESTADO','FECHA_LIQUIDACION','LIQUIDADO_POR',
+                'MOTIVO_ACLARACION','ACLARACION_POR','ACLARACION_FECHA',
+                'AUTORIZADO_POR','FECHA_AUTORIZACION','NOTA_AUTORIZACION'],
+
+  /* Bitácora de auditoría: quién hizo qué y cuándo. Solo la escribe el script. */
+  BITACORA: ['ID','FECHA_HORA','USUARIO','NOMBRE','ROL','ACCION','HOJA','REGISTRO','DETALLE']
 };
+
+var HOJA_BITACORA = 'BITACORA';
+
+/* Máximo de renglones que se conservan en la bitácora (los más viejos se
+   recortan para que la hoja no crezca sin límite). 0 = sin límite. */
+var BITACORA_MAX = 10000;
 
 /* Hojas que la app lee como catálogo/registro (CONFIG se maneja aparte) */
 var HOJAS_DATOS = Object.keys(HOJAS);
@@ -93,6 +105,15 @@ function doPost(e) {
 
     var p = JSON.parse((e && e.postData && e.postData.contents) || '{}');
 
+    // Un evento de bitácora no modifica datos: se registra y se responde corto
+    if (p.action === 'log') {
+      registrarBitacora(p.usuario, p.evento, '', '', p.detalle);
+      return json({ ok: true, logged: true });
+    }
+
+    // Las filas capturadas a mano en el Sheet pueden venir sin ID
+    asignarIdsFaltantes();
+
     switch (p.action) {
       case 'upsert':      upsert(p.sheet, p.record);        break;
       case 'bulkUpsert':  bulkUpsert(p.sheet, p.records);   break;
@@ -104,6 +125,8 @@ function doPost(e) {
       default:
         throw new Error('Acción no reconocida: ' + p.action);
     }
+
+    registrarAccion(p);
 
     return json({ ok: true, data: leerTodo() });
 
@@ -153,6 +176,9 @@ function configurarHojas() {
   }
   asegurarEncabezados(cfg, ['CLAVE','VALOR']);
   cfg.setFrozenRows(1);
+
+  var ids = asignarIdsFaltantes();
+  if (ids) resumen.push('Se asignaron ' + ids + ' ID(s) a filas capturadas a mano.');
 
   var msg = resumen.length ? resumen.join('\n') : 'Todo estaba en orden, no hubo cambios.';
   Logger.log(msg);
@@ -367,6 +393,161 @@ function setConfig(clave, valor) {
 }
 
 /* ------------------------------------------------------------------ *
+ *  Bitácora de auditoría
+ * ------------------------------------------------------------------ */
+
+/** Traduce la petición a un renglón legible de bitácora. */
+function registrarAccion(p) {
+  var hoja = p.sheet || '';
+  var registro = '';
+  var detalle = '';
+  var accion = String(p.action || '').toUpperCase();
+
+  switch (p.action) {
+    case 'upsert':
+      registro = (p.record && p.record.ID) || '';
+      accion = 'ALTA / EDICIÓN';
+      detalle = describir(p.record);
+      break;
+    case 'bulkUpsert':
+      accion = 'IMPORTACIÓN';
+      detalle = (p.records ? p.records.length : 0) + ' registro(s) importados';
+      break;
+    case 'delete':
+      accion = 'ELIMINACIÓN';
+      registro = p.id || '';
+      break;
+    case 'deleteMany':
+      accion = 'ELIMINACIÓN MÚLTIPLE';
+      registro = (p.ids || []).join(' ');
+      detalle = (p.ids || []).length + ' registro(s)';
+      break;
+    case 'clearAll':
+      accion = 'VACIADO DE HOJA';
+      detalle = 'Se borraron todos los registros de ' + hoja;
+      break;
+    case 'setConfig':
+      accion = 'CAMBIO DE PARÁMETRO';
+      hoja = 'CONFIG';
+      registro = p.clave || '';
+      detalle = p.clave + ' = ' + p.valor;
+      break;
+    case 'liquidar':
+      hoja = 'LIQUIDACION';
+      registro = (p.record && p.record.FOLIO) || '';
+      var estado = String((p.record && p.record.ESTADO) || '').toUpperCase();
+      accion = estado === 'ACLARACION' ? 'ENVÍO A ACLARACIÓN'
+             : (p.record && p.record.AUTORIZADO_POR) ? 'AUTORIZACIÓN DE ACLARACIÓN'
+             : 'LIQUIDACIÓN';
+      detalle = describirLiquidacion(p.record);
+      break;
+  }
+
+  registrarBitacora(p.usuario, accion, hoja, registro, detalle);
+}
+
+function describir(rec) {
+  if (!rec) return '';
+  var claves = ['NOMBRE','USUARIO','ECONOMICO','RUTA','FOLIO','CLAVE','OPERADOR','ROL'];
+  var partes = [];
+  claves.forEach(function (k) {
+    if (rec[k] !== undefined && rec[k] !== '') partes.push(k + ': ' + rec[k]);
+  });
+  return partes.join(' · ');
+}
+
+function describirLiquidacion(rec) {
+  if (!rec) return '';
+  var partes = [];
+  if (rec.OPERADOR) partes.push('Operador: ' + rec.OPERADOR);
+  if (rec.KM_ODOMETRO !== undefined) {
+    partes.push('KM odómetro: ' + rec.KM_ODOMETRO + ' vs ruta: ' + rec.KM_RUTA +
+                ' (dif ' + rec.DIFERENCIA_KM + ')');
+  }
+  if (rec.MOTIVO_ACLARACION) partes.push('Motivo: ' + rec.MOTIVO_ACLARACION);
+  if (rec.NOTA_AUTORIZACION) partes.push('Autorización: ' + rec.NOTA_AUTORIZACION);
+  return partes.join(' · ');
+}
+
+/**
+ * Escribe un renglón en la bitácora. Nunca lanza: un fallo aquí no debe
+ * tumbar la operación que el usuario acaba de hacer.
+ */
+function registrarBitacora(usuario, accion, hoja, registro, detalle) {
+  try {
+    var u = usuario || {};
+    var b = hojaDe(HOJA_BITACORA);
+    var tz = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+
+    b.appendRow([
+      Utilities.getUuid(),
+      Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd HH:mm:ss'),
+      String(u.USUARIO || '(desconocido)'),
+      String(u.NOMBRE  || ''),
+      String(u.ROL     || ''),
+      String(accion    || ''),
+      String(hoja      || ''),
+      String(registro  || ''),
+      String(detalle   || '')
+    ]);
+
+    if (BITACORA_MAX > 0) {
+      var sobra = b.getLastRow() - 1 - BITACORA_MAX;
+      if (sobra > 0) b.deleteRows(2, sobra);
+    }
+  } catch (err) {
+    Logger.log('No se pudo escribir en la bitácora: ' + err);
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ *  IDs faltantes
+ * ------------------------------------------------------------------ */
+
+/**
+ * Rellena la columna ID de las filas capturadas a mano en el Sheet.
+ * Sin ID, la app no puede distinguir un registro de otro: era la causa de que
+ * al elegir una caseta se guardara siempre la primera del catálogo.
+ */
+function asignarIdsFaltantes() {
+  var total = 0;
+
+  HOJAS_DATOS.forEach(function (nombre) {
+    if (nombre === HOJA_BITACORA) return;
+
+    var hoja = hojaDe(nombre);
+    if (hoja.getLastRow() < 2) return;
+
+    var heads = encabezados(hoja);
+    var colId = heads.indexOf('ID');
+    if (colId === -1) return;
+
+    var rango = hoja.getRange(2, colId + 1, hoja.getLastRow() - 1, 1);
+    var ids = rango.getValues();
+    var datos = hoja.getRange(2, 1, hoja.getLastRow() - 1, heads.length).getValues();
+    var cambios = false;
+
+    for (var i = 0; i < ids.length; i++) {
+      var vacio = String(ids[i][0]).trim() === '';
+      // Solo se le asigna ID a las filas que sí tienen contenido
+      var tieneDatos = datos[i].some(function (v, j) {
+        return j !== colId && String(v).trim() !== '';
+      });
+      if (vacio && tieneDatos) {
+        ids[i][0] = Utilities.getUuid();
+        cambios = true;
+        total++;
+      }
+    }
+
+    if (cambios) rango.setValues(ids);
+  });
+
+  if (total) Logger.log('IDs asignados: ' + total);
+  return total;
+}
+
+/* ------------------------------------------------------------------ *
  *  Liquidación
  * ------------------------------------------------------------------ */
 
@@ -428,5 +609,6 @@ function onOpen() {
   SpreadsheetApp.getUi()
     .createMenu('Master de Ruta')
     .addItem('Configurar hojas', 'configurarHojas')
+    .addItem('Asignar IDs faltantes', 'asignarIdsFaltantes')
     .addToUi();
 }

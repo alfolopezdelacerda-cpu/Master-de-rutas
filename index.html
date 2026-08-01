@@ -84,6 +84,7 @@ th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ink2
 td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
 tr:hover td{background:var(--surface2)}
 .twrap{overflow-x:auto}
+thead.sticky th{position:sticky;top:0;background:var(--surface);z-index:2}
 td input,td select{padding:6px 8px;font-size:13px;min-width:70px}
 td input[type=checkbox],th input[type=checkbox]{width:16px;height:16px;min-width:16px}
 
@@ -328,8 +329,8 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 
   <div class="card">
     <h2>Solicitudes recientes</h2>
-    <div class="twrap"><table>
-      <thead><tr><th>Folio</th><th>Fecha serv.</th><th>Ruta</th><th>Operador</th><th>Económico</th><th class="right">KM</th><th class="right">Total</th><th></th></tr></thead>
+    <div class="twrap" style="max-height:420px;overflow-y:auto"><table>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr><th>Folio</th><th>Fecha serv.</th><th>Ruta</th><th>Operador</th><th>Económico</th><th class="right">KM</th><th class="right">Total</th><th></th></tr></thead>
       <tbody id="tbodySol"></tbody>
     </table></div>
   </div>
@@ -342,7 +343,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <div class="sub">Busca el servicio por carta porte, folio, operador o ruta. Captura los datos reales y los gastos adicionales. Un viaje <b>no liquidado</b> no contará para el pago en pre-nómina.</div>
     <div class="grid g3">
       <div style="grid-column:1/3"><label>Buscar</label><input id="xBusca" placeholder="🔍 Carta porte, folio, operador o ruta…"></div>
-      <div><label>Estado</label><select id="xEstado"><option value="todos">Todos</option><option value="pendientes">Pendientes</option><option value="liquidados">Liquidados</option></select></div>
+      <div><label>Estado</label><select id="xEstado"><option value="todos">Todos</option><option value="pendientes">Pendientes</option><option value="aclaracion">En aclaración</option><option value="liquidados">Liquidados</option></select></div>
     </div>
   </div>
 
@@ -385,7 +386,30 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       <div><label>Dádivas ($)</label><input id="lqDadivas" type="number" step="0.01" min="0" class="num" value="0"></div>
       <div><label>Estacionamientos ($)</label><input id="lqEstac" type="number" step="0.01" min="0" class="num" value="0"></div>
     </div>
-    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:8px">
+    <!-- Aclaración: cuando el odómetro se sale de la tolerancia -->
+    <div id="lqAclaraBox" style="display:none;background:var(--surface2);border:1px solid var(--bad);border-radius:10px;padding:14px;margin-top:12px">
+      <h3 style="color:var(--bad);margin-bottom:8px">Este viaje debe entrar a aclaración</h3>
+      <div class="mini" id="lqAclaraMotivoAuto" style="margin-bottom:10px"></div>
+      <label>Motivo / observaciones de la aclaración</label>
+      <textarea id="lqAclaraNota" rows="2" placeholder="Explica la diferencia de kilometraje…" style="resize:vertical"></textarea>
+      <button class="btn btn-d" id="btnAclaracion" style="margin-top:12px">⚑ Enviar a aclaración</button>
+    </div>
+
+    <!-- Autorización: solo administradores -->
+    <div id="lqAutorizaBox" style="display:none;background:var(--surface2);border:1px dashed var(--road);border-radius:10px;padding:14px;margin-top:12px">
+      <h3 style="margin-bottom:8px">Servicio en aclaración</h3>
+      <div class="mini" id="lqAclaraInfo" style="margin-bottom:10px"></div>
+      <div id="lqAutorizaAdmin">
+        <label>Nota de autorización</label>
+        <textarea id="lqAutorizaNota" rows="2" placeholder="Motivo por el que se autoriza…" style="resize:vertical"></textarea>
+        <button class="btn btn-p" id="btnAutorizar" style="margin-top:12px">✔ Autorizar y liquidar</button>
+      </div>
+      <div class="mini" id="lqAutorizaNoAdmin" style="color:var(--bad);display:none">
+        Solo un administrador puede cambiar el estatus a liquidado.
+      </div>
+    </div>
+
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:12px">
       <label style="display:flex;gap:10px;align-items:center;font-size:14px;text-transform:none;letter-spacing:0;font-weight:700;color:var(--ink)"><input type="checkbox" id="lqEvidencia" style="width:18px;height:18px;min-width:18px"> Entregó evidencia completa</label>
       <button class="btn btn-p" id="btnLiquidar">✔ Liquidar viaje</button>
       <button class="btn btn-s" id="btnLiqCancelar">Cancelar</button>
@@ -445,8 +469,9 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 
       <div class="card">
         <h3>Objetivo de kilómetros</h3>
-        <div class="grid g3" style="margin-bottom:10px">
+        <div class="grid g4" style="margin-bottom:10px">
           <div><label>Tipo de unidad</label><select id="pTipoU"></select></div>
+          <div><label>Tipo de servicio</label><select id="pTipoServ"><option>FORÁNEO</option><option>LOCAL</option></select></div>
           <div><label>Objetivo semanal (km)</label><input id="pObjKm" type="number" min="0" step="1"></div>
           <div><label>Pago por km extra ($)</label><input id="pPagoKmX" type="number" min="0" step="0.1"></div>
         </div>
@@ -549,9 +574,12 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <div><label>$ litro ahorrado (gasolina)</label><input id="cfgBLG" type="number" step="0.5"></div>
       </div>
       <h3 style="margin-top:18px">Objetivo semanal de KM por tipo de unidad</h3>
+      <div class="sub" style="margin-bottom:12px">Full y Sencillo tienen objetivo distinto para servicio foráneo y local.</div>
       <div class="grid g4">
-        <div><label>Full</label><input id="cfgOKFull" type="number" step="10"></div>
-        <div><label>Sencillo</label><input id="cfgOKSen" type="number" step="10"></div>
+        <div><label>Full (foráneo)</label><input id="cfgOKFull" type="number" step="10"></div>
+        <div><label>Full (local)</label><input id="cfgOKFullLoc" type="number" step="10"></div>
+        <div><label>Sencillo (foráneo)</label><input id="cfgOKSen" type="number" step="10"></div>
+        <div><label>Sencillo (local)</label><input id="cfgOKSenLoc" type="number" step="10"></div>
         <div><label>Rabón</label><input id="cfgOKRab" type="number" step="10"></div>
         <div><label>3.5 T</label><input id="cfgOK35" type="number" step="10"></div>
         <div><label>1.5 T</label><input id="cfgOK15" type="number" step="10"></div>
@@ -592,6 +620,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <button class="tab atab" data-adm="SOLICITUDES">Solicitudes</button>
         <button class="tab atab" data-adm="NOMINAS">Nóminas</button>
         <button class="tab atab" data-adm="LIQUIDACION">Liquidación</button>
+        <button class="tab atab" data-adm="BITACORA">Bitácora</button>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
         <button class="btn btn-p btn-sm" id="btnAdmAdd">＋ Agregar registro</button>
@@ -601,7 +630,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <button class="btn btn-d btn-sm" id="btnDelAll">🗑 Eliminar todo</button>
         <span class="mini" id="csvHint"></span>
       </div>
-      <div class="twrap"><table><thead id="admHead"></thead><tbody id="admBody"></tbody></table></div>
+      <div class="twrap" style="max-height:460px;overflow-y:auto"><table><thead id="admHead" class="sticky"></thead><tbody id="admBody"></tbody></table></div>
     </div>
   </div>
 </section>
@@ -723,6 +752,9 @@ const COMBUSTIBLES = ['DIESEL','GASOLINA','GAS'];
 const CFG_OBJ_KM = { 'FULL':'OBJ_KM_FULL','SENCILLO':'OBJ_KM_SENCILLO','RABÓN':'OBJ_KM_RABON','3.5 T':'OBJ_KM_35','1.5 T':'OBJ_KM_15','UTILITARIA':'OBJ_KM_UTIL' };
 const CFG_OBJ_REND = { 'FULL':'OBJ_REND_FULL','SENCILLO':'OBJ_REND_SENCILLO','RABÓN':'OBJ_REND_RABON','3.5 T':'OBJ_REND_35','1.5 T':'OBJ_REND_15','UTILITARIA':'OBJ_REND_UTIL' };
 const DEF_OBJ_KM = { 'FULL':2500,'SENCILLO':2500,'RABÓN':1000,'3.5 T':800,'1.5 T':800,'UTILITARIA':500 };
+/* Full y Sencillo tienen objetivo aparte cuando el servicio es LOCAL */
+const CFG_OBJ_KM_LOCAL = { 'FULL':'OBJ_KM_FULL_LOCAL','SENCILLO':'OBJ_KM_SENCILLO_LOCAL' };
+const DEF_OBJ_KM_LOCAL = { 'FULL':1500,'SENCILLO':1500 };
 const DEF_OBJ_REND = { 'FULL':1.8,'SENCILLO':2.5,'RABÓN':3.5,'3.5 T':3,'1.5 T':8,'UTILITARIA':10 };
 
 /* Tarifa de casetas por tipo de unidad (categoría de ejes) */
@@ -736,10 +768,11 @@ const TARIFA_CASETA = {
 };
 const CAMPOS_CASETA = ['COSTO_2E','COSTO_5E','COSTO_9E'];
 
-/* Tolerancia de KM entre la ruta registrada y el odómetro (Liquidación) */
-const TOLERANCIA_KM = 20;
+/* Tolerancia de KM entre la ruta registrada y el odómetro (Liquidación).
+   Se aplica en ambos sentidos: fuera de ±15 km el viaje entra a aclaración. */
+const TOLERANCIA_KM = 15;
 
-const DB = { UNIDADES:[], OPERADORES:[], EJECUTIVOS:[], REMOLQUES:[], CLIENTES:[], RUTAS:[], SOLICITUDES:[], NOMINAS:[], LIQUIDACION:[], CASETAS:[], USUARIOS:[], CONFIG:{} };
+const DB = { UNIDADES:[], OPERADORES:[], EJECUTIVOS:[], REMOLQUES:[], CLIENTES:[], RUTAS:[], SOLICITUDES:[], NOMINAS:[], LIQUIDACION:[], CASETAS:[], USUARIOS:[], BITACORA:[], CONFIG:{} };
 
 const $  = id => document.getElementById(id);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
@@ -784,8 +817,16 @@ async function apiCargar(){
     toast('No se pudo conectar al Google Sheet. Revisa la URL en Administración.', true);
   }
 }
+/* Identidad que se manda al backend para la bitácora */
+function nombreUsuario(){ return usuarioActual? (usuarioActual.NOMBRE || usuarioActual.USUARIO || '') : ''; }
+function ctxUsuario(){
+  return usuarioActual
+    ? { USUARIO: usuarioActual.USUARIO||'', NOMBRE: nombreUsuario(), ROL: String(usuarioActual.ROL||'').toUpperCase() }
+    : { USUARIO:'(sin sesión)', NOMBRE:'(sin sesión)', ROL:'' };
+}
 async function apiEnviar(payload){
   try{
+    payload = Object.assign({}, payload, { usuario: ctxUsuario() });
     const r = await fetch(WEBHOOK, { method:'POST', body: JSON.stringify(payload) });
     const j = await r.json();
     if(!j.ok) throw new Error(j.error||'Error');
@@ -798,8 +839,18 @@ async function apiEnviar(payload){
     return false;
   }
 }
+/* Registra un evento en la bitácora sin bloquear ni avisar si falla:
+   la bitácora nunca debe interrumpir lo que el usuario está haciendo. */
+function bitacora(accion, detalle){
+  try{
+    fetch(WEBHOOK, { method:'POST', body: JSON.stringify({
+      action:'log', usuario: ctxUsuario(), evento: accion, detalle: detalle||''
+    })});
+  }catch(e){ /* silencioso a propósito */ }
+}
+
 function aplicarDatos(data){
-  ['UNIDADES','OPERADORES','EJECUTIVOS','REMOLQUES','CLIENTES','RUTAS','SOLICITUDES','NOMINAS','LIQUIDACION','CASETAS','USUARIOS'].forEach(k=>{ DB[k] = data[k]||[]; });
+  ['UNIDADES','OPERADORES','EJECUTIVOS','REMOLQUES','CLIENTES','RUTAS','SOLICITUDES','NOMINAS','LIQUIDACION','CASETAS','USUARIOS','BITACORA'].forEach(k=>{ DB[k] = data[k]||[]; });
   DB.CONFIG = data.CONFIG||{};
   refrescarTodo();
 }
@@ -824,7 +875,22 @@ function etiquetaTarifa(tipoUnidad){
   const t = TARIFA_CASETA[String(tipoUnidad||'').toUpperCase()];
   return t? t.etiqueta : '';
 }
-function casetaPorId(id){ return DB.CASETAS.find(c=>String(c.ID)===String(id)); }
+/* Resuelve una caseta del catálogo. Se busca por ID y, si la fila del Sheet se
+   capturó sin ID, se cae a buscarla por nombre para que igual funcione. */
+function casetaPorId(id){
+  if(id===''||id===undefined||id===null) return null;
+  return DB.CASETAS.find(c=>String(c.ID)===String(id)) || null;
+}
+function casetaPorNombre(nombre){
+  const n = String(nombre||'').trim().toUpperCase();
+  if(!n) return null;
+  return DB.CASETAS.find(c=>String(c.NOMBRE||'').trim().toUpperCase()===n) || null;
+}
+function resolverCaseta(ref){
+  if(!ref) return null;
+  return casetaPorId(ref.ID) || casetaPorNombre(ref.NOMBRE);
+}
+function refCaseta(cat){ return { ID: cat.ID||'', NOMBRE: cat.NOMBRE||'' }; }
 /* Acepta el formato nuevo [{ID,NOMBRE}] y el viejo ["NOMBRE", …] */
 function leerCasetasRuta(ruta){
   let arr=[];
@@ -839,7 +905,7 @@ function costoCasetas(lista, tipoUnidad){
   let total=0, sinCatalogo=0;
   const detalle=[];
   (lista||[]).forEach(c=>{
-    const cat = c.ID? casetaPorId(c.ID) : null;
+    const cat = resolverCaseta(c);
     if(cat){ const v=nf(cat[campo]); total+=v; detalle.push({nombre:cat.NOMBRE, monto:v}); }
     else { sinCatalogo++; detalle.push({nombre:c.NOMBRE||'(sin nombre)', monto:null}); }
   });
@@ -857,7 +923,12 @@ function textoDesglose(res, tipoUnidad){
 }
 function esRutaSoloFull(ruta){ return !!ruta && String(ruta.OPTIMIZADA_FULL||'').toUpperCase()==='SI'; }
 function cfgNum(clave, def){ const v = parseFloat(DB.CONFIG[clave]); return isFinite(v)?v:def; }
-function objKm(tipo){ return cfgNum(CFG_OBJ_KM[tipo]||'', DEF_OBJ_KM[tipo]??0); }
+function objKm(tipo, servicio){
+  if(String(servicio||'').toUpperCase()==='LOCAL' && CFG_OBJ_KM_LOCAL[tipo]){
+    return cfgNum(CFG_OBJ_KM_LOCAL[tipo], DEF_OBJ_KM_LOCAL[tipo]);
+  }
+  return cfgNum(CFG_OBJ_KM[tipo]||'', DEF_OBJ_KM[tipo]??0);
+}
 function objRend(tipo){ return cfgNum(CFG_OBJ_REND[tipo]||'', DEF_OBJ_REND[tipo]??0); }
 function precioComb(c){
   c = String(c).toUpperCase();
@@ -926,18 +997,23 @@ function pintarCasetas(){
   casetasRuta.forEach((c,i)=>{
     const d=document.createElement('div');
     d.style.cssText='display:flex;gap:8px;align-items:end;margin-bottom:10px';
-    const opts = DB.CASETAS.map(x=>`<option value="${esc(x.ID)}"${String(x.ID)===String(c.ID)?' selected':''}>${esc(x.NOMBRE)} · ${money(nf(x[campo]))}</option>`).join('');
-    const huerfana = c.ID? '' : `<option value="" selected>${esc(c.NOMBRE||'— Selecciona —')}${c.NOMBRE?' (fuera del catálogo)':''}</option>`;
+    // El value es la POSICIÓN en el catálogo, no el ID: así funciona aunque las
+    // filas del Sheet se hayan capturado sin ID.
+    const cat = resolverCaseta(c);
+    const sel = cat? DB.CASETAS.indexOf(cat) : -1;
+    const opts = DB.CASETAS.map((x,j)=>
+      `<option value="${j}"${j===sel?' selected':''}>${esc(x.NOMBRE)} · ${money(nf(x[campo]))}</option>`).join('');
+    const vacia = `<option value="-1"${sel<0?' selected':''}>${sel<0&&c.NOMBRE? esc(c.NOMBRE)+' (fuera del catálogo)' : '— Selecciona —'}</option>`;
     d.innerHTML=`
       <div style="flex:1"><label>Caseta ${i+1}</label>
-        <select data-ci="${i}">${huerfana||'<option value="">— Selecciona —</option>'}${opts}</select>
+        <select data-ci="${i}">${vacia}${opts}</select>
       </div>
       <button class="xbtn" data-cdel="${i}" style="margin-bottom:9px">✕</button>`;
     w.appendChild(d);
   });
   w.querySelectorAll('select[data-ci]').forEach(el=>el.addEventListener('change',()=>{
-    const cat = casetaPorId(el.value);
-    casetasRuta[+el.dataset.ci] = cat? {ID:cat.ID, NOMBRE:cat.NOMBRE} : {ID:'', NOMBRE:''};
+    const cat = DB.CASETAS[parseInt(el.value,10)];
+    casetasRuta[+el.dataset.ci] = cat? refCaseta(cat) : {ID:'', NOMBRE:''};
     pintarCasetas(); calcularRuta();
   }));
   w.querySelectorAll('[data-cdel]').forEach(el=>el.addEventListener('click',()=>{ casetasRuta.splice(+el.dataset.cdel,1); pintarCasetas(); calcularRuta(); }));
@@ -955,10 +1031,10 @@ function calcularRuta(){
   $('rTotalKm').dataset.v = total;
   // Costo de casetas automático según el tipo de unidad de la ruta
   const tipo = $('rTipoUnidad').value;
-  const res = costoCasetas(casetasRuta.filter(c=>c.ID), tipo);
+  const res = costoCasetas(casetasRuta.filter(resolverCaseta), tipo);
   $('rCostoCasetas').value = money(res.total);
   $('rCostoCasetas').dataset.v = res.total;
-  const conNombre = casetasRuta.filter(c=>c.ID || c.NOMBRE);
+  const conNombre = casetasRuta.filter(c=>resolverCaseta(c) || c.NOMBRE);
   $('rCasetasDesglose').innerHTML = conNombre.length? textoDesglose(costoCasetas(conNombre, tipo), tipo) : '';
 }
 $('rTipoUnidad').addEventListener('change',()=>{ pintarCasetas(); calcularRuta(); });
@@ -995,7 +1071,7 @@ $('btnGuardarRuta').addEventListener('click', async ()=>{
     modal('Ruta optimizada para Full','Marcaste <b>Optimizada para Full</b>, pero el tipo de unidad de la ruta es <b>'+esc($('rTipoUnidad').value)+'</b>. Cambia el tipo de unidad a <b>FULL</b> o desactiva el interruptor.','🚛');
     return;
   }
-  const huerfanas = casetasRuta.filter(c=>!c.ID);
+  const huerfanas = casetasRuta.filter(c=>!resolverCaseta(c));
   if(huerfanas.length){
     modal('Casetas sin catálogo','Hay '+huerfanas.length+' caseta(s) sin seleccionar del catálogo. Selecciónalas o quítalas para que el costo se calcule correctamente.','🛣');
     return;
@@ -1015,7 +1091,7 @@ $('btnGuardarRuta').addEventListener('click', async ()=>{
     KM_VACIOS: suma('VACÍO'),
     KM_POSICIONAMIENTO: suma('POSICIONAMIENTO'),
     OPTIMIZADA_FULL: $('rOptFull').checked? 'SI' : 'NO',
-    CASETAS_JSON: JSON.stringify(casetasRuta.filter(c=>c.ID)),
+    CASETAS_JSON: JSON.stringify(casetasRuta.filter(resolverCaseta).map(c=>refCaseta(resolverCaseta(c)))),
     COSTO_CASETAS: r2(nf($('rCostoCasetas').dataset.v)),
     COSTO_CASETAS_2E: r2(costoCasetas(casetasRuta,'RABÓN').total),
     COSTO_CASETAS_5E: r2(costoCasetas(casetasRuta,'SENCILLO').total),
@@ -1446,7 +1522,12 @@ function calcularPrenomina(){
   const tipoAuto = tipoPredominante(servicios,'TIPO_UNIDAD');
   if(tipoAuto && !$('pTipoU').dataset.manual && TIPOS_UNIDAD.includes(tipoAuto)) $('pTipoU').value=tipoAuto;
   const tipo = $('pTipoU').value || 'FULL';
-  if(!$('pObjKm').dataset.manual) $('pObjKm').value = objKm(tipo);
+  // Tipo de servicio predominante → decide si aplica el objetivo local
+  const servAuto = tipoPredominante(servicios,'TIPO_SERVICIO');
+  if(servAuto && !$('pTipoServ').dataset.manual && ['LOCAL','FORÁNEO'].includes(servAuto)) $('pTipoServ').value=servAuto;
+  const servicio = $('pTipoServ').value || 'FORÁNEO';
+  $('pTipoServ').disabled = !CFG_OBJ_KM_LOCAL[tipo];
+  if(!$('pObjKm').dataset.manual) $('pObjKm').value = objKm(tipo, servicio);
   if(!$('pRendObj').dataset.manual) $('pRendObj').value = objRend(tipo);
   const combPred = tipoPredominante(serviciosLiq,'COMBUSTIBLE') || 'DIESEL';
   if(!$('pBonoLitro').dataset.manual) $('pBonoLitro').value = combPred==='DIESEL'? cfgNum('BONO_LITRO_DIESEL',16) : cfgNum('BONO_LITRO_GASOLINA',12);
@@ -1497,17 +1578,20 @@ function calcularPrenomina(){
 
   ultimoCalculoNom = op? {
     op, etiqueta, servicios:serviciosLiq, semanas, bruto, impPct, imp, neto, bono, km,
-    objKmSemanal:nf($('pObjKm').value), objTot, kmX, pagoKm, rObj, rReal, ahorro, pagoRend, total, tipo
+    objKmSemanal:nf($('pObjKm').value), objTot, kmX, pagoKm, rObj, rReal, ahorro, pagoRend, total, tipo, servicio
   } : null;
   pintarNominas();
 }
 ['pOperador','pAnio','pModo','pSemana','pMes','ob1','ob2','ob3'].forEach(id=>$(id).addEventListener('change',calcularPrenomina));
 $('pAnio').addEventListener('change',()=>{ pintarPrenomina(); });
-[['pSemanasN',1],['pImpPct',1],['pBonoPct',1],['pTipoU',1],['pObjKm',1],['pPagoKmX',1],['pRendObj',1],['pRendReal',0],['pBonoLitro',1]].forEach(([id,marca])=>{
+/* Se registra ANTES del bloque siguiente: al cambiar unidad o tipo de servicio
+   el objetivo debe volver a calcularse solo, antes de que corra el recálculo. */
+['pTipoU','pTipoServ'].forEach(id=>$(id).addEventListener('change',()=>{ delete $('pObjKm').dataset.manual; }));
+[['pSemanasN',1],['pImpPct',1],['pBonoPct',1],['pTipoU',1],['pTipoServ',1],['pObjKm',1],['pPagoKmX',1],['pRendObj',1],['pRendReal',0],['pBonoLitro',1]].forEach(([id,marca])=>{
   $(id).addEventListener('input',()=>{ if(marca) $(id).dataset.manual='1'; calcularPrenomina(); });
   $(id).addEventListener('change',()=>{ if(marca) $(id).dataset.manual='1'; calcularPrenomina(); });
 });
-$('pOperador').addEventListener('change',()=>{ ['pSemanasN','pTipoU','pObjKm','pRendObj','pBonoLitro'].forEach(id=>delete $(id).dataset.manual); $('pRendReal').value=''; });
+$('pOperador').addEventListener('change',()=>{ ['pSemanasN','pTipoU','pTipoServ','pObjKm','pRendObj','pBonoLitro'].forEach(id=>delete $(id).dataset.manual); $('pRendReal').value=''; });
 $('pModo').addEventListener('change',()=>{ delete $('pSemanasN').dataset.manual; });
 
 $('btnPdfNom').addEventListener('click',()=>{
@@ -1587,7 +1671,16 @@ function clienteDeSol(s){
 }
 function combProyectado(s){ return nf(s.LITROS_COMBUSTIBLE)*precioComb(s.COMBUSTIBLE); }
 function liqDe(id){ return DB.LIQUIDACION.find(x=>String(x.ID)===String(id)); }
-function estaLiquidado(solId){ const l=liqDe(solId); return l && String(l.ESTADO).toUpperCase()==='LIQUIDADO'; }
+function estadoLiq(solId){ const l=liqDe(solId); return l? String(l.ESTADO||'').toUpperCase() : ''; }
+function estaLiquidado(solId){ return estadoLiq(solId)==='LIQUIDADO'; }
+function enAclaracion(solId){ return estadoLiq(solId)==='ACLARACION'; }
+function esAdmin(){ return !!(usuarioActual && String(usuarioActual.ROL).toUpperCase()==='ADMIN'); }
+function etiquetaEstadoLiq(solId){
+  const e = estadoLiq(solId);
+  if(e==='LIQUIDADO')  return '<span class="tag ok">Liquidado</span>';
+  if(e==='ACLARACION') return '<span class="tag" style="background:var(--bad);color:#fff">Aclaración</span>';
+  return '<span class="tag">Pendiente</span>';
+}
 
 let liqEditando = null;
 function abrirLiq(id){
@@ -1618,65 +1711,96 @@ function abrirLiq(id){
   $('lqOdoFin').value = l && l.ODOMETRO_FINAL!==''? nf(l.ODOMETRO_FINAL) : '';
   $('lqKmRuta').value = num(nf(s.KM),1);
   $('lqKmRuta').dataset.v = nf(s.KM);
+  $('lqAclaraNota').value = l? (l.MOTIVO_ACLARACION||'') : '';
+  $('lqAutorizaNota').value = '';
   calcOdometro();
+  pintarCajaAclaracion(id, l);
   $('liqDetalle').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
-/* Total de KM por odómetro y validación contra los KM de la ruta registrada */
+/* Caja de autorización: aparece cuando el servicio ya está en aclaración */
+function pintarCajaAclaracion(id, l){
+  const enAcl = enAclaracion(id);
+  $('lqAutorizaBox').style.display = enAcl? '' : 'none';
+  if(!enAcl) return;
+  $('lqAutorizaAdmin').style.display   = esAdmin()? '' : 'none';
+  $('lqAutorizaNoAdmin').style.display = esAdmin()? 'none' : '';
+  $('lqAclaraInfo').innerHTML =
+    `Enviado a aclaración por <b>${esc(l&&l.ACLARACION_POR||'—')}</b> el <b>${fmtFecha(l&&l.ACLARACION_FECHA)||'—'}</b>.<br>`+
+    `Motivo: ${esc(l&&l.MOTIVO_ACLARACION||'—')}`;
+  // Estando en aclaración, liquidar solo procede por la vía de autorización
+  $('btnLiquidar').disabled = true;
+  $('lqAclaraBox').style.display = 'none';
+}
+
+/* Total de KM por odómetro y validación contra los KM de la ruta registrada.
+   Devuelve el estado del kilometraje para decidir si se puede liquidar. */
 function calcOdometro(){
   const ini = nf($('lqOdoIni').value), fin = nf($('lqOdoFin').value);
   const kmRuta = nf($('lqKmRuta').dataset.v);
   const hayDatos = $('lqOdoIni').value!=='' && $('lqOdoFin').value!=='';
   const total = fin - ini;
+  const dif = total - kmRuta;
   $('lqOdoKm').value = hayDatos? num(total,1) : '';
   $('lqOdoKm').dataset.v = hayDatos? total : '';
+
   const av = $('lqOdoAviso');
-  if(!hayDatos){ av.innerHTML=''; av.style.color=''; return; }
-  if(total<0){
-    av.innerHTML='⚠ El odómetro final es menor que el inicial. Revisa la captura.';
-    av.style.color='var(--bad)';
-    return;
+  let estado = 'sin-datos';
+  if(!hayDatos){ av.innerHTML=''; av.style.color=''; }
+  else if(total<0){
+    estado = 'invalido';
+    av.innerHTML = '⚠ El odómetro final es menor que el inicial. Revisa la captura.';
+    av.style.color = 'var(--bad)';
   }
-  const dif = total - kmRuta;
-  if(dif > TOLERANCIA_KM){
+  else if(Math.abs(dif) > TOLERANCIA_KM){
+    estado = 'fuera';
+    const sentido = dif>0? 'de más' : 'de menos';
     av.innerHTML = `⚠ <b>Revisar el servicio.</b> La ruta registró <b>${num(kmRuta,1)} km</b> y el odómetro da <b>${num(total,1)} km</b>: `+
-                   `<b>${num(dif,1)} km de más</b>, por encima de la tolerancia de ${TOLERANCIA_KM} km.`;
-    av.style.color='var(--bad)';
-  } else {
-    av.innerHTML = `Diferencia contra la ruta registrada: <b>${dif>=0?'+':''}${num(dif,1)} km</b> (dentro de la tolerancia de ${TOLERANCIA_KM} km).`;
-    av.style.color='var(--ok)';
+                   `<b>${num(Math.abs(dif),1)} km ${sentido}</b>, fuera de la tolerancia de ±${TOLERANCIA_KM} km. `+
+                   `El viaje no se puede liquidar: debe entrar a aclaración.`;
+    av.style.color = 'var(--bad)';
   }
+  else {
+    estado = 'ok';
+    av.innerHTML = `Diferencia contra la ruta registrada: <b>${dif>=0?'+':''}${num(dif,1)} km</b> (dentro de la tolerancia de ±${TOLERANCIA_KM} km).`;
+    av.style.color = 'var(--ok)';
+  }
+
+  // El botón de liquidar solo vive dentro de la tolerancia
+  const fuera = (estado==='fuera');
+  $('lqAclaraBox').style.display = fuera? '' : 'none';
+  $('btnLiquidar').disabled = fuera;
+  $('btnLiquidar').title = fuera? 'Fuera de la tolerancia de kilometraje: envía el viaje a aclaración' : '';
+  if(fuera){
+    const sentido = dif>0? 'de más' : 'de menos';
+    $('lqAclaraMotivoAuto').innerHTML =
+      `Diferencia de <b>${num(Math.abs(dif),1)} km ${sentido}</b> contra los ${num(kmRuta,1)} km de la ruta registrada. `+
+      `Una vez en aclaración, solo un administrador puede cambiar el estatus a liquidado.`;
+  }
+  return { estado, ini, fin, total, kmRuta, dif };
 }
 ['lqOdoIni','lqOdoFin'].forEach(id=>$(id).addEventListener('input', calcOdometro));
 $('btnLiqCancelar').addEventListener('click',()=>{ $('liqDetalle').style.display='none'; liqEditando=null; });
 
-$('btnLiquidar').addEventListener('click', async ()=>{
-  if(!liqEditando){ toast('Selecciona un servicio de la tabla.', true); return; }
-  // Validar campos numéricos con valor
+/* Reúne y valida lo común a liquidar y a mandar a aclaración.
+   Devuelve null si falta algo (ya avisó al usuario). */
+function armarLiquidacion(){
+  if(!liqEditando){ toast('Selecciona un servicio de la tabla.', true); return null; }
   const campos=['lqCombR','lqCasR','lqPension','lqViaticos','lqManiobras','lqTalachas','lqDadivas','lqEstac'];
   for(const id of campos){
-    if($(id).value===''){ toast('Todos los campos numéricos deben tener un valor (al menos 0).', true); $(id).focus(); return; }
+    if($(id).value===''){ toast('Todos los campos numéricos deben tener un valor (al menos 0).', true); $(id).focus(); return null; }
   }
-  if(!$('lqEvidencia').checked){ toast('Debes confirmar que el operador entregó evidencia completa.', true); return; }
-  if(!$('lqFechaFin').value){ toast('Ingresa la fecha de servicio finalizado.', true); return; }
+  if(!$('lqEvidencia').checked){ toast('Debes confirmar que el operador entregó evidencia completa.', true); return null; }
+  if(!$('lqFechaFin').value){ toast('Ingresa la fecha de servicio finalizado.', true); return null; }
+  if($('lqOdoIni').value===''||$('lqOdoFin').value===''){ toast('Captura el odómetro inicial y final.', true); $('lqOdoIni').focus(); return null; }
 
-  // Odómetro
-  if($('lqOdoIni').value===''||$('lqOdoFin').value===''){ toast('Captura el odómetro inicial y final.', true); $('lqOdoIni').focus(); return; }
-  const odoIni = nf($('lqOdoIni').value), odoFin = nf($('lqOdoFin').value);
-  const odoKm = odoFin - odoIni;
-  if(odoKm < 0){ toast('El odómetro final no puede ser menor que el inicial.', true); $('lqOdoFin').focus(); return; }
-  const kmRuta = nf($('lqKmRuta').dataset.v);
-  const difKm = odoKm - kmRuta;
-  if(difKm > TOLERANCIA_KM){
-    if(!confirm(
-      '⚠ REVISAR EL SERVICIO\n\n'+
-      'La ruta registrada tiene '+num(kmRuta,1)+' km y el odómetro da '+num(odoKm,1)+' km.\n'+
-      'Son '+num(difKm,1)+' km de más, por encima de la tolerancia de '+TOLERANCIA_KM+' km.\n\n'+
-      '¿Deseas liquidar el viaje de todos modos?')) return;
-  }
+  const odo = calcOdometro();
+  if(odo.estado==='invalido'){ toast('El odómetro final no puede ser menor que el inicial.', true); $('lqOdoFin').focus(); return null; }
 
-  const s = DB.SOLICITUDES.find(x=>String(x.ID)===String(liqEditando)); if(!s) return;
-  const reg = {
+  const s = DB.SOLICITUDES.find(x=>String(x.ID)===String(liqEditando));
+  if(!s){ toast('No se encontró la solicitud.', true); return null; }
+
+  return { s, odo, reg: {
     ID: s.ID, FOLIO: s.FOLIO, CARTAS_PORTE: s.CARTAS_PORTE,
     FECHA_CARGA: s.FECHA_SERVICIO, FECHA_FINALIZADO: $('lqFechaFin').value,
     RUTA: s.RUTA, CLIENTE: clienteDeSol(s), OPERADOR: s.OPERADOR,
@@ -1685,13 +1809,81 @@ $('btnLiquidar').addEventListener('click', async ()=>{
     PENSION_LIQ: r2(nf($('lqPension').value)), VIATICOS: r2(nf($('lqViaticos').value)),
     MANIOBRAS: r2(nf($('lqManiobras').value)), TALACHAS: r2(nf($('lqTalachas').value)),
     DADIVAS: r2(nf($('lqDadivas').value)), ESTACIONAMIENTOS: r2(nf($('lqEstac').value)),
-    ODOMETRO_INICIAL: r2(odoIni), ODOMETRO_FINAL: r2(odoFin),
-    KM_ODOMETRO: r2(odoKm), KM_RUTA: r2(kmRuta), DIFERENCIA_KM: r2(difKm),
-    REVISAR_KM: difKm > TOLERANCIA_KM? 'SI' : 'NO',
-    EVIDENCIA: 'SI', ESTADO: 'LIQUIDADO', FECHA_LIQUIDACION: hoyISO()
-  };
+    ODOMETRO_INICIAL: r2(odo.ini), ODOMETRO_FINAL: r2(odo.fin),
+    KM_ODOMETRO: r2(odo.total), KM_RUTA: r2(odo.kmRuta), DIFERENCIA_KM: r2(odo.dif),
+    REVISAR_KM: odo.estado==='fuera'? 'SI' : 'NO',
+    EVIDENCIA: 'SI'
+  }};
+}
+
+/* Liquidar: solo dentro de la tolerancia y si no está en aclaración */
+$('btnLiquidar').addEventListener('click', async ()=>{
+  const armado = armarLiquidacion(); if(!armado) return;
+  const { s, odo, reg } = armado;
+
+  if(enAclaracion(s.ID)){
+    modal('Servicio en aclaración','Este viaje está en <b>aclaración</b>. Solo un administrador puede autorizarlo y cambiar el estatus a liquidado.','⚑');
+    return;
+  }
+  if(odo.estado==='fuera'){
+    modal('Fuera de tolerancia',
+      `La diferencia de kilometraje es de <b>${num(Math.abs(odo.dif),1)} km</b>, fuera de la tolerancia de ±${TOLERANCIA_KM} km.<br><br>`+
+      `Este viaje no se puede liquidar: envíalo a <b>aclaración</b> con el botón de abajo.`, '⚑');
+    return;
+  }
+
+  reg.ESTADO = 'LIQUIDADO';
+  reg.FECHA_LIQUIDACION = hoyISO();
+  reg.LIQUIDADO_POR = nombreUsuario();
   if(await apiEnviar({action:'liquidar', record:reg})){
     toast('Viaje '+s.FOLIO+' liquidado y datos enviados a la sábana');
+    $('liqDetalle').style.display='none'; liqEditando=null;
+  }
+});
+
+/* Enviar a aclaración: el estatus queda en ACLARACION */
+$('btnAclaracion').addEventListener('click', async ()=>{
+  const armado = armarLiquidacion(); if(!armado) return;
+  const { s, odo, reg } = armado;
+  if(odo.estado!=='fuera'){ toast('El kilometraje está dentro de la tolerancia: liquida el viaje normalmente.', true); return; }
+
+  const nota = ($('lqAclaraNota').value||'').trim();
+  if(!nota){ toast('Escribe el motivo de la aclaración.', true); $('lqAclaraNota').focus(); return; }
+
+  reg.ESTADO = 'ACLARACION';
+  reg.FECHA_LIQUIDACION = '';
+  reg.MOTIVO_ACLARACION = nota;
+  reg.ACLARACION_POR = nombreUsuario();
+  reg.ACLARACION_FECHA = hoyISO();
+  if(await apiEnviar({action:'liquidar', record:reg})){
+    toast('Viaje '+s.FOLIO+' enviado a aclaración');
+    $('liqDetalle').style.display='none'; liqEditando=null;
+  }
+});
+
+/* Autorizar: exclusivo de administradores, pasa de ACLARACION a LIQUIDADO */
+$('btnAutorizar').addEventListener('click', async ()=>{
+  if(!esAdmin()){ modal('Sin permiso','Solo un administrador puede cambiar el estatus a liquidado.','🔒'); return; }
+  const armado = armarLiquidacion(); if(!armado) return;
+  const { s, reg } = armado;
+  if(!enAclaracion(s.ID)){ toast('Este servicio no está en aclaración.', true); return; }
+
+  const nota = ($('lqAutorizaNota').value||'').trim();
+  if(!nota){ toast('Escribe la nota de autorización.', true); $('lqAutorizaNota').focus(); return; }
+  if(!confirm('¿Autorizar el viaje '+s.FOLIO+' y cambiar su estatus a LIQUIDADO?')) return;
+
+  const previo = liqDe(s.ID) || {};
+  reg.ESTADO = 'LIQUIDADO';
+  reg.FECHA_LIQUIDACION = hoyISO();
+  reg.MOTIVO_ACLARACION = previo.MOTIVO_ACLARACION || '';
+  reg.ACLARACION_POR = previo.ACLARACION_POR || '';
+  reg.ACLARACION_FECHA = previo.ACLARACION_FECHA || '';
+  reg.AUTORIZADO_POR = nombreUsuario();
+  reg.FECHA_AUTORIZACION = hoyISO();
+  reg.NOTA_AUTORIZACION = nota;
+  reg.LIQUIDADO_POR = nombreUsuario();
+  if(await apiEnviar({action:'liquidar', record:reg})){
+    toast('Viaje '+s.FOLIO+' autorizado y liquidado');
     $('liqDetalle').style.display='none'; liqEditando=null;
   }
 });
@@ -1701,27 +1893,30 @@ function pintarLiquidacion(){
   const estado=$('xEstado').value;
   const tb=$('tbodyLiq'); tb.innerHTML='';
   const filas = [...DB.SOLICITUDES].reverse().filter(s=>{
-    const l = liqDe(s.ID);
-    const liq = l && String(l.ESTADO).toUpperCase()==='LIQUIDADO';
-    if(estado==='pendientes' && liq) return false;
-    if(estado==='liquidados' && !liq) return false;
+    const e = estadoLiq(s.ID);
+    if(estado==='pendientes'   && e!=='') return false;
+    if(estado==='liquidados'   && e!=='LIQUIDADO') return false;
+    if(estado==='aclaracion'   && e!=='ACLARACION') return false;
     if(!q) return true;
     return [s.CARTAS_PORTE,s.FOLIO,s.OPERADOR,s.RUTA].some(v=>String(v).toUpperCase().includes(q));
   });
   filas.forEach(s=>{
     const l = liqDe(s.ID);
-    const liq = l && String(l.ESTADO).toUpperCase()==='LIQUIDADO';
+    const e = estadoLiq(s.ID);
+    const liq = e==='LIQUIDADO';
+    const acl = e==='ACLARACION';
     const proyC = combProyectado(s), proyK = nf(s.COSTO_CASETAS);
     const odo = l && l.KM_ODOMETRO!==''&&l.KM_ODOMETRO!==undefined? nf(l.KM_ODOMETRO) : null;
     const revisar = l && String(l.REVISAR_KM).toUpperCase()==='SI';
+    const accion = liq? 'Ver' : acl? (esAdmin()? '✔ Autorizar' : 'Ver') : '✔ Liquidar';
     const tr=document.createElement('tr');
     tr.innerHTML=`<td><b>${esc(s.FOLIO)}</b></td><td>${esc(s.CARTAS_PORTE)}</td><td>${esc(s.OPERADOR)}</td>
       <td>${esc(s.RUTA)}</td><td>${esc(clienteDeSol(s))}</td><td>${fmtFecha(s.FECHA_SERVICIO)}</td>
       <td class="right num">${money(proyC)}</td><td class="right num">${money(proyK)}</td>
       <td class="right num">${num(nf(s.KM),1)}</td>
       <td class="right num"${revisar?' style="color:var(--bad);font-weight:700"':''}>${odo===null?'—':num(odo,1)+(revisar?' ⚠':'')}</td>
-      <td>${liq? '<span class="tag ok">Liquidado</span>':'<span class="tag">Pendiente</span>'}</td>
-      <td><button class="btn btn-${liq?'s':'p'} btn-sm" data-xliq="${s.ID}">${liq?'Ver':'✔ Liquidar'}</button></td>`;
+      <td>${etiquetaEstadoLiq(s.ID)}</td>
+      <td><button class="btn btn-${liq?'s':'p'} btn-sm" data-xliq="${s.ID}">${accion}</button></td>`;
     tb.appendChild(tr);
   });
   if(!filas.length) tb.innerHTML='<tr><td colspan="12" class="mini">Sin solicitudes que coincidan.</td></tr>';
@@ -1812,7 +2007,9 @@ const ADMIN = {
   RUTAS:{ soloLectura:true, cols:[{k:'RUTA'},{k:'CLIENTE'},{k:'TIPO_SERVICIO'},{k:'TOTAL_KM'},{k:'COSTO_CASETAS'}] },
   SOLICITUDES:{ soloLectura:true, cols:[{k:'FOLIO'},{k:'FECHA_SERVICIO'},{k:'RUTA'},{k:'OPERADOR'},{k:'TOTAL'}] },
   NOMINAS:{ soloLectura:true, cols:[{k:'OPERADOR'},{k:'PERIODO'},{k:'KM'},{k:'TOTAL'},{k:'FECHA_REGISTRO'}] },
-  LIQUIDACION:{ soloLectura:true, cols:[{k:'FOLIO'},{k:'CLIENTE'},{k:'ESTADO'},{k:'COMB_REAL'},{k:'CASETAS_REAL'},{k:'FECHA_LIQUIDACION'}] }
+  LIQUIDACION:{ soloLectura:true, cols:[{k:'FOLIO'},{k:'CLIENTE'},{k:'ESTADO'},{k:'COMB_REAL'},{k:'CASETAS_REAL'},{k:'FECHA_LIQUIDACION'}] },
+  BITACORA:{ soloLectura:true, sinBorrar:true, invertido:true,
+    cols:[{k:'FECHA_HORA'},{k:'USUARIO'},{k:'NOMBRE'},{k:'ROL'},{k:'ACCION'},{k:'HOJA'},{k:'REGISTRO'},{k:'DETALLE'}] }
 };
 let admHoja='UNIDADES';
 let adminOk=false;
@@ -1832,6 +2029,7 @@ const CFG_MAP = [
   ['BONO_PCT','cfgBonoPct',30],['IMPUESTO_SUELDO_PCT','cfgImpPct',0],['PAGO_KM_EXTRA','cfgKmX',2],
   ['BONO_LITRO_DIESEL','cfgBLD',16],['BONO_LITRO_GASOLINA','cfgBLG',12],
   ['OBJ_KM_FULL','cfgOKFull',2500],['OBJ_KM_SENCILLO','cfgOKSen',2500],['OBJ_KM_RABON','cfgOKRab',1000],
+  ['OBJ_KM_FULL_LOCAL','cfgOKFullLoc',1500],['OBJ_KM_SENCILLO_LOCAL','cfgOKSenLoc',1500],
   ['OBJ_KM_35','cfgOK35',800],['OBJ_KM_15','cfgOK15',800],['OBJ_KM_UTIL','cfgOKUtil',500],
   ['OBJ_REND_FULL','cfgORFull',1.8],['OBJ_REND_SENCILLO','cfgORSen',2.5],['OBJ_REND_RABON','cfgORRab',3.5],
   ['OBJ_REND_35','cfgOR35',3],['OBJ_REND_15','cfgOR15',8],['OBJ_REND_UTIL','cfgORUtil',10]
@@ -1865,18 +2063,27 @@ function pintarAdmin(){
   $('btnCsv').style.display = def.csv? '':'none';
   $('csvHint').textContent = def.csv? 'Encabezados esperados: '+def.csv : '';
   $('btnAdmAdd').style.display = def.soloLectura? 'none':'';
-  $('admHead').innerHTML='<tr><th><input type="checkbox" id="admSelAll"></th>'+def.cols.map(c=>`<th>${c.k.replace(/_/g,' ')}</th>`).join('')+'<th></th></tr>';
+  // La bitácora no se edita ni se borra desde la app
+  $('btnDelSel').style.display = def.sinBorrar? 'none':'';
+  $('btnDelAll').style.display = def.sinBorrar? 'none':'';
+  $('admHead').innerHTML='<tr>'+(def.sinBorrar?'':'<th><input type="checkbox" id="admSelAll"></th>')
+    +def.cols.map(c=>`<th>${c.k.replace(/_/g,' ')}</th>`).join('')+(def.sinBorrar?'':'<th></th>')+'</tr>';
   const tb=$('admBody'); tb.innerHTML='';
-  (DB[admHoja]||[]).forEach(r=>{
+  let filas = DB[admHoja]||[];
+  if(def.invertido) filas = [...filas].reverse().slice(0,400);   // lo más reciente arriba
+  filas.forEach(r=>{
     const tr=document.createElement('tr');
-    tr.innerHTML = `<td><input type="checkbox" data-sel="${r.ID}"></td>` + def.cols.map(c=>{
+    const celdas = def.cols.map(c=>{
       if(def.soloLectura) return `<td>${esc(r[c.k])}</td>`;
       if(c.opts) return `<td><select data-id="${r.ID}" data-k="${c.k}">${c.opts.map(o=>`<option${String(r[c.k])===o?' selected':''}>${o}</option>`).join('')}</select></td>`;
       return `<td><input type="${c.tipo||'text'}" step="any" value="${esc(r[c.k])}" data-id="${r.ID}" data-k="${c.k}"></td>`;
-    }).join('') + `<td><button class="btn btn-d btn-sm" data-adel="${r.ID}">✕</button></td>`;
+    }).join('');
+    tr.innerHTML = def.sinBorrar
+      ? celdas
+      : `<td><input type="checkbox" data-sel="${r.ID}"></td>` + celdas + `<td><button class="btn btn-d btn-sm" data-adel="${r.ID}">✕</button></td>`;
     tb.appendChild(tr);
   });
-  if(!(DB[admHoja]||[]).length) tb.innerHTML=`<tr><td colspan="${def.cols.length+2}" class="mini">Sin registros. ${def.csv?'Importa un CSV o agrega registros manualmente.':''}</td></tr>`;
+  if(!filas.length) tb.innerHTML=`<tr><td colspan="${def.cols.length+2}" class="mini">Sin registros. ${def.csv?'Importa un CSV o agrega registros manualmente.':''}</td></tr>`;
   const selAll=$('admSelAll');
   if(selAll) selAll.addEventListener('change',()=>{ tb.querySelectorAll('input[type=checkbox][data-sel]').forEach(c=>c.checked=selAll.checked); });
   tb.querySelectorAll('input[data-k],select[data-k]').forEach(el=>el.addEventListener('change', async ()=>{
@@ -1996,9 +2203,11 @@ function abrirSesion(u, recordar){
   $('loginWrap').style.display='none';
   document.body.classList.remove('locked');
   $('userChip').textContent = (u.NOMBRE || u.USUARIO) + ' · ' + String(u.ROL||'OPERATIVO').toUpperCase();
+  if(recordar!==false) bitacora('INICIO DE SESIÓN');
   refrescarTodo();
 }
 function cerrarSesion(){
+  bitacora('CIERRE DE SESIÓN');
   try{ sessionStorage.removeItem('adl_user'); }catch(e){}
   usuarioActual = null;
   document.body.classList.add('locked');
@@ -2011,6 +2220,7 @@ function intentarLogin(){
   const u = buscarUsuario($('logUser').value, $('logPass').value);
   if(!u){
     $('logErr').textContent = 'Usuario o contraseña incorrectos.';
+    bitacora('ACCESO RECHAZADO', 'Usuario intentado: '+($('logUser').value||'').trim());
     $('logPass').value=''; $('logPass').focus();
     return;
   }

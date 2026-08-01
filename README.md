@@ -62,6 +62,13 @@ Un renglón por caseta, con su costo en cada categoría de ejes:
 Se puede llenar a mano en el Sheet, o desde **Administración → Casetas**
 (incluye importación por CSV con esos mismos encabezados).
 
+> **Importante: la columna `ID` no se deja vacía.** Si capturas filas
+> directamente en el Sheet sin llenar el ID, la app no puede distinguir un
+> registro de otro y al elegir una caseta siempre guarda la primera del
+> catálogo. El backend rellena los IDs faltantes solo, en cada escritura y al
+> correr `configurarHojas()`; también está el menú **Master de Ruta → Asignar
+> IDs faltantes**.
+
 ### Hoja `USUARIOS`
 
 | ID | USUARIO | NOMBRE | PASSWORD | ROL | ACTIVO |
@@ -74,13 +81,28 @@ Mientras la hoja `USUARIOS` esté vacía, la app permite entrar con **admin /
 admin** para poder crear el primer administrador. En cuanto exista al menos un
 usuario, ese acceso inicial deja de funcionar.
 
+### Hoja `BITACORA`
+
+| ID | FECHA_HORA | USUARIO | NOMBRE | ROL | ACCION | HOJA | REGISTRO | DETALLE |
+|----|------------|---------|--------|-----|--------|------|----------|---------|
+
+La escribe solo el Apps Script: registra altas, ediciones, eliminaciones,
+importaciones, cambios de parámetros, liquidaciones, aclaraciones e inicios y
+cierres de sesión (incluidos los accesos rechazados). Se consulta en
+**Administración → Bitácora**, con lo más reciente arriba, y no se puede editar
+ni borrar desde la app. Conserva los últimos 10 000 renglones; el límite está en
+la constante `BITACORA_MAX`.
+
 ### Columnas nuevas en hojas existentes
 
 `configurarHojas()` las agrega solo:
 
 - `RUTAS`: `OPTIMIZADA_FULL`, `COSTO_CASETAS_2E`, `COSTO_CASETAS_5E`, `COSTO_CASETAS_9E`
 - `SOLICITUDES`: `TARIFA_CASETAS`
-- `LIQUIDACION`: `ODOMETRO_INICIAL`, `ODOMETRO_FINAL`, `KM_ODOMETRO`, `KM_RUTA`, `DIFERENCIA_KM`, `REVISAR_KM`
+- `LIQUIDACION`: `ODOMETRO_INICIAL`, `ODOMETRO_FINAL`, `KM_ODOMETRO`, `KM_RUTA`,
+  `DIFERENCIA_KM`, `REVISAR_KM`, `LIQUIDADO_POR`, `MOTIVO_ACLARACION`,
+  `ACLARACION_POR`, `ACLARACION_FECHA`, `AUTORIZADO_POR`, `FECHA_AUTORIZACION`,
+  `NOTA_AUTORIZACION`
 
 ## Cómo funciona el costo de casetas
 
@@ -108,10 +130,42 @@ queda impedido.
 ## Validación de kilómetros en Liquidación
 
 Al liquidar se capturan **odómetro inicial** y **final**; el total de km se
-calcula solo. Si el total supera por más de **20 km** los kilómetros de la ruta
-registrada en el servicio, se muestra una advertencia para revisar el servicio y
-se pide confirmación antes de liquidar. La tolerancia está en la constante
-`TOLERANCIA_KM`.
+calcula solo y se compara contra los kilómetros de la ruta registrada en el
+servicio. La tolerancia es de **±15 km** (constante `TOLERANCIA_KM`) y aplica en
+ambos sentidos: tanto de más como de menos.
+
+Fuera de esa tolerancia el viaje **no se puede liquidar**. El botón de liquidar
+se bloquea y aparece la caja de aclaración, donde se captura el motivo y el
+servicio pasa a estatus **ACLARACION**.
+
+Un servicio en aclaración solo lo puede desbloquear un **administrador**, desde
+el mismo detalle del servicio: captura una nota de autorización y el estatus
+pasa a `LIQUIDADO`. Queda registrado quién lo mandó a aclaración, con qué
+motivo, y quién lo autorizó. Los usuarios operativos ven la caja pero sin el
+botón de autorizar.
+
+Mientras un viaje esté en aclaración no cuenta como liquidado, así que tampoco
+cuenta para el pago en pre-nómina.
+
+## Objetivo semanal de KM
+
+Full y Sencillo tienen dos objetivos: uno para servicio **foráneo** y otro para
+**local** (1 500 km por defecto), configurables en Administración. En
+Pre-Nómina, el selector *Tipo de servicio* elige cuál aplica; se preselecciona
+solo con el tipo de servicio predominante de los viajes del periodo. Los demás
+tipos de unidad tienen un objetivo único y el selector queda deshabilitado.
+
+## Bitácora
+
+Cada operación que llega al backend queda registrada con el usuario que la hizo,
+la fecha y hora, la hoja afectada y un detalle legible. Se consulta en
+**Administración → Bitácora**.
+
+Conviene saber qué alcance tiene: la bitácora registra lo que pasa por el Apps
+Script, y la identidad del usuario la manda la app. Sirve para saber quién hizo
+qué en el uso normal del sistema, pero alguien que llame directo a la URL
+`/exec` puede escribir con el nombre que quiera. Es trazabilidad operativa, no
+una auditoría a prueba de manipulación.
 
 ## Nota sobre el acceso
 
