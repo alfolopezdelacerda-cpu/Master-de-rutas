@@ -106,6 +106,16 @@ td input[type=checkbox],th input[type=checkbox]{width:16px;height:16px;min-width
 #toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(80px);background:var(--ink);color:var(--bg);padding:12px 22px;border-radius:10px;font-weight:600;transition:transform .25s;z-index:99;max-width:90vw}
 #toast.show{transform:translateX(-50%) translateY(0)}
 
+/* Lista de casillas para selección múltiple compacta */
+.chklist{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:2px 12px;
+  max-height:172px;overflow-y:auto;border:1px solid var(--line);border-radius:8px;
+  padding:8px 10px;background:var(--surface)}
+.chklist label{display:flex;align-items:center;gap:9px;margin:0;padding:5px 6px;border-radius:6px;
+  font-size:13px;font-weight:500;text-transform:none;letter-spacing:0;color:var(--ink);cursor:pointer}
+.chklist label:hover{background:var(--surface2)}
+.chklist input{width:16px;height:16px;min-width:16px;margin:0;cursor:pointer}
+.chklist .vacio{grid-column:1/-1;color:var(--ink2);font-size:12.5px;padding:4px 6px}
+
 .lock{max-width:380px;margin:40px auto;text-align:center}
 .lock .ico{font-size:42px;margin-bottom:10px}
 
@@ -433,13 +443,22 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 <section class="sec" id="sec-prenomina">
   <div class="card">
     <h2>Pre-nómina de operadores</h2>
-    <div class="sub">Las semanas de nómina corren de <b>jueves a miércoles</b>. Mantén presionado Ctrl (Cmd en Mac) para seleccionar varias semanas o meses.</div>
-    <div class="grid g4">
+    <div class="sub">Las semanas de nómina corren de <b>jueves a miércoles</b>. Marca las casillas de los periodos que quieras incluir.</div>
+    <div class="grid g3" style="margin-bottom:14px">
       <div><label>Operador</label><select id="pOperador"></select></div>
       <div><label>Año</label><select id="pAnio"></select></div>
       <div><label>Filtrar por</label><select id="pModo"><option value="semana">Semana (jue–mié)</option><option value="mes">Mes</option></select></div>
-      <div id="pSemBox"><label>Semanas (selección múltiple)</label><select id="pSemana" multiple size="5"></select></div>
-      <div id="pMesBox" style="display:none"><label>Meses (selección múltiple)</label><select id="pMes" multiple size="5"></select></div>
+    </div>
+    <div id="pSemBox">
+      <label>Semanas <span class="mini" id="pSemCuenta"></span></label>
+      <div class="chklist" id="pSemana"></div>
+    </div>
+    <div id="pMesBox" style="display:none">
+      <label>Meses <span class="mini" id="pMesCuenta"></span></label>
+      <div class="chklist" id="pMes"></div>
+    </div>
+    <div class="mini" id="pAvisoSoloAdmin" style="display:none;margin-top:12px;color:var(--ink2);border-left:3px solid var(--accent);padding-left:10px">
+      Los objetivos, porcentajes y montos los fija el administrador. Tú solo capturas el <b>rendimiento real</b>.
     </div>
   </div>
 
@@ -475,10 +494,39 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
           <div><label>Objetivo semanal (km)</label><input id="pObjKm" type="number" min="0" step="1"></div>
           <div><label>Pago por km extra ($)</label><input id="pPagoKmX" type="number" min="0" step="0.1"></div>
         </div>
-        <div class="totrow"><span>KM realizados</span><b class="num" id="pKm">0</b></div>
+        <label>KM que cuentan para el objetivo</label>
+        <div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:12px" id="pFuenteBox">
+          <label style="display:flex;gap:8px;align-items:center;font-size:13.5px;text-transform:none;letter-spacing:0;font-weight:600;color:var(--ink);margin:0">
+            <input type="radio" name="pFuenteKm" value="RUTA" checked style="width:16px;height:16px;min-width:16px"> Proyectados en la ruta
+          </label>
+          <label style="display:flex;gap:8px;align-items:center;font-size:13.5px;text-transform:none;letter-spacing:0;font-weight:600;color:var(--ink);margin:0">
+            <input type="radio" name="pFuenteKm" value="ODOMETRO" style="width:16px;height:16px;min-width:16px"> Registrados por odómetro
+          </label>
+        </div>
+        <div class="totrow"><span>KM proyectados en las rutas</span><b class="num" id="pKmRuta">0</b></div>
+        <div class="totrow"><span>KM registrados por odómetro</span><b class="num" id="pKmOdo">0</b></div>
+        <div class="totrow"><span><b>KM realizados</b> <span class="mini" id="pKmFuente"></span></span><b class="num" id="pKm">0</b></div>
         <div class="totrow"><span>Objetivo del periodo (obj × semanas)</span><b class="num" id="pObjTot">0</b></div>
+        <div class="totrow"><span>Cumplimiento del objetivo</span><b class="num" id="pCumplePct">0%</b></div>
         <div class="totrow"><span>KM extra</span><b class="num" id="pKmX">0</b></div>
         <div class="totrow"><span>Pago por km extra</span><b class="num pos" id="pPagoKm">$0.00</b></div>
+      </div>
+
+      <div class="card">
+        <h3>Apoyo para viaje</h3>
+        <div class="sub">Se paga completo con <b>60%</b> o más del objetivo de KM; al <b>50%</b> entre 30% y 59%; al <b>20%</b> por debajo de 30%. Sin viajes en el periodo, no se paga.</div>
+        <div class="grid g2" style="margin-bottom:10px">
+          <div><label>Monto del apoyo ($)</label><input id="pApoyoMonto" type="number" min="0" step="50"></div>
+          <div><label>Cumplimiento alcanzado</label><input id="pApoyoPct" class="num" readonly></div>
+        </div>
+        <div id="pApoyoAdminBox" style="display:none;background:var(--surface2);border:1px dashed var(--road);border-radius:10px;padding:12px;margin-bottom:10px">
+          <label style="display:flex;gap:10px;align-items:center;font-size:14px;text-transform:none;letter-spacing:0;font-weight:700;color:var(--ink);margin:0">
+            <input type="checkbox" id="pApoyoAuth" style="width:18px;height:18px;min-width:18px"> Autorizar el apoyo al 100% aunque no cumpla el objetivo
+          </label>
+          <div class="mini" style="margin-top:6px">Exclusivo del administrador. Queda registrado en la bitácora.</div>
+        </div>
+        <div class="mini" id="pApoyoNota" style="margin-bottom:8px"></div>
+        <div class="totrow"><span>Apoyo para viaje</span><b class="num pos" id="pApoyo">$0.00</b></div>
       </div>
 
       <div class="card">
@@ -570,6 +618,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <div><label>% bono cumplimiento</label><input id="cfgBonoPct" type="number" step="1"></div>
         <div><label>% impuestos al sueldo</label><input id="cfgImpPct" type="number" step="0.1"></div>
         <div><label>Pago por km extra ($)</label><input id="cfgKmX" type="number" step="0.1"></div>
+        <div><label>Apoyo para viaje ($)</label><input id="cfgApoyo" type="number" step="50"></div>
         <div><label>$ litro ahorrado (diésel)</label><input id="cfgBLD" type="number" step="0.5"></div>
         <div><label>$ litro ahorrado (gasolina)</label><input id="cfgBLG" type="number" step="0.5"></div>
       </div>
@@ -734,6 +783,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <tr><td class="prLbl">RENDIMIENTO OBJETIVO / REAL</td><td id="pnRend"></td></tr>
     <tr><td class="prLbl">LITROS AHORRADOS</td><td id="pnLA"></td></tr>
     <tr><td class="prLbl">PAGO POR RENDIMIENTO EFICIENTE</td><td id="pnPagoRend"></td></tr>
+    <tr><td class="prLbl">APOYO PARA VIAJE</td><td id="pnApoyo"></td></tr>
     <tr><td class="prLbl" style="font-size:13px">TOTAL A PAGAR AL OPERADOR</td><td id="pnTotal" style="font-weight:bold;font-size:13px"></td></tr>
   </table>
   <table class="prTable" style="margin-top:40px">
@@ -1433,6 +1483,47 @@ function pintarListaSol(){
 /* =====================================================
    PRE-NÓMINA (semana jueves–miércoles, filtros múltiples)
 ===================================================== */
+const MESES_NOMBRE = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+function nombreMes(iso){
+  const [a,m] = String(iso).split('-');
+  const n = MESES_NOMBRE[parseInt(m,10)-1];
+  return n? (n.charAt(0).toUpperCase()+n.slice(1)+' '+a) : iso;
+}
+
+/* Lista de casillas de selección múltiple. Conserva lo ya marcado y, si no
+   queda nada marcado, deja seleccionado el primer periodo. */
+function pintarChklist(id, items, vacio){
+  const cont = $(id);
+  const antes = marcadosChklist(id);
+  cont.innerHTML = '';
+  if(!items.length){ cont.innerHTML = `<div class="vacio">${esc(vacio)}</div>`; actualizarCuenta(id); return; }
+  items.forEach((it,i)=>{
+    const marcado = antes.length? antes.includes(it.valor) : i===0;
+    const lab = document.createElement('label');
+    lab.innerHTML = `<input type="checkbox" value="${esc(it.valor)}"${marcado?' checked':''}><span>${esc(it.texto)}</span>`;
+    cont.appendChild(lab);
+  });
+  if(!marcadosChklist(id).length){
+    const primero = cont.querySelector('input');
+    if(primero) primero.checked = true;
+  }
+  cont.querySelectorAll('input').forEach(el=>el.addEventListener('change',()=>{
+    // Siempre debe quedar al menos un periodo marcado
+    if(!marcadosChklist(id).length){ el.checked = true; toast('Debe quedar al menos un periodo seleccionado.'); }
+    actualizarCuenta(id);
+    calcularPrenomina();
+  }));
+  actualizarCuenta(id);
+}
+function marcadosChklist(id){
+  return [...$(id).querySelectorAll('input:checked')].map(el=>el.value);
+}
+function actualizarCuenta(id){
+  const n = marcadosChklist(id).length;
+  const eti = $(id==='pSemana'? 'pSemCuenta' : 'pMesCuenta');
+  if(eti) eti.textContent = n? `· ${n} seleccionado${n>1?'s':''}` : '';
+}
+
 function pintarPrenomina(){
   llenarSelect('pOperador', DB.OPERADORES, o=>o.NOMBRE);
   // Años disponibles
@@ -1453,24 +1544,15 @@ function pintarPrenomina(){
   const wHoy = semanaNomina(hoyISO());
   if(anioSel===anioHoy) mapa[wHoy.key]=wHoy;
   const claves = Object.keys(mapa).sort().reverse();
-  const sel=$('pSemana'); const antes=[...sel.selectedOptions].map(o=>o.value);
-  sel.innerHTML='';
-  claves.forEach(k=>{
+  pintarChklist('pSemana', claves.map(k=>{
     const w=mapa[k];
-    const o=document.createElement('option'); o.value=k;
-    o.textContent=`Semana ${w.week} · ${ddmm(w.ini)} – ${ddmm(w.fin)} (${w.year})`;
-    if(antes.includes(k)) o.selected=true;
-    sel.appendChild(o);
-  });
-  if(![...sel.selectedOptions].length && sel.options.length) sel.options[0].selected=true;
+    return { valor:k, texto:`Semana ${w.week} · ${ddmm(w.ini)} – ${ddmm(w.fin)}` };
+  }), 'Sin semanas con servicios en este año.');
   // Meses disponibles (filtrados por año)
   const meses=[...new Set(solAnio.map(s=>String(s.FECHA_SERVICIO).slice(0,7)).filter(Boolean))].sort().reverse();
   const mHoy=hoyISO().slice(0,7);
   if(anioSel===anioHoy && !meses.includes(mHoy)) meses.unshift(mHoy);
-  const selM=$('pMes'); const antesM=[...selM.selectedOptions].map(o=>o.value);
-  selM.innerHTML='';
-  meses.forEach(m=>{ const o=document.createElement('option'); o.value=m; o.textContent=m; if(antesM.includes(m)) o.selected=true; selM.appendChild(o); });
-  if(![...selM.selectedOptions].length && selM.options.length) selM.options[0].selected=true;
+  pintarChklist('pMes', meses.map(m=>({ valor:m, texto:nombreMes(m) })), 'Sin meses con servicios en este año.');
   // Selects/valores por defecto
   const selT=$('pTipoU');
   if(!selT.options.length){ TIPOS_UNIDAD.forEach(t=>{const o=document.createElement('option');o.textContent=t;selT.appendChild(o);}); }
@@ -1489,12 +1571,12 @@ function serviciosPeriodo(){
   );
   let etiqueta='', semanasAuto=1;
   if($('pModo').value==='semana'){
-    const sel=[...$('pSemana').selectedOptions].map(o=>o.value);
+    const sel=marcadosChklist('pSemana');
     servicios = servicios.filter(s=>sel.includes(semanaNomina(s.FECHA_SERVICIO).key));
     etiqueta = sel.map(k=>'S'+k.split('-S')[1]).join(' + ') + ' ('+anioSel+')';
     semanasAuto = Math.max(1, sel.length);
   }else{
-    const sel=[...$('pMes').selectedOptions].map(o=>o.value);
+    const sel=marcadosChklist('pMes');
     servicios = servicios.filter(s=>sel.includes(String(s.FECHA_SERVICIO).slice(0,7)));
     etiqueta = sel.join(' + ');
     const semanas=new Set(servicios.map(s=>semanaNomina(s.FECHA_SERVICIO).key));
@@ -1512,7 +1594,67 @@ function tipoPredominante(servicios, campo){
   return mejor;
 }
 let ultimoCalculoNom = null;
+
+/* Fuente de KM que cuenta para el objetivo: ruta proyectada u odómetro */
+function fuenteKm(){
+  const sel = document.querySelector('input[name="pFuenteKm"]:checked');
+  return sel? sel.value : 'RUTA';
+}
+
+/* Apoyo para viaje, escalonado según el cumplimiento del objetivo de KM.
+   Un administrador puede autorizarlo al 100% aunque no se cumpla. */
+function calcularApoyo(nServiciosLiq, cumplePct){
+  const base = nf($('pApoyoMonto').value);
+  const autorizado = esAdmin() && $('pApoyoAuth').checked;
+
+  if(!nServiciosLiq){
+    if(autorizado){
+      return { monto: base, pct: 100, autorizado: true,
+        nota: '<span style="color:var(--ok)">Autorizado por el administrador al 100% pese a no tener viajes liquidados en el periodo.</span>' };
+    }
+    return { monto: 0, pct: 0, autorizado: false,
+      nota: 'Sin viajes liquidados en el periodo: no se paga apoyo.' };
+  }
+
+  let pct = cumplePct >= 60 ? 100 : cumplePct >= 30 ? 50 : 20;
+  const pctNatural = pct;
+  if(autorizado) pct = 100;
+
+  const monto = base * pct / 100;
+  let nota;
+  if(autorizado && pctNatural < 100){
+    nota = `<span style="color:var(--ok)">Autorizado por el administrador al 100%.</span> `+
+           `Por cumplimiento (${num(cumplePct,1)}%) le correspondía el ${pctNatural}%.`;
+  } else {
+    nota = `Cumplimiento del ${num(cumplePct,1)}% del objetivo → se paga el <b>${pct}%</b> del apoyo.`;
+  }
+  return { monto, pct, autorizado, nota };
+}
+
+/* Campos que solo un administrador puede tocar. El operativo únicamente
+   captura el rendimiento real. */
+const CAMPOS_SOLO_ADMIN = [
+  'pSemanasN','pImpPct','pBonoPct',                    // Sueldo
+  'pTipoU','pTipoServ','pObjKm','pPagoKmX',            // Objetivo de KM
+  'pRendObj','pBonoLitro',                             // Objetivo de rendimiento
+  'pApoyoMonto'                                        // Apoyo para viaje
+];
+function aplicarPermisosPrenomina(){
+  const admin = esAdmin();
+  CAMPOS_SOLO_ADMIN.forEach(id=>{
+    const el = $(id); if(!el) return;
+    el.disabled = !admin;
+    el.title = admin? '' : 'Solo el administrador puede modificar este campo';
+  });
+  // La fuente de KM también es decisión del administrador
+  document.querySelectorAll('input[name="pFuenteKm"]').forEach(el=>{ el.disabled = !admin; });
+  $('pApoyoAdminBox').style.display = admin? '' : 'none';
+  if(!admin) $('pApoyoAuth').checked = false;
+  $('pAvisoSoloAdmin').style.display = admin? 'none' : '';
+}
+
 function calcularPrenomina(){
+  aplicarPermisosPrenomina();
   $('pSemBox').style.display = $('pModo').value==='semana' ? '' : 'none';
   $('pMesBox').style.display = $('pModo').value==='mes' ? '' : 'none';
   const {op, servicios, serviciosLiq, etiqueta, semanasAuto} = serviciosPeriodo();
@@ -1526,18 +1668,29 @@ function calcularPrenomina(){
   const servAuto = tipoPredominante(servicios,'TIPO_SERVICIO');
   if(servAuto && !$('pTipoServ').dataset.manual && ['LOCAL','FORÁNEO'].includes(servAuto)) $('pTipoServ').value=servAuto;
   const servicio = $('pTipoServ').value || 'FORÁNEO';
-  $('pTipoServ').disabled = !CFG_OBJ_KM_LOCAL[tipo];
+  $('pTipoServ').disabled = !CFG_OBJ_KM_LOCAL[tipo] || !esAdmin();
   if(!$('pObjKm').dataset.manual) $('pObjKm').value = objKm(tipo, servicio);
   if(!$('pRendObj').dataset.manual) $('pRendObj').value = objRend(tipo);
   const combPred = tipoPredominante(serviciosLiq,'COMBUSTIBLE') || 'DIESEL';
   if(!$('pBonoLitro').dataset.manual) $('pBonoLitro').value = combPred==='DIESEL'? cfgNum('BONO_LITRO_DIESEL',16) : cfgNum('BONO_LITRO_GASOLINA',12);
 
+  if($('pApoyoMonto').value==='') $('pApoyoMonto').value = cfgNum('APOYO_VIAJE',1500);
+
   const bruto = (op? nf(op.PAGO_NOMINAL_SEMANAL):0) * semanas;
   const impPct = nf($('pImpPct').value);
   const imp = bruto*impPct/100;
   const neto = bruto-imp;
-  // Solo los servicios LIQUIDADOS cuentan para KM y pago
-  const km = serviciosLiq.reduce((a,s)=>a+nf(s.KM),0);
+
+  // Solo los servicios LIQUIDADOS cuentan para KM y pago.
+  // Se calculan las dos fuentes y manda la que esté seleccionada.
+  const kmRuta = serviciosLiq.reduce((a,s)=>a+nf(s.KM),0);
+  const kmOdo  = serviciosLiq.reduce((a,s)=>{
+    const l = liqDe(s.ID);
+    return a + (l? nf(l.KM_ODOMETRO) : 0);
+  },0);
+  const fuente = fuenteKm();
+  const km = fuente==='ODOMETRO'? kmOdo : kmRuta;
+
   const nPend = servicios.length - serviciosLiq.length;
   const nObs = [$('ob1'),$('ob2'),$('ob3')].filter(c=>c.checked).length;
   const bono = neto*(nf($('pBonoPct').value)/100)/3*nObs;
@@ -1545,21 +1698,32 @@ function calcularPrenomina(){
   const kmX = Math.max(0, km-objTot);
   const pagoKm = kmX*nf($('pPagoKmX').value);
   const cumpleKm = km >= objTot;
+  const cumplePct = objTot>0? (km/objTot*100) : 0;
+
   const rObj = nf($('pRendObj').value), rReal = nf($('pRendReal').value);
   const lObj = rObj>0? km/rObj:0;
   const lReal = rReal>0? km/rReal:lObj;
   const ahorro = cumpleKm? Math.max(0, lObj-lReal) : 0;
   const pagoRend = ahorro*nf($('pBonoLitro').value);
-  const total = neto+bono+pagoKm+pagoRend;
+
+  const apoyo = calcularApoyo(serviciosLiq.length, cumplePct);
+  const total = neto+bono+pagoKm+pagoRend+apoyo.monto;
 
   $('pNominal').textContent=money(bruto);
   $('pImp').textContent='−'+money(imp);
   $('pNeto').textContent=money(neto);
   $('pBono').textContent=money(bono);
+  $('pKmRuta').textContent=num(kmRuta,1);
+  $('pKmOdo').textContent=num(kmOdo,1);
+  $('pKmFuente').textContent = fuente==='ODOMETRO'? '(por odómetro)' : '(proyectados en ruta)';
   $('pKm').textContent=num(km,1) + (nPend>0? ` (${nPend} viaje(s) sin liquidar no cuentan)`:'');
   $('pObjTot').textContent=num(objTot);
+  $('pCumplePct').textContent=num(cumplePct,1)+'%';
   $('pKmX').textContent=num(kmX,1);
   $('pPagoKm').textContent=money(pagoKm);
+  $('pApoyoPct').value = num(cumplePct,1)+'%';
+  $('pApoyo').textContent=money(apoyo.monto);
+  $('pApoyoNota').innerHTML = apoyo.nota;
   $('pLAhorro').textContent=num(ahorro,1) + ((!cumpleKm && rReal>0)? ' (no aplica)':'');
   $('pPagoRend').textContent=money(pagoRend) + ((!cumpleKm && rReal>0)? ' — no cumple obj. KM':'');
   $('pTotal').textContent=money(total);
@@ -1578,11 +1742,14 @@ function calcularPrenomina(){
 
   ultimoCalculoNom = op? {
     op, etiqueta, servicios:serviciosLiq, semanas, bruto, impPct, imp, neto, bono, km,
-    objKmSemanal:nf($('pObjKm').value), objTot, kmX, pagoKm, rObj, rReal, ahorro, pagoRend, total, tipo, servicio
+    kmRuta, kmOdo, fuente, cumplePct,
+    objKmSemanal:nf($('pObjKm').value), objTot, kmX, pagoKm, rObj, rReal, ahorro, pagoRend,
+    apoyo: apoyo.monto, apoyoPct: apoyo.pct, apoyoAutorizado: apoyo.autorizado,
+    total, tipo, servicio
   } : null;
   pintarNominas();
 }
-['pOperador','pAnio','pModo','pSemana','pMes','ob1','ob2','ob3'].forEach(id=>$(id).addEventListener('change',calcularPrenomina));
+['pOperador','pAnio','pModo','ob1','ob2','ob3'].forEach(id=>$(id).addEventListener('change',calcularPrenomina));
 $('pAnio').addEventListener('change',()=>{ pintarPrenomina(); });
 /* Se registra ANTES del bloque siguiente: al cambiar unidad o tipo de servicio
    el objetivo debe volver a calcularse solo, antes de que corra el recálculo. */
@@ -1593,6 +1760,9 @@ $('pAnio').addEventListener('change',()=>{ pintarPrenomina(); });
 });
 $('pOperador').addEventListener('change',()=>{ ['pSemanasN','pTipoU','pTipoServ','pObjKm','pRendObj','pBonoLitro'].forEach(id=>delete $(id).dataset.manual); $('pRendReal').value=''; });
 $('pModo').addEventListener('change',()=>{ delete $('pSemanasN').dataset.manual; });
+document.querySelectorAll('input[name="pFuenteKm"]').forEach(el=>el.addEventListener('change',calcularPrenomina));
+$('pApoyoAuth').addEventListener('change',calcularPrenomina);
+$('pApoyoMonto').addEventListener('input',calcularPrenomina);
 
 $('btnPdfNom').addEventListener('click',()=>{
   const c = ultimoCalculoNom;
@@ -1607,10 +1777,12 @@ $('btnPdfNom').addEventListener('click',()=>{
   $('pnBono').textContent=money(c.bono);
   $('pnObjKm').textContent=num(c.objTot)+' KM';
   $('pnKmX').textContent=num(c.kmX,1)+' KM';
+  $('pnKm').textContent=num(c.km,1)+(c.fuente==='ODOMETRO'? ' (odómetro)':' (ruta)');
   $('pnPagoKm').textContent=money(c.pagoKm);
   $('pnRend').textContent=num(c.rObj,2)+' / '+(c.rReal? num(c.rReal,2):'—');
   $('pnLA').textContent=num(c.ahorro,1);
   $('pnPagoRend').textContent=money(c.pagoRend);
+  $('pnApoyo').textContent=money(c.apoyo)+' ('+c.apoyoPct+'%'+(c.apoyoAutorizado?', autorizado':'')+')';
   $('pnTotal').textContent=money(c.total);
   document.body.classList.add('print-nom');
   window.print();
@@ -1628,6 +1800,10 @@ $('btnRegNom').addEventListener('click', async ()=>{
     BONO_CUMPLIMIENTO: r2(c.bono), KM: r2(c.km), OBJETIVO_KM: r2(c.objTot), KM_EXTRA: r2(c.kmX),
     PAGO_KM_EXTRA: r2(c.pagoKm), REND_OBJETIVO: c.rObj, REND_REAL: c.rReal,
     LITROS_AHORRADOS: r2(c.ahorro), PAGO_RENDIMIENTO: r2(c.pagoRend),
+    KM_RUTA: r2(c.kmRuta), KM_ODOMETRO: r2(c.kmOdo), FUENTE_KM: c.fuente,
+    CUMPLIMIENTO_PCT: r2(c.cumplePct), APOYO_VIAJE: r2(c.apoyo), APOYO_PCT: c.apoyoPct,
+    APOYO_AUTORIZADO: c.apoyoAutorizado? 'SI':'NO', AUTORIZADO_POR: c.apoyoAutorizado? nombreUsuario():'',
+    REGISTRADO_POR: nombreUsuario(),
     TOTAL: r2(c.total), FECHA_REGISTRO: hoyISO()
   };
   if(await apiEnviar({action:'upsert', sheet:'NOMINAS', record:reg})) toast('Nómina de '+c.op.NOMBRE+' registrada');
@@ -1649,7 +1825,7 @@ function pintarNominas(){
 }
 $('btnCsvNom').addEventListener('click',()=>{
   if(!DB.NOMINAS.length){ toast('No hay nóminas registradas.', true); return; }
-  const cols=['OPERADOR','MODO','PERIODO','SEMANAS','SUELDO_BRUTO','IMPUESTO_PCT','IMPUESTOS','SUELDO_NETO','BONO_CUMPLIMIENTO','KM','OBJETIVO_KM','KM_EXTRA','PAGO_KM_EXTRA','REND_OBJETIVO','REND_REAL','LITROS_AHORRADOS','PAGO_RENDIMIENTO','TOTAL','FECHA_REGISTRO'];
+  const cols=['OPERADOR','MODO','PERIODO','SEMANAS','SUELDO_BRUTO','IMPUESTO_PCT','IMPUESTOS','SUELDO_NETO','BONO_CUMPLIMIENTO','KM','KM_RUTA','KM_ODOMETRO','FUENTE_KM','OBJETIVO_KM','CUMPLIMIENTO_PCT','KM_EXTRA','PAGO_KM_EXTRA','REND_OBJETIVO','REND_REAL','LITROS_AHORRADOS','PAGO_RENDIMIENTO','APOYO_VIAJE','APOYO_PCT','APOYO_AUTORIZADO','TOTAL','REGISTRADO_POR','FECHA_REGISTRO'];
   const csv=[cols.join(',')].concat(DB.NOMINAS.map(n=>cols.map(c=>{
     const v=String(n[c]??''); return /[",\n]/.test(v)? '"'+v.replace(/"/g,'""')+'"' : v;
   }).join(','))).join('\n');
@@ -2027,6 +2203,7 @@ const CFG_MAP = [
   ['PRECIO_DIESEL','cfgDiesel',26.31],['PRECIO_GASOLINA','cfgGasolina',23.46],['PRECIO_GAS','cfgGas',12.5],
   ['PRECIO_UREA','cfgUrea',20],['UREA_PCT','cfgUreaPct',5],['FOLIO_INICIAL','cfgFolio',2050],
   ['BONO_PCT','cfgBonoPct',30],['IMPUESTO_SUELDO_PCT','cfgImpPct',0],['PAGO_KM_EXTRA','cfgKmX',2],
+  ['APOYO_VIAJE','cfgApoyo',1500],
   ['BONO_LITRO_DIESEL','cfgBLD',16],['BONO_LITRO_GASOLINA','cfgBLG',12],
   ['OBJ_KM_FULL','cfgOKFull',2500],['OBJ_KM_SENCILLO','cfgOKSen',2500],['OBJ_KM_RABON','cfgOKRab',1000],
   ['OBJ_KM_FULL_LOCAL','cfgOKFullLoc',1500],['OBJ_KM_SENCILLO_LOCAL','cfgOKSenLoc',1500],

@@ -155,6 +155,51 @@ Pre-Nómina, el selector *Tipo de servicio* elige cuál aplica; se preselecciona
 solo con el tipo de servicio predominante de los viajes del periodo. Los demás
 tipos de unidad tienen un objetivo único y el selector queda deshabilitado.
 
+## Pre-Nómina
+
+### Apoyo para viaje
+
+Monto fijo (1 500 por defecto, configurable en Administración) que se paga
+escalonado según el cumplimiento del objetivo de KM del periodo:
+
+| Cumplimiento | Se paga |
+|---|---|
+| 60% o más | 100% |
+| 30% a 59% | 50% |
+| menos de 30% | 20% |
+| sin viajes liquidados | 0 |
+
+El enunciado decía «más del 60%» y «del 30% al 59%», que deja fuera el tramo
+59–60. Está implementado con **60% inclusive** al 100%: a partir de 60,00% se
+paga completo. Si prefieres que 60% exacto caiga en el 50%, es un cambio de un
+carácter.
+
+Un **administrador** puede autorizar el apoyo al 100% aunque no se cumpla el
+objetivo, con una casilla que solo él ve. Queda registrado en la nómina
+(`APOYO_AUTORIZADO`, `AUTORIZADO_POR`) y en la bitácora.
+
+### KM que cuentan para el objetivo
+
+Se muestran las dos cifras y se elige cuál cuenta:
+
+- **Proyectados en la ruta** — la suma de los KM de las rutas de los servicios.
+- **Registrados por odómetro** — la suma de `KM_ODOMETRO` de las liquidaciones.
+
+En ambos casos solo cuentan los viajes **liquidados**. La elección se guarda en
+la nómina (`FUENTE_KM`) junto con las dos cifras, y solo el administrador puede
+cambiarla.
+
+### Permisos
+
+Un usuario **operativo** ve la pre-nómina completa pero no puede modificar
+sueldo, objetivos, porcentajes, montos ni la fuente de KM. Lo único que captura
+es el **rendimiento real**; también puede elegir los periodos y marcar los
+objetivos de cumplimiento. Todo lo demás aparece deshabilitado.
+
+Igual que el resto del control de acceso, esto es un candado de interfaz: evita
+errores y cambios indebidos en el uso normal, pero no sustituye una validación
+en el servidor.
+
 ## Bitácora
 
 Cada operación que llega al backend queda registrada con el usuario que la hizo,

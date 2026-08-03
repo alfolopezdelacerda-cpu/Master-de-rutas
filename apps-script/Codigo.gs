@@ -50,8 +50,11 @@ var HOJAS = {
                 'PENSION','COMIDA','COSTO_CASETAS','TARIFA_CASETAS','EJECUTIVO','TOTAL'],
 
   NOMINAS: ['ID','OPERADOR','MODO','PERIODO','SEMANAS','SUELDO_BRUTO','IMPUESTO_PCT','IMPUESTOS',
-            'SUELDO_NETO','BONO_CUMPLIMIENTO','KM','OBJETIVO_KM','KM_EXTRA','PAGO_KM_EXTRA',
-            'REND_OBJETIVO','REND_REAL','LITROS_AHORRADOS','PAGO_RENDIMIENTO','TOTAL','FECHA_REGISTRO'],
+            'SUELDO_NETO','BONO_CUMPLIMIENTO','KM','KM_RUTA','KM_ODOMETRO','FUENTE_KM',
+            'OBJETIVO_KM','CUMPLIMIENTO_PCT','KM_EXTRA','PAGO_KM_EXTRA',
+            'REND_OBJETIVO','REND_REAL','LITROS_AHORRADOS','PAGO_RENDIMIENTO',
+            'APOYO_VIAJE','APOYO_PCT','APOYO_AUTORIZADO','AUTORIZADO_POR',
+            'TOTAL','REGISTRADO_POR','FECHA_REGISTRO'],
 
   /* ESTADO: LIQUIDADO | ACLARACION */
   LIQUIDACION: ['ID','FOLIO','CARTAS_PORTE','FECHA_CARGA','FECHA_FINALIZADO','RUTA','CLIENTE','OPERADOR',
@@ -408,6 +411,14 @@ function registrarAccion(p) {
       registro = (p.record && p.record.ID) || '';
       accion = 'ALTA / EDICIÓN';
       detalle = describir(p.record);
+      if (p.sheet === 'NOMINAS' && p.record) {
+        accion = 'REGISTRO DE NÓMINA';
+        detalle = 'Periodo: ' + p.record.PERIODO + ' · Total: ' + p.record.TOTAL +
+                  ' · Apoyo: ' + p.record.APOYO_VIAJE + ' (' + p.record.APOYO_PCT + '%)' +
+                  (String(p.record.APOYO_AUTORIZADO).toUpperCase() === 'SI'
+                    ? ' AUTORIZADO POR EL ADMINISTRADOR' : '') +
+                  ' · KM: ' + p.record.KM + ' (' + p.record.FUENTE_KM + ')';
+      }
       break;
     case 'bulkUpsert':
       accion = 'IMPORTACIÓN';
