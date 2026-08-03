@@ -925,6 +925,8 @@ async function apiEnviar(payload){
     if(!j.ok) throw new Error(j.error||'Error');
     aplicarDatos(j.data);
     setConn(true,'Conectado al Sheet');
+    // El backend avisa si algo falló al copiar a la sábana
+    if(j.aviso) modal('Aviso de la sábana', esc(j.aviso), '📄');
     return true;
   }catch(e){
     setConn(false,'Sin conexión');

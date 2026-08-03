@@ -180,9 +180,22 @@ colocando por coincidencia de encabezado. Si en la sábana cambian de lugar, se
 ajusta en la constante `SABANA_COLUMNAS_FIJAS` del Apps Script.
 
 Si el folio ya existe en la sábana se actualiza en lugar de duplicarse, y si la
-hoja tiene menos de 30 columnas el renglón se extiende hasta AD. Un fallo al
-escribir en la sábana no tumba la liquidación: esa queda guardada igual y el
-error se registra en el log del script.
+hoja tiene menos de 30 columnas el renglón se extiende hasta AD.
+
+Los encabezados se reconocen **sin distinguir mayúsculas, acentos ni signos**:
+`Folio`, `FOLIO` y `folio` son la misma columna, y `KM inicial` corresponde a
+`KM_INICIAL`. Lo mismo para localizar la columna del folio con la que se
+identifica el renglón del viaje.
+
+Un fallo al escribir en la sábana no tumba la liquidación: esa queda guardada
+igual, y ahora la app **muestra un aviso en pantalla** explicando qué pasó
+(antes fallaba en silencio).
+
+**Si el odómetro no aparece en la sábana**, corre el menú
+**Master de Ruta → Probar sábana** dentro del Google Sheet. Sin modificar nada,
+te dice si el ID está configurado, si la sábana se puede abrir, qué hojas tiene,
+si encontró la hoja `Transportadora`, qué encabezado hay hoy en AC y AD, y si
+existe una columna de folio con la que emparejar el renglón del viaje.
 
 ## Objetivo semanal de KM
 

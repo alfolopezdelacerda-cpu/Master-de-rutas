@@ -153,7 +153,9 @@ function doPost(e) {
 
     registrarAccion(p);
 
-    return json({ ok: true, data: leerTodo() });
+    var respuesta = { ok: true, data: leerTodo() };
+    if (avisoSabana) { respuesta.aviso = avisoSabana; avisoSabana = ''; }
+    return json(respuesta);
 
   } catch (err) {
     return json({ ok: false, error: String(err && err.message || err) });
@@ -622,18 +624,29 @@ function asignarIdsFaltantes() {
  * Guarda la liquidación y, si hay un SABANA_SHEET_ID configurado, agrega el
  * renglón a la hoja "Transportadora" de ese otro Sheet.
  */
+/* Último problema al escribir la sábana. Se devuelve al front para que el
+   usuario se entere: antes fallaba en silencio y no había forma de saberlo. */
+var avisoSabana = '';
+
 function liquidar(record) {
   upsert('LIQUIDACION', record);
+  avisoSabana = '';
 
   var cfg = leerConfig();
   var idSabana = String(cfg.SABANA_SHEET_ID || '').trim();
-  if (!idSabana) return;   // sin sábana configurada no hay nada más que hacer
+  if (!idSabana) {
+    avisoSabana = 'No hay un ID de sábana configurado, así que el odómetro no se copió a la hoja Transportadora. ' +
+                  'Captúralo en Administración → ID del Google Sheet de la sábana.';
+    return;
+  }
 
   try {
     escribirSabana(idSabana, record);
   } catch (err) {
     // La liquidación ya quedó guardada: no se tumba la operación por la sábana
-    Logger.log('No se pudo escribir en la sábana: ' + err);
+    avisoSabana = 'La liquidación se guardó, pero no se pudo escribir en la sábana: ' +
+                  String(err && err.message || err);
+    Logger.log(avisoSabana);
   }
 }
 
@@ -660,7 +673,7 @@ function escribirSabana(idSabana, record) {
   });
 
   // Si ya existe el folio, se actualiza en lugar de duplicar
-  var colFolio = heads.indexOf('FOLIO');
+  var colFolio = buscarColumnaFolio(heads);
   var fila = -1;
   if (colFolio >= 0 && hoja.getLastRow() >= 2) {
     var folios = hoja.getRange(2, colFolio + 1, hoja.getLastRow() - 1, 1).getValues();
@@ -669,19 +682,21 @@ function escribirSabana(idSabana, record) {
     }
   }
 
+  // Encabezado → campo del registro, tolerando mayúsculas, acentos y signos:
+  // en la sábana las columnas suelen llamarse "Folio" o "KM inicial", no "FOLIO"
+  var campoDe = mapearEncabezados(heads, record);
+
   var valores;
   if (fila > 0) {
     var actuales = hoja.getRange(fila, 1, 1, ancho).getValues()[0];
     valores = [];
     for (var j = 0; j < ancho; j++) {
-      var h = heads[j];
-      valores.push((h && record.hasOwnProperty(h)) ? record[h] : actuales[j]);
+      valores.push(campoDe[j] ? record[campoDe[j]] : actuales[j]);
     }
   } else {
     valores = [];
     for (var k = 0; k < ancho; k++) {
-      var hk = heads[k];
-      valores.push((hk && record.hasOwnProperty(hk)) ? record[hk] : '');
+      valores.push(campoDe[k] ? record[campoDe[k]] : '');
     }
     fila = hoja.getLastRow() + 1;
   }
@@ -693,6 +708,99 @@ function escribirSabana(idSabana, record) {
   });
 
   hoja.getRange(fila, 1, 1, ancho).setValues([valores]);
+}
+
+/**
+ * Diagnóstico de la conexión con la sábana. Se corre desde el menú
+ * "Master de Ruta → Probar sábana" y dice exactamente qué encuentra y dónde
+ * escribiría el odómetro, sin modificar nada.
+ */
+function probarSabana() {
+  var msg = [];
+  var cfg = leerConfig();
+  var id = String(cfg.SABANA_SHEET_ID || '').trim();
+
+  if (!id) {
+    return reportar('No hay SABANA_SHEET_ID en la hoja CONFIG.\n\n' +
+      'Captúralo en la app: Administración → ID del Google Sheet de la sábana.');
+  }
+  msg.push('ID de sábana configurado: ' + id);
+
+  var libro;
+  try {
+    libro = SpreadsheetApp.openById(id);
+  } catch (err) {
+    return reportar(msg.join('\n') + '\n\nNO SE PUDO ABRIR la sábana: ' + err + '\n\n' +
+      'Revisa que el ID sea correcto y que la cuenta que ejecuta el script tenga acceso a ese archivo.');
+  }
+  msg.push('Sábana abierta: ' + libro.getName());
+
+  var nombres = libro.getSheets().map(function (h) { return h.getName(); });
+  msg.push('Hojas que contiene: ' + nombres.join(' | '));
+
+  var hoja = libro.getSheetByName(HOJA_SABANA);
+  if (!hoja) {
+    return reportar(msg.join('\n') + '\n\nNO EXISTE una hoja llamada exactamente "' + HOJA_SABANA + '".\n\n' +
+      'El nombre distingue mayúsculas y espacios. Cámbialo en la sábana, o ajusta la constante ' +
+      'HOJA_SABANA al inicio de este script.');
+  }
+
+  var heads = encabezados(hoja);
+  msg.push('Hoja "' + HOJA_SABANA + '" encontrada: ' + heads.length + ' columnas, ' +
+           Math.max(hoja.getLastRow() - 1, 0) + ' renglones de datos.');
+
+  SABANA_COLUMNAS_FIJAS.forEach(function (c) {
+    var n = letraAColumna(c.columna);
+    msg.push('  ' + c.columna + ' (columna ' + n + ') ← ' + c.campo +
+             '   encabezado actual: "' + (heads[n - 1] || '(vacío)') + '"');
+  });
+
+  var colFolio = buscarColumnaFolio(heads);
+  msg.push(colFolio >= 0
+    ? 'Columna de folio: ' + (colFolio + 1) + ' ("' + heads[colFolio] + '"). Los folios ya existentes se actualizan.'
+    : 'NO hay columna de folio: cada liquidación AGREGA un renglón nuevo al final ' +
+      'en lugar de completar el renglón del viaje. Si esperabas que llenara un renglón ya existente, ' +
+      'ese es el motivo: agrega una columna FOLIO a la hoja Transportadora.');
+
+  return reportar(msg.join('\n'));
+}
+
+function reportar(texto) {
+  Logger.log(texto);
+  try { SpreadsheetApp.getUi().alert('Prueba de sábana', texto, SpreadsheetApp.getUi().ButtonSet.OK); } catch (ignore) {}
+  return texto;
+}
+
+/**
+ * Deja un nombre comparable: sin acentos, en mayúsculas y solo con letras y
+ * números. Así "KM inicial", "Km_Inicial" y "KM_INICIAL" son lo mismo.
+ */
+function clave(texto) {
+  return String(texto)
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')   // quita acentos
+    .toUpperCase().replace(/[^A-Z0-9]/g, '');           // deja letras y números
+}
+
+/**
+ * Para cada columna de la sábana devuelve el campo del registro que le toca,
+ * o null si esa columna no le corresponde a ninguno (se deja intacta).
+ */
+function mapearEncabezados(heads, record) {
+  var porClave = {};
+  Object.keys(record).forEach(function (k) { porClave[clave(k)] = k; });
+  return heads.map(function (h) {
+    if (!String(h).trim()) return null;
+    return porClave[clave(h)] || null;
+  });
+}
+
+/** Busca la columna del folio tolerando mayúsculas, acentos y puntuación. */
+function buscarColumnaFolio(heads) {
+  for (var i = 0; i < heads.length; i++) {
+    var h = clave(heads[i]);
+    if (h === 'FOLIO' || h === 'NOFOLIO' || h === 'NUMFOLIO' || h === 'NFOLIO') return i;
+  }
+  return -1;
 }
 
 /** 'A' → 1, 'AC' → 29, 'AD' → 30 */
@@ -714,5 +822,6 @@ function onOpen() {
     .createMenu('Master de Ruta')
     .addItem('Configurar hojas', 'configurarHojas')
     .addItem('Asignar IDs faltantes', 'asignarIdsFaltantes')
+    .addItem('Probar sábana', 'probarSabana')
     .addToUi();
 }
