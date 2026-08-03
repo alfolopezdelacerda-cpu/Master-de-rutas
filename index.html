@@ -131,8 +131,10 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 .userchip{font-size:12px;font-weight:600;padding:5px 12px;border-radius:99px;background:rgba(255,255,255,.12);white-space:nowrap}
 
 /* Modal de aviso */
-#modalWrap{position:fixed;inset:0;z-index:210;background:rgba(9,14,24,.55);display:none;align-items:center;justify-content:center;padding:20px}
-#modalWrap.show{display:flex}
+#modalWrap,#cancelWrap{position:fixed;inset:0;z-index:210;background:rgba(9,14,24,.55);display:none;align-items:center;justify-content:center;padding:20px}
+#modalWrap.show,#cancelWrap.show{display:flex}
+#cancelWrap{z-index:220}
+#cancelWrap .mbox{max-height:92vh;overflow-y:auto}
 #modalWrap .mbox{width:100%;max-width:460px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.3);padding:26px;text-align:center}
 #modalWrap .mico{font-size:40px;margin-bottom:8px}
 #modalWrap h3{font-size:20px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
@@ -415,7 +417,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <button class="btn btn-p" id="btnAutorizar" style="margin-top:12px">✔ Autorizar y liquidar</button>
       </div>
       <div class="mini" id="lqAutorizaNoAdmin" style="color:var(--bad);display:none">
-        Solo un administrador puede cambiar el estatus a liquidado.
+        Solo un administrador o un supervisor puede cambiar el estatus a liquidado.
       </div>
     </div>
 
@@ -503,9 +505,10 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
             <input type="radio" name="pFuenteKm" value="ODOMETRO" style="width:16px;height:16px;min-width:16px"> Registrados por odómetro
           </label>
         </div>
-        <div class="totrow"><span>KM proyectados en las rutas</span><b class="num" id="pKmRuta">0</b></div>
-        <div class="totrow"><span>KM registrados por odómetro</span><b class="num" id="pKmOdo">0</b></div>
         <div class="totrow"><span><b>KM realizados</b> <span class="mini" id="pKmFuente"></span></span><b class="num" id="pKm">0</b></div>
+        <!-- Solo se muestra la fuente que NO se está usando, como referencia -->
+        <div class="totrow" id="pKmRutaBox"><span class="mini">KM proyectados en las rutas (referencia)</span><b class="num mini" id="pKmRuta">0</b></div>
+        <div class="totrow" id="pKmOdoBox"><span class="mini">KM registrados por odómetro (referencia)</span><b class="num mini" id="pKmOdo">0</b></div>
         <div class="totrow"><span>Objetivo del periodo (obj × semanas)</span><b class="num" id="pObjTot">0</b></div>
         <div class="totrow"><span>Cumplimiento del objetivo</span><b class="num" id="pCumplePct">0%</b></div>
         <div class="totrow"><span>KM extra</span><b class="num" id="pKmX">0</b></div>
@@ -669,6 +672,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <button class="tab atab" data-adm="SOLICITUDES">Solicitudes</button>
         <button class="tab atab" data-adm="NOMINAS">Nóminas</button>
         <button class="tab atab" data-adm="LIQUIDACION">Liquidación</button>
+        <button class="tab atab" data-adm="CANCELADAS">Canceladas</button>
         <button class="tab atab" data-adm="BITACORA">Bitácora</button>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;align-items:center">
@@ -687,6 +691,45 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 </main>
 
 <div id="toast"></div>
+
+<!-- ============ MODAL: CANCELAR SOLICITUD ============ -->
+<div id="cancelWrap">
+  <div class="mbox" style="max-width:520px;text-align:left">
+    <div style="text-align:center">
+      <div class="mico">⚠</div>
+      <h3>Cancelar solicitud de gasto</h3>
+    </div>
+    <div class="mtxt" style="text-align:center" id="canDatos"></div>
+
+    <div style="background:var(--surface2);border:1px solid var(--bad);border-radius:10px;padding:12px;margin-bottom:16px">
+      <div class="mini" style="color:var(--bad);font-weight:600">
+        Esta acción elimina la solicitud. Queda registrada en la hoja <b>Solicitudes Canceladas</b>
+        con el folio, el motivo, quién la cancela y quién la autoriza.
+      </div>
+    </div>
+
+    <div style="margin-bottom:14px">
+      <label>Motivo de la cancelación</label>
+      <textarea id="canMotivo" rows="2" placeholder="Explica por qué se cancela…" style="resize:vertical"></textarea>
+    </div>
+
+    <div style="border-top:1px dashed var(--road);padding-top:14px">
+      <label>Autorización del supervisor</label>
+      <div class="grid g2" style="gap:10px">
+        <input id="canUser" placeholder="Usuario del supervisor" autocomplete="off">
+        <input id="canPass" type="password" placeholder="Contraseña" autocomplete="off">
+      </div>
+      <div class="mini" style="margin-top:6px">Debe ser un usuario con rol <b>Supervisor</b> o <b>Administrador</b>.</div>
+    </div>
+
+    <div class="lerr" id="canErr" style="text-align:left;margin-top:10px"></div>
+
+    <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+      <button class="btn btn-s" id="canCerrar">Cancelar</button>
+      <button class="btn btn-d" id="canConfirmar">✕ Cancelar la solicitud</button>
+    </div>
+  </div>
+</div>
 
 <!-- ============ MODAL DE AVISO ============ -->
 <div id="modalWrap">
@@ -822,7 +865,7 @@ const CAMPOS_CASETA = ['COSTO_2E','COSTO_5E','COSTO_9E'];
    Se aplica en ambos sentidos: fuera de ±15 km el viaje entra a aclaración. */
 const TOLERANCIA_KM = 15;
 
-const DB = { UNIDADES:[], OPERADORES:[], EJECUTIVOS:[], REMOLQUES:[], CLIENTES:[], RUTAS:[], SOLICITUDES:[], NOMINAS:[], LIQUIDACION:[], CASETAS:[], USUARIOS:[], BITACORA:[], CONFIG:{} };
+const DB = { UNIDADES:[], OPERADORES:[], EJECUTIVOS:[], REMOLQUES:[], CLIENTES:[], RUTAS:[], SOLICITUDES:[], NOMINAS:[], LIQUIDACION:[], CASETAS:[], USUARIOS:[], BITACORA:[], SOLICITUDES_CANCELADAS:[], CONFIG:{} };
 
 const $  = id => document.getElementById(id);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
@@ -900,7 +943,7 @@ function bitacora(accion, detalle){
 }
 
 function aplicarDatos(data){
-  ['UNIDADES','OPERADORES','EJECUTIVOS','REMOLQUES','CLIENTES','RUTAS','SOLICITUDES','NOMINAS','LIQUIDACION','CASETAS','USUARIOS','BITACORA'].forEach(k=>{ DB[k] = data[k]||[]; });
+  ['UNIDADES','OPERADORES','EJECUTIVOS','REMOLQUES','CLIENTES','RUTAS','SOLICITUDES','NOMINAS','LIQUIDACION','CASETAS','USUARIOS','BITACORA','SOLICITUDES_CANCELADAS'].forEach(k=>{ DB[k] = data[k]||[]; });
   DB.CONFIG = data.CONFIG||{};
   refrescarTodo();
 }
@@ -1472,13 +1515,83 @@ function pintarListaSol(){
     const tr=document.createElement('tr');
     tr.innerHTML=`<td><b>${esc(s.FOLIO)}</b></td><td>${fmtFecha(s.FECHA_SERVICIO)}</td><td>${esc(s.RUTA)}</td><td>${esc(s.OPERADOR)}</td><td>${esc(s.ECONOMICO)}</td>
       <td class="right num">${num(s.KM,1)}</td><td class="right num">${money(s.TOTAL)}</td>
-      <td><button class="btn btn-d btn-sm" data-srm="${s.ID}">✕</button></td>`;
+      <td><button class="btn btn-d btn-sm" data-srm="${s.ID}" title="Cancelar la solicitud">✕</button></td>`;
     tb.appendChild(tr);
   });
-  tb.querySelectorAll('[data-srm]').forEach(b=>b.addEventListener('click', async ()=>{
-    if(confirm('¿Eliminar esta solicitud?')) { if(await apiEnviar({action:'delete', sheet:'SOLICITUDES', id:b.dataset.srm})) toast('Solicitud eliminada'); }
-  }));
+  tb.querySelectorAll('[data-srm]').forEach(b=>b.addEventListener('click',()=>abrirCancelacion(b.dataset.srm)));
 }
+
+/* =====================================================
+   CANCELACIÓN DE SOLICITUDES (requiere supervisor)
+===================================================== */
+let solCancelando = null;
+
+function abrirCancelacion(id){
+  const s = DB.SOLICITUDES.find(x=>String(x.ID)===String(id));
+  if(!s){ toast('No se encontró la solicitud.', true); return; }
+  solCancelando = id;
+  $('canDatos').innerHTML =
+    `Folio <b>${esc(s.FOLIO)}</b> · ${esc(s.RUTA||'—')}<br>`+
+    `Operador: <b>${esc(s.OPERADOR||'—')}</b> · Carta(s) porte: <b>${esc(s.CARTAS_PORTE||'—')}</b><br>`+
+    `Total: <b>${money(nf(s.TOTAL))}</b>`;
+  $('canMotivo').value=''; $('canUser').value=''; $('canPass').value=''; $('canErr').textContent='';
+  $('cancelWrap').classList.add('show');
+  $('canMotivo').focus();
+}
+function cerrarCancelacion(){
+  $('cancelWrap').classList.remove('show');
+  solCancelando = null;
+}
+$('canCerrar').addEventListener('click', cerrarCancelacion);
+$('cancelWrap').addEventListener('click',e=>{ if(e.target===$('cancelWrap')) cerrarCancelacion(); });
+$('canPass').addEventListener('keydown',e=>{ if(e.key==='Enter') $('canConfirmar').click(); });
+
+/* Valida las credenciales de quien autoriza. Debe ser SUP o ADMIN activo. */
+function validarSupervisor(user, pass){
+  const u = String(user||'').trim().toLowerCase();
+  const p = String(pass||'');
+  if(!u || !p) return { ok:false, error:'Captura el usuario y la contraseña del supervisor.' };
+
+  if(!DB.USUARIOS.length){
+    if(u==='admin' && p==='admin') return { ok:true, usuario: USUARIO_INICIAL };
+    return { ok:false, error:'Usuario o contraseña incorrectos.' };
+  }
+  const encontrado = DB.USUARIOS.find(x=>String(x.USUARIO||'').trim().toLowerCase()===u);
+  if(!encontrado || String(encontrado.PASSWORD??'')!==p) return { ok:false, error:'Usuario o contraseña incorrectos.' };
+  if(String(encontrado.ACTIVO||'SI').toUpperCase()==='NO') return { ok:false, error:'Ese usuario está dado de baja.' };
+
+  const rol = String(encontrado.ROL||'').toUpperCase();
+  if(rol!=='SUP' && rol!=='ADMIN'){
+    return { ok:false, error:'Ese usuario no tiene permiso para autorizar cancelaciones. Se necesita un supervisor o un administrador.' };
+  }
+  return { ok:true, usuario: encontrado };
+}
+
+$('canConfirmar').addEventListener('click', async ()=>{
+  if(!solCancelando) return;
+  const s = DB.SOLICITUDES.find(x=>String(x.ID)===String(solCancelando));
+  if(!s){ $('canErr').textContent='La solicitud ya no existe.'; return; }
+
+  const motivo = ($('canMotivo').value||'').trim();
+  if(!motivo){ $('canErr').textContent='Escribe el motivo de la cancelación.'; $('canMotivo').focus(); return; }
+
+  const auth = validarSupervisor($('canUser').value, $('canPass').value);
+  if(!auth.ok){ $('canErr').textContent=auth.error; $('canPass').value=''; $('canPass').focus(); return; }
+
+  $('canErr').textContent='';
+  const registro = Object.assign({}, s, {
+    MOTIVO_CANCELACION: motivo,
+    CANCELADA_POR: nombreUsuario(),
+    AUTORIZADA_POR: auth.usuario.NOMBRE || auth.usuario.USUARIO,
+    ROL_AUTORIZA: etiquetaRol(auth.usuario.ROL),
+    FECHA_CANCELACION: hoyISO()
+  });
+
+  if(await apiEnviar({action:'cancelarSolicitud', record:registro})){
+    toast('Solicitud '+s.FOLIO+' cancelada y registrada');
+    cerrarCancelacion();
+  }
+});
 
 /* =====================================================
    PRE-NÓMINA (semana jueves–miércoles, filtros múltiples)
@@ -1716,6 +1829,9 @@ function calcularPrenomina(){
   $('pKmRuta').textContent=num(kmRuta,1);
   $('pKmOdo').textContent=num(kmOdo,1);
   $('pKmFuente').textContent = fuente==='ODOMETRO'? '(por odómetro)' : '(proyectados en ruta)';
+  // La fuente en uso ya se muestra como "KM realizados": no se repite abajo
+  $('pKmRutaBox').style.display = fuente==='RUTA'? 'none' : '';
+  $('pKmOdoBox').style.display  = fuente==='ODOMETRO'? 'none' : '';
   $('pKm').textContent=num(km,1) + (nPend>0? ` (${nPend} viaje(s) sin liquidar no cuentan)`:'');
   $('pObjTot').textContent=num(objTot);
   $('pCumplePct').textContent=num(cumplePct,1)+'%';
@@ -1850,7 +1966,14 @@ function liqDe(id){ return DB.LIQUIDACION.find(x=>String(x.ID)===String(id)); }
 function estadoLiq(solId){ const l=liqDe(solId); return l? String(l.ESTADO||'').toUpperCase() : ''; }
 function estaLiquidado(solId){ return estadoLiq(solId)==='LIQUIDADO'; }
 function enAclaracion(solId){ return estadoLiq(solId)==='ACLARACION'; }
-function esAdmin(){ return !!(usuarioActual && String(usuarioActual.ROL).toUpperCase()==='ADMIN'); }
+function rolActual(){ return usuarioActual? String(usuarioActual.ROL||'').toUpperCase() : ''; }
+function esAdmin(){ return rolActual()==='ADMIN'; }
+/* SUP: no toca objetivos ni parámetros, pero autoriza cancelaciones y aclaraciones */
+function puedeAutorizar(){ return rolActual()==='ADMIN' || rolActual()==='SUP'; }
+function etiquetaRol(rol){
+  const r = String(rol||'').toUpperCase();
+  return r==='ADMIN'? 'ADMINISTRADOR' : r==='SUP'? 'SUPERVISOR' : 'OPERATIVO';
+}
 function etiquetaEstadoLiq(solId){
   const e = estadoLiq(solId);
   if(e==='LIQUIDADO')  return '<span class="tag ok">Liquidado</span>';
@@ -1899,8 +2022,8 @@ function pintarCajaAclaracion(id, l){
   const enAcl = enAclaracion(id);
   $('lqAutorizaBox').style.display = enAcl? '' : 'none';
   if(!enAcl) return;
-  $('lqAutorizaAdmin').style.display   = esAdmin()? '' : 'none';
-  $('lqAutorizaNoAdmin').style.display = esAdmin()? 'none' : '';
+  $('lqAutorizaAdmin').style.display   = puedeAutorizar()? '' : 'none';
+  $('lqAutorizaNoAdmin').style.display = puedeAutorizar()? 'none' : '';
   $('lqAclaraInfo').innerHTML =
     `Enviado a aclaración por <b>${esc(l&&l.ACLARACION_POR||'—')}</b> el <b>${fmtFecha(l&&l.ACLARACION_FECHA)||'—'}</b>.<br>`+
     `Motivo: ${esc(l&&l.MOTIVO_ACLARACION||'—')}`;
@@ -2039,7 +2162,7 @@ $('btnAclaracion').addEventListener('click', async ()=>{
 
 /* Autorizar: exclusivo de administradores, pasa de ACLARACION a LIQUIDADO */
 $('btnAutorizar').addEventListener('click', async ()=>{
-  if(!esAdmin()){ modal('Sin permiso','Solo un administrador puede cambiar el estatus a liquidado.','🔒'); return; }
+  if(!puedeAutorizar()){ modal('Sin permiso','Solo un administrador o un supervisor puede cambiar el estatus a liquidado.','🔒'); return; }
   const armado = armarLiquidacion(); if(!armado) return;
   const { s, reg } = armado;
   if(!enAclaracion(s.ID)){ toast('Este servicio no está en aclaración.', true); return; }
@@ -2084,7 +2207,7 @@ function pintarLiquidacion(){
     const proyC = combProyectado(s), proyK = nf(s.COSTO_CASETAS);
     const odo = l && l.KM_ODOMETRO!==''&&l.KM_ODOMETRO!==undefined? nf(l.KM_ODOMETRO) : null;
     const revisar = l && String(l.REVISAR_KM).toUpperCase()==='SI';
-    const accion = liq? 'Ver' : acl? (esAdmin()? '✔ Autorizar' : 'Ver') : '✔ Liquidar';
+    const accion = liq? 'Ver' : acl? (puedeAutorizar()? '✔ Autorizar' : 'Ver') : '✔ Liquidar';
     const tr=document.createElement('tr');
     tr.innerHTML=`<td><b>${esc(s.FOLIO)}</b></td><td>${esc(s.CARTAS_PORTE)}</td><td>${esc(s.OPERADOR)}</td>
       <td>${esc(s.RUTA)}</td><td>${esc(clienteDeSol(s))}</td><td>${fmtFecha(s.FECHA_SERVICIO)}</td>
@@ -2173,7 +2296,7 @@ const ADMIN = {
     csv:'NOMBRE, CARRETERA, COSTO_2E, COSTO_5E, COSTO_9E' },
   USUARIOS:{ cols:[
       {k:'USUARIO',raw:true},{k:'NOMBRE'},{k:'PASSWORD',raw:true},
-      {k:'ROL',opts:['OPERATIVO','ADMIN']},{k:'ACTIVO',opts:['SI','NO']}] },
+      {k:'ROL',opts:['OPERATIVO','SUP','ADMIN']},{k:'ACTIVO',opts:['SI','NO']}] },
   OPERADORES:{ cols:[{k:'NOMBRE'},{k:'PAGO_NOMINAL_SEMANAL',tipo:'number'},{k:'ACTIVO',opts:['SI','NO']}],
     csv:'NOMBRE, PAGO_NOMINAL_SEMANAL, ACTIVO' },
   EJECUTIVOS:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
@@ -2181,9 +2304,12 @@ const ADMIN = {
     csv:'ECONOMICO, PLACAS, TIPO' },
   CLIENTES:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
   RUTAS:{ soloLectura:true, cols:[{k:'RUTA'},{k:'CLIENTE'},{k:'TIPO_SERVICIO'},{k:'TOTAL_KM'},{k:'COSTO_CASETAS'}] },
-  SOLICITUDES:{ soloLectura:true, cols:[{k:'FOLIO'},{k:'FECHA_SERVICIO'},{k:'RUTA'},{k:'OPERADOR'},{k:'TOTAL'}] },
+  SOLICITUDES:{ soloLectura:true, sinBorrarMasivo:true, cols:[{k:'FOLIO'},{k:'FECHA_SERVICIO'},{k:'RUTA'},{k:'OPERADOR'},{k:'TOTAL'}] },
   NOMINAS:{ soloLectura:true, cols:[{k:'OPERADOR'},{k:'PERIODO'},{k:'KM'},{k:'TOTAL'},{k:'FECHA_REGISTRO'}] },
   LIQUIDACION:{ soloLectura:true, cols:[{k:'FOLIO'},{k:'CLIENTE'},{k:'ESTADO'},{k:'COMB_REAL'},{k:'CASETAS_REAL'},{k:'FECHA_LIQUIDACION'}] },
+  CANCELADAS:{ soloLectura:true, sinBorrar:true, invertido:true, hoja:'SOLICITUDES_CANCELADAS',
+    cols:[{k:'FECHA_CANCELACION'},{k:'FOLIO'},{k:'RUTA'},{k:'OPERADOR'},{k:'TOTAL'},
+          {k:'MOTIVO_CANCELACION'},{k:'CANCELADA_POR'},{k:'AUTORIZADA_POR'},{k:'ROL_AUTORIZA'}] },
   BITACORA:{ soloLectura:true, sinBorrar:true, invertido:true,
     cols:[{k:'FECHA_HORA'},{k:'USUARIO'},{k:'NOMBRE'},{k:'ROL'},{k:'ACCION'},{k:'HOJA'},{k:'REGISTRO'},{k:'DETALLE'}] }
 };
@@ -2241,12 +2367,14 @@ function pintarAdmin(){
   $('csvHint').textContent = def.csv? 'Encabezados esperados: '+def.csv : '';
   $('btnAdmAdd').style.display = def.soloLectura? 'none':'';
   // La bitácora no se edita ni se borra desde la app
-  $('btnDelSel').style.display = def.sinBorrar? 'none':'';
-  $('btnDelAll').style.display = def.sinBorrar? 'none':'';
+  const sinMasivo = def.sinBorrar || def.sinBorrarMasivo;
+  $('btnDelSel').style.display = sinMasivo? 'none':'';
+  $('btnDelAll').style.display = sinMasivo? 'none':'';
   $('admHead').innerHTML='<tr>'+(def.sinBorrar?'':'<th><input type="checkbox" id="admSelAll"></th>')
     +def.cols.map(c=>`<th>${c.k.replace(/_/g,' ')}</th>`).join('')+(def.sinBorrar?'':'<th></th>')+'</tr>';
   const tb=$('admBody'); tb.innerHTML='';
-  let filas = DB[admHoja]||[];
+  const hojaDatos = def.hoja || admHoja;
+  let filas = DB[hojaDatos]||[];
   if(def.invertido) filas = [...filas].reverse().slice(0,400);   // lo más reciente arriba
   filas.forEach(r=>{
     const tr=document.createElement('tr');
@@ -2264,7 +2392,7 @@ function pintarAdmin(){
   const selAll=$('admSelAll');
   if(selAll) selAll.addEventListener('change',()=>{ tb.querySelectorAll('input[type=checkbox][data-sel]').forEach(c=>c.checked=selAll.checked); });
   tb.querySelectorAll('input[data-k],select[data-k]').forEach(el=>el.addEventListener('change', async ()=>{
-    const reg=(DB[admHoja]||[]).find(x=>String(x.ID)===el.dataset.id); if(!reg) return;
+    const reg=(DB[ADMIN[admHoja].hoja||admHoja]||[]).find(x=>String(x.ID)===el.dataset.id); if(!reg) return;
     const colDef = (ADMIN[admHoja].cols||[]).find(c=>c.k===el.dataset.k) || {};
     reg[el.dataset.k]= el.type==='number'? nf(el.value) : (colDef.raw? el.value.trim() : el.value.toUpperCase());
     if(admHoja==='USUARIOS' && el.dataset.k==='USUARIO'){
@@ -2274,6 +2402,8 @@ function pintarAdmin(){
     if(await apiEnviar({action:'upsert', sheet:admHoja, record:reg})) toast('Registro actualizado');
   }));
   tb.querySelectorAll('[data-adel]').forEach(b=>b.addEventListener('click', async ()=>{
+    // Las solicitudes solo se cancelan con autorización de un supervisor
+    if(admHoja==='SOLICITUDES'){ abrirCancelacion(b.dataset.adel); return; }
     if(confirm('¿Eliminar el registro?')){ if(await apiEnviar({action:'delete', sheet:admHoja, id:b.dataset.adel})) toast('Registro eliminado'); }
   }));
 }
@@ -2379,7 +2509,7 @@ function abrirSesion(u, recordar){
   if(recordar!==false){ try{ sessionStorage.setItem('adl_user', String(u.ID)); }catch(e){} }
   $('loginWrap').style.display='none';
   document.body.classList.remove('locked');
-  $('userChip').textContent = (u.NOMBRE || u.USUARIO) + ' · ' + String(u.ROL||'OPERATIVO').toUpperCase();
+  $('userChip').textContent = (u.NOMBRE || u.USUARIO) + ' · ' + etiquetaRol(u.ROL);
   if(recordar!==false) bitacora('INICIO DE SESIÓN');
   refrescarTodo();
 }

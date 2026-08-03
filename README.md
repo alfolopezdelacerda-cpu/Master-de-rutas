@@ -74,12 +74,31 @@ Se puede llenar a mano en el Sheet, o desde **Administración → Casetas**
 | ID | USUARIO | NOMBRE | PASSWORD | ROL | ACTIVO |
 |----|---------|--------|----------|-----|--------|
 
-- `ROL` — `ADMIN` (ve la pestaña Administración) u `OPERATIVO`
 - `ACTIVO` — `SI` / `NO`
+- `ROL` — uno de tres:
+
+| Rol | Administración | Objetivos y parámetros | Autoriza aclaraciones y cancelaciones |
+|---|---|---|---|
+| `ADMIN` | sí | sí | sí |
+| `SUP` | no | no | sí |
+| `OPERATIVO` | no | no | no |
 
 Mientras la hoja `USUARIOS` esté vacía, la app permite entrar con **admin /
 admin** para poder crear el primer administrador. En cuanto exista al menos un
 usuario, ese acceso inicial deja de funcionar.
+
+### Hoja `SOLICITUDES_CANCELADAS`
+
+Copia completa de cada solicitud eliminada, más `MOTIVO_CANCELACION`,
+`CANCELADA_POR`, `AUTORIZADA_POR`, `ROL_AUTORIZA` y `FECHA_CANCELACION`.
+
+Una solicitud no se borra sin pasar por ahí: al pulsar la ✕ sale un cuadro que
+pide el **motivo** y las **credenciales de un supervisor o administrador**
+—distintas de las de quien está usando la app— y solo entonces se archiva y se
+elimina. El backend archiva primero y borra después, así que si el archivado
+falla la solicitud original no se pierde. Se consulta en
+**Administración → Canceladas**, y el borrado masivo de solicitudes está
+deshabilitado para que no haya forma de saltarse el paso.
 
 ### Hoja `BITACORA`
 
@@ -138,8 +157,8 @@ Fuera de esa tolerancia el viaje **no se puede liquidar**. El botón de liquidar
 se bloquea y aparece la caja de aclaración, donde se captura el motivo y el
 servicio pasa a estatus **ACLARACION**.
 
-Un servicio en aclaración solo lo puede desbloquear un **administrador**, desde
-el mismo detalle del servicio: captura una nota de autorización y el estatus
+Un servicio en aclaración solo lo puede desbloquear un **administrador** o un
+**supervisor**, desde el mismo detalle del servicio: captura una nota de autorización y el estatus
 pasa a `LIQUIDADO`. Queda registrado quién lo mandó a aclaración, con qué
 motivo, y quién lo autorizó. Los usuarios operativos ven la caja pero sin el
 botón de autorizar.
@@ -180,7 +199,9 @@ objetivo, con una casilla que solo él ve. Queda registrado en la nómina
 
 ### KM que cuentan para el objetivo
 
-Se muestran las dos cifras y se elige cuál cuenta:
+Se elige cuál de las dos cifras cuenta. La seleccionada aparece como **KM
+realizados** y la otra debajo, como referencia — nunca se repite la misma cifra
+en dos renglones:
 
 - **Proyectados en la ruta** — la suma de los KM de las rutas de los servicios.
 - **Registrados por odómetro** — la suma de `KM_ODOMETRO` de las liquidaciones.
@@ -191,8 +212,8 @@ cambiarla.
 
 ### Permisos
 
-Un usuario **operativo** ve la pre-nómina completa pero no puede modificar
-sueldo, objetivos, porcentajes, montos ni la fuente de KM. Lo único que captura
+Los usuarios **operativo** y **supervisor** ven la pre-nómina completa pero no
+pueden modificar sueldo, objetivos, porcentajes, montos ni la fuente de KM. Lo único que captura
 es el **rendimiento real**; también puede elegir los periodos y marcar los
 objetivos de cumplimiento. Todo lo demás aparece deshabilitado.
 

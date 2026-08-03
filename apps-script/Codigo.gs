@@ -65,9 +65,20 @@ var HOJAS = {
                 'MOTIVO_ACLARACION','ACLARACION_POR','ACLARACION_FECHA',
                 'AUTORIZADO_POR','FECHA_AUTORIZACION','NOTA_AUTORIZACION'],
 
+  /* Solicitudes canceladas: copia completa de la solicitud más el motivo y
+     las firmas de quién la cancela y quién la autoriza. */
+  SOLICITUDES_CANCELADAS: ['ID','FECHA_CANCELACION','FOLIO','FECHA_SOLICITUD','FECHA_SERVICIO',
+                'CARTAS_PORTE','TIPO_ARRASTRE','ECONOMICO','PLACAS','TIPO_UNIDAD','OPERADOR',
+                'REMOLQUE1','REMOLQUE2','DOLLY','RUTA','CLIENTE','TIPO_SERVICIO','TIPO_VIAJE',
+                'KM','COMBUSTIBLE','LITROS_COMBUSTIBLE','PENSION','COMIDA','COSTO_CASETAS',
+                'EJECUTIVO','TOTAL',
+                'MOTIVO_CANCELACION','CANCELADA_POR','AUTORIZADA_POR','ROL_AUTORIZA'],
+
   /* Bitácora de auditoría: quién hizo qué y cuándo. Solo la escribe el script. */
   BITACORA: ['ID','FECHA_HORA','USUARIO','NOMBRE','ROL','ACCION','HOJA','REGISTRO','DETALLE']
 };
+
+var HOJA_CANCELADAS = 'SOLICITUDES_CANCELADAS';
 
 var HOJA_BITACORA = 'BITACORA';
 
@@ -125,6 +136,7 @@ function doPost(e) {
       case 'clearAll':    vaciar(p.sheet);                  break;
       case 'setConfig':   setConfig(p.clave, p.valor);      break;
       case 'liquidar':    liquidar(p.record);               break;
+      case 'cancelarSolicitud': cancelarSolicitud(p.record); break;
       default:
         throw new Error('Acción no reconocida: ' + p.action);
     }
@@ -396,6 +408,31 @@ function setConfig(clave, valor) {
 }
 
 /* ------------------------------------------------------------------ *
+ *  Cancelación de solicitudes
+ * ------------------------------------------------------------------ */
+
+/**
+ * Copia la solicitud a SOLICITUDES_CANCELADAS y la borra de SOLICITUDES.
+ * Primero se archiva y luego se borra: si algo falla en el archivado, la
+ * solicitud original sigue ahí y no se pierde el registro.
+ */
+function cancelarSolicitud(record) {
+  if (!record || !record.ID) throw new Error('Falta la solicitud a cancelar');
+  if (!record.MOTIVO_CANCELACION) throw new Error('Falta el motivo de la cancelación');
+  if (!record.AUTORIZADA_POR) throw new Error('Falta la autorización del supervisor');
+
+  var archivo = {};
+  Object.keys(record).forEach(function (k) { archivo[k] = record[k]; });
+  if (!archivo.FECHA_CANCELACION) {
+    var tz = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+    archivo.FECHA_CANCELACION = Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd');
+  }
+
+  upsert(HOJA_CANCELADAS, archivo);   // 1) se archiva
+  borrar('SOLICITUDES', [record.ID]); // 2) se elimina la original
+}
+
+/* ------------------------------------------------------------------ *
  *  Bitácora de auditoría
  * ------------------------------------------------------------------ */
 
@@ -442,6 +479,15 @@ function registrarAccion(p) {
       hoja = 'CONFIG';
       registro = p.clave || '';
       detalle = p.clave + ' = ' + p.valor;
+      break;
+    case 'cancelarSolicitud':
+      accion = 'CANCELACIÓN DE SOLICITUD';
+      hoja = 'SOLICITUDES';
+      registro = (p.record && p.record.FOLIO) || '';
+      detalle = 'Motivo: ' + (p.record && p.record.MOTIVO_CANCELACION) +
+                ' · Autorizó: ' + (p.record && p.record.AUTORIZADA_POR) +
+                ' (' + (p.record && p.record.ROL_AUTORIZA) + ')' +
+                ' · Total: ' + (p.record && p.record.TOTAL);
       break;
     case 'liquidar':
       hoja = 'LIQUIDACION';
