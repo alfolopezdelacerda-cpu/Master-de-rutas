@@ -100,6 +100,16 @@ var COLUMNAS_TEXTO = {
 var HOJA_CONFIG = 'CONFIG';
 var HOJA_SABANA = 'Transportadora';
 
+/**
+ * Columnas de la sábana que se escriben por POSICIÓN, no por nombre de
+ * encabezado. El kilometraje del odómetro va a AC y AD de la hoja
+ * Transportadora. Si en la sábana cambian de lugar, se ajusta aquí.
+ */
+var SABANA_COLUMNAS_FIJAS = [
+  { columna: 'AC', campo: 'ODOMETRO_INICIAL' },   // KM inicial
+  { columna: 'AD', campo: 'ODOMETRO_FINAL'   }    // KM final
+];
+
 /* ------------------------------------------------------------------ *
  *  Puntos de entrada HTTP
  * ------------------------------------------------------------------ */
@@ -631,6 +641,9 @@ function liquidar(record) {
  * Agrega el renglón a la sábana haciendo coincidir los encabezados por nombre,
  * así que respeta el orden de columnas que ya tenga esa hoja. Las columnas de
  * la sábana que no existan en el registro se dejan vacías.
+ *
+ * Excepción: el kilometraje del odómetro va SIEMPRE a las columnas fijas
+ * AC y AD (ver SABANA_COLUMNAS_FIJAS), sin importar cómo se llamen ahí.
  */
 function escribirSabana(idSabana, record) {
   var hoja = SpreadsheetApp.openById(idSabana).getSheetByName(HOJA_SABANA);
@@ -638,6 +651,13 @@ function escribirSabana(idSabana, record) {
 
   var heads = encabezados(hoja);
   if (!heads.length) throw new Error('La hoja ' + HOJA_SABANA + ' no tiene encabezados');
+
+  // El renglón se extiende si las columnas fijas caen más allá del encabezado
+  var ancho = heads.length;
+  SABANA_COLUMNAS_FIJAS.forEach(function (c) {
+    var n = letraAColumna(c.columna);
+    if (n > ancho) ancho = n;
+  });
 
   // Si ya existe el folio, se actualiza en lugar de duplicar
   var colFolio = heads.indexOf('FOLIO');
@@ -649,13 +669,40 @@ function escribirSabana(idSabana, record) {
     }
   }
 
+  var valores;
   if (fila > 0) {
-    var actuales = hoja.getRange(fila, 1, 1, heads.length).getValues()[0];
-    var valores = heads.map(function (h, i) { return record.hasOwnProperty(h) ? record[h] : actuales[i]; });
-    hoja.getRange(fila, 1, 1, heads.length).setValues([valores]);
+    var actuales = hoja.getRange(fila, 1, 1, ancho).getValues()[0];
+    valores = [];
+    for (var j = 0; j < ancho; j++) {
+      var h = heads[j];
+      valores.push((h && record.hasOwnProperty(h)) ? record[h] : actuales[j]);
+    }
   } else {
-    hoja.appendRow(heads.map(function (h) { return record.hasOwnProperty(h) ? record[h] : ''; }));
+    valores = [];
+    for (var k = 0; k < ancho; k++) {
+      var hk = heads[k];
+      valores.push((hk && record.hasOwnProperty(hk)) ? record[hk] : '');
+    }
+    fila = hoja.getLastRow() + 1;
   }
+
+  // Columnas fijas por posición: mandan sobre lo que diga el encabezado
+  SABANA_COLUMNAS_FIJAS.forEach(function (c) {
+    if (record[c.campo] === undefined || record[c.campo] === '') return;
+    valores[letraAColumna(c.columna) - 1] = record[c.campo];
+  });
+
+  hoja.getRange(fila, 1, 1, ancho).setValues([valores]);
+}
+
+/** 'A' → 1, 'AC' → 29, 'AD' → 30 */
+function letraAColumna(letra) {
+  var s = String(letra).toUpperCase();
+  var n = 0;
+  for (var i = 0; i < s.length; i++) {
+    n = n * 26 + (s.charCodeAt(i) - 64);
+  }
+  return n;
 }
 
 /* ------------------------------------------------------------------ *

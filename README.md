@@ -166,6 +166,24 @@ botón de autorizar.
 Mientras un viaje esté en aclaración no cuenta como liquidado, así que tampoco
 cuenta para el pago en pre-nómina.
 
+### Odómetro en la sábana
+
+Al liquidar (o al mandar a aclaración), el kilometraje del odómetro se escribe
+en la hoja **Transportadora** de la sábana:
+
+- **AC** — odómetro inicial (KM inicial)
+- **AD** — odómetro final (KM final)
+
+Estas dos van por **posición de columna**, no por nombre de encabezado, así que
+funcionan sin importar cómo se titulen ahí. El resto de los campos se sigue
+colocando por coincidencia de encabezado. Si en la sábana cambian de lugar, se
+ajusta en la constante `SABANA_COLUMNAS_FIJAS` del Apps Script.
+
+Si el folio ya existe en la sábana se actualiza en lugar de duplicarse, y si la
+hoja tiene menos de 30 columnas el renglón se extiende hasta AD. Un fallo al
+escribir en la sábana no tumba la liquidación: esa queda guardada igual y el
+error se registra en el log del script.
+
 ## Objetivo semanal de KM
 
 Full y Sencillo tienen dos objetivos: uno para servicio **foráneo** y otro para
