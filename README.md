@@ -77,12 +77,12 @@ Se puede llenar a mano en el Sheet, o desde **Administración → Casetas**
 - `ACTIVO` — `SI` / `NO`
 - `ROL` — uno de cuatro:
 
-| Rol | Administración | Objetivos y parámetros | Autoriza aclaraciones y cancelaciones | Confirma dispersión | Pestañas visibles |
-|---|---|---|---|---|---|
-| `ADMIN` | sí | sí | sí | sí | todas |
-| `SUP` | no | no | sí | no | todas menos Administración |
-| `AUDITOR` | no | no | no | sí | solo Liquidación, Pre-Nómina, Indicadores |
-| `OPERATIVO` | no | no | no | no | todas menos Administración |
+| Rol | Administración | Objetivos y parámetros | Autoriza aclaraciones y cancelaciones | Confirma dispersión | Revierte dispersión | Pestañas visibles |
+|---|---|---|---|---|---|---|
+| `ADMIN` | sí | sí | sí | no | sí | todas |
+| `SUP` | no | no | sí | no | no | todas menos Administración |
+| `AUDITOR` | no | no | no | sí | no | solo Liquidación, Pre-Nómina, Indicadores |
+| `OPERATIVO` | no | no | no | no | no | todas menos Administración |
 
 Mientras la hoja `USUARIOS` esté vacía, la app permite entrar con **admin /
 admin** para poder crear el primer administrador. En cuanto exista al menos un
@@ -278,12 +278,13 @@ en el servidor.
 ## Dispersión de gastos
 
 En **Liquidación**, junto al botón *Liquidar viaje* aparece el botón
-**Dispersión** — solo cuando el servicio ya está liquidado:
+**Dispersar** — solo cuando el servicio ya está liquidado:
 
-- **Gris, "○ Dispersión pendiente"** — todavía no se confirma. Un auditor o un
-  administrador puede darle clic; antes de mandar la confirmación se muestra un
-  resumen de los montos capturados (combustible real, casetas, pensión,
-  viáticos, maniobras, talachas, dádivas, estacionamientos) para revisarlos.
+- **Gris, "Dispersar"** — todavía no se confirma. Es **exclusivo del rol
+  auditor**: nadie más puede activarlo, ni siquiera el administrador. Antes de
+  mandar la confirmación se muestra un resumen de los montos capturados
+  (combustible real, casetas, pensión, viáticos, maniobras, talachas, dádivas,
+  estacionamientos) para revisarlos.
 - **Verde, "✔ Dispersado"** — ya se confirmó. Muestra quién y cuándo.
 
 Al confirmarse, **los campos del servicio quedan bloqueados** (odómetro, fecha
@@ -294,8 +295,8 @@ los campos se editan con normalidad. Una solicitud cuyo gasto ya se dispersó
 tampoco se puede cancelar.
 
 Solo un **administrador** puede revertir una dispersión ya confirmada (por si
-se marcó por error); un auditor no puede deshacer su propia confirmación desde
-la app.
+se marcó por error) — pero no puede confirmarla él mismo; esa parte es
+exclusiva del auditor.
 
 En **Liquidación** también hay una tarjeta discreta que dice cuántos servicios
 liquidados **hoy** siguen pendientes de dispersar (por ejemplo, *"3 servicios

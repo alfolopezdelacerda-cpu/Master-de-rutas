@@ -429,7 +429,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:12px">
       <label style="display:flex;gap:10px;align-items:center;font-size:14px;text-transform:none;letter-spacing:0;font-weight:700;color:var(--ink)"><input type="checkbox" id="lqEvidencia" style="width:18px;height:18px;min-width:18px"> Entregó evidencia completa</label>
       <button class="btn btn-p" id="btnLiquidar">✔ Liquidar viaje</button>
-      <button class="btn btn-s" id="btnDispersar" style="display:none;background:var(--chip);color:var(--ink2)">○ Dispersión pendiente</button>
+      <button class="btn btn-s" id="btnDispersar" style="display:none;background:var(--chip);color:var(--ink2)">Dispersar</button>
       <button class="btn btn-s" id="btnLiqCancelar">Cancelar</button>
     </div>
     <div class="mini" id="lqDispInfo" style="margin-top:8px"></div>
@@ -1985,8 +1985,11 @@ function esAdmin(){ return rolActual()==='ADMIN'; }
 function esAuditor(){ return rolActual()==='AUDITOR'; }
 /* SUP: no toca objetivos ni parámetros, pero autoriza cancelaciones y aclaraciones */
 function puedeAutorizar(){ return rolActual()==='ADMIN' || rolActual()==='SUP'; }
-/* Confirma la dispersión de gasto al operador: el auditor y el administrador */
-function puedeDispersar(){ return rolActual()==='ADMIN' || rolActual()==='AUDITOR'; }
+/* Confirma la dispersión de gasto al operador: exclusivo del auditor.
+   El administrador conserva solo la posibilidad de revertirla, como respaldo
+   si se confirmó por error. */
+function puedeDispersar(){ return rolActual()==='AUDITOR'; }
+function puedeRevertirDispersion(){ return rolActual()==='ADMIN'; }
 function etiquetaRol(rol){
   const r = String(rol||'').toUpperCase();
   return r==='ADMIN'? 'ADMINISTRADOR' : r==='SUP'? 'SUPERVISOR' : r==='AUDITOR'? 'AUDITOR' : 'OPERATIVO';
@@ -2060,8 +2063,9 @@ function abrirLiq(id){
 }
 
 /* Botón de Dispersión: confirma frente al operador los gastos ya liquidados.
-   Solo aparece cuando el viaje está LIQUIDADO. Verde y fijo si ya se
-   dispersó; gris y activable (para auditor o admin) mientras esté pendiente. */
+   Solo aparece cuando el viaje está LIQUIDADO. Gris "Dispersar" mientras esté
+   pendiente —exclusivo del auditor—; verde "Dispersado" una vez confirmada
+   —solo el administrador puede revertirla, como respaldo ante un error. */
 function pintarBotonDispersion(id, l){
   const btn = $('btnDispersar');
   const liquidado = estaLiquidado(id);
@@ -2071,20 +2075,20 @@ function pintarBotonDispersion(id, l){
   const disp = dispersado(id);
   btn.classList.toggle('btn-disp-ok', disp);
   btn.classList.toggle('btn-disp-pend', !disp);
-  btn.textContent = disp? '✔ Dispersado' : '○ Dispersión pendiente';
+  btn.textContent = disp? '✔ Dispersado' : 'Dispersar';
 
   if(disp){
     $('lqDispInfo').innerHTML =
       `Dispersado por <b>${esc(l.DISPERSADO_POR||'—')}</b> el <b>${fmtFecha(l.FECHA_DISPERSION)||'—'}</b>.`;
     // Solo el administrador puede revertir una dispersión ya confirmada
-    btn.disabled = !esAdmin();
-    btn.title = esAdmin()? 'Revertir la dispersión' : 'Ya fue confirmada; solo un administrador puede revertirla';
+    btn.disabled = !puedeRevertirDispersion();
+    btn.title = puedeRevertirDispersion()? 'Revertir la dispersión' : 'Ya fue confirmada; solo un administrador puede revertirla';
   } else {
     $('lqDispInfo').innerHTML = puedeDispersar()
       ? 'Revisa que los gastos capturados sean los reales antes de confirmar.'
-      : 'Solo un auditor o un administrador puede confirmar la dispersión.';
+      : 'Solo un usuario auditor puede confirmar la dispersión.';
     btn.disabled = !puedeDispersar();
-    btn.title = puedeDispersar()? '' : 'Solo un auditor o un administrador puede confirmar la dispersión';
+    btn.title = puedeDispersar()? '' : 'Solo un usuario auditor puede confirmar la dispersión';
   }
 
   aplicarCandadoDispersion(disp);
@@ -2273,8 +2277,9 @@ $('btnAutorizar').addEventListener('click', async ()=>{
   }
 });
 
-/* Dispersión: el auditor (o el admin) confirma que los gastos que se le van
-   a pagar al operador coinciden con lo real. Solo aplica a viajes liquidados. */
+/* Dispersión: exclusiva del auditor, confirma que los gastos que se le van a
+   pagar al operador coinciden con lo real. Solo aplica a viajes liquidados.
+   El administrador solo puede revertir una ya confirmada. */
 $('btnDispersar').addEventListener('click', async ()=>{
   if(!liqEditando) return;
   const s = DB.SOLICITUDES.find(x=>String(x.ID)===String(liqEditando)); if(!s) return;
@@ -2283,7 +2288,7 @@ $('btnDispersar').addEventListener('click', async ()=>{
   }
 
   if(dispersado(liqEditando)){
-    if(!esAdmin()) return;   // el botón ya estaba deshabilitado, por si acaso
+    if(!puedeRevertirDispersion()) return;   // el botón ya estaba deshabilitado, por si acaso
     if(!confirm('Esta dispersión ya está confirmada. ¿Revertirla a pendiente?')) return;
     const reg = Object.assign({}, l, { DISPERSION:'NO', DISPERSADO_POR:'', FECHA_DISPERSION:'' });
     if(await apiEnviar({action:'dispersar', record:reg})){
