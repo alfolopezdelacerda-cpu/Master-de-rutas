@@ -75,13 +75,14 @@ Se puede llenar a mano en el Sheet, o desde **Administración → Casetas**
 |----|---------|--------|----------|-----|--------|
 
 - `ACTIVO` — `SI` / `NO`
-- `ROL` — uno de tres:
+- `ROL` — uno de cuatro:
 
-| Rol | Administración | Objetivos y parámetros | Autoriza aclaraciones y cancelaciones |
-|---|---|---|---|
-| `ADMIN` | sí | sí | sí |
-| `SUP` | no | no | sí |
-| `OPERATIVO` | no | no | no |
+| Rol | Administración | Objetivos y parámetros | Autoriza aclaraciones y cancelaciones | Confirma dispersión | Pestañas visibles |
+|---|---|---|---|---|---|
+| `ADMIN` | sí | sí | sí | sí | todas |
+| `SUP` | no | no | sí | no | todas menos Administración |
+| `AUDITOR` | no | no | no | sí | solo Liquidación, Pre-Nómina, Indicadores |
+| `OPERATIVO` | no | no | no | no | todas menos Administración |
 
 Mientras la hoja `USUARIOS` esté vacía, la app permite entrar con **admin /
 admin** para poder crear el primer administrador. En cuanto exista al menos un
@@ -98,7 +99,8 @@ pide el **motivo** y las **credenciales de un supervisor o administrador**
 elimina. El backend archiva primero y borra después, así que si el archivado
 falla la solicitud original no se pierde. Se consulta en
 **Administración → Canceladas**, y el borrado masivo de solicitudes está
-deshabilitado para que no haya forma de saltarse el paso.
+deshabilitado para que no haya forma de saltarse el paso. Una solicitud cuyo
+gasto **ya fue dispersado** no se puede cancelar (ver más abajo).
 
 ### Hoja `BITACORA`
 
@@ -166,36 +168,56 @@ botón de autorizar.
 Mientras un viaje esté en aclaración no cuenta como liquidado, así que tampoco
 cuenta para el pago en pre-nómina.
 
-### Odómetro en la sábana
+### La sábana: dos momentos de escritura, ubicados por CP
 
-Al liquidar (o al mandar a aclaración), el kilometraje del odómetro se escribe
-en la hoja **Transportadora** de la sábana:
+La app escribe en la hoja **Transportadora** de la sábana en dos momentos
+distintos, cada uno con sus propias columnas fijas, y **ambos ubican el
+renglón por carta porte (CP)** — no por folio:
+
+**Al guardar la Solicitud de Gasto** (antes del viaje, lo que se le asigna al
+operador):
+
+- **AF** — combustible asignado (el importe en $, no los litros)
+- **AI** — casetas
+- **AJ** — pensión
+- **AK** — viáticos (se toma del campo *Comida* de la solicitud; es el único
+  candidato que existe en ese formulario — si tu sábana entiende "viáticos"
+  como otra cosa, dímelo y lo ajusto)
+
+**Al liquidar** (al terminar el viaje, lo real ya conciliado):
 
 - **AC** — odómetro inicial (KM inicial)
 - **AD** — odómetro final (KM final)
+- **AL** — maniobras
+- **AM** — talachas
+- **AN** — dádivas
 
-Estas dos van por **posición de columna**, no por nombre de encabezado, así que
-funcionan sin importar cómo se titulen ahí. El resto de los campos se sigue
-colocando por coincidencia de encabezado. Si en la sábana cambian de lugar, se
-ajusta en la constante `SABANA_COLUMNAS_FIJAS` del Apps Script.
+Todas van por **posición de columna**, no por nombre de encabezado, así que
+funcionan sin importar cómo se titulen ahí. Si en la sábana cambian de lugar,
+se ajusta en `SABANA_COLUMNAS_SOLICITUD` y `SABANA_COLUMNAS_LIQUIDACION` del
+Apps Script.
 
-Si el folio ya existe en la sábana se actualiza en lugar de duplicarse, y si la
-hoja tiene menos de 30 columnas el renglón se extiende hasta AD.
+**Cómo se ubica el renglón:** la app busca en la sábana una columna cuyo
+nombre sea `CP`, `Carta Porte` o similar, y ahí busca la primera carta porte de
+la solicitud (`CARTAS_PORTE` puede traer varias, separadas por coma — se usa
+la primera). Si la sábana no tiene columna de CP, se cae a buscar por `FOLIO`
+como antes. Si el renglón no existe, se crea uno nuevo y se siembra la columna
+de CP para que la siguiente escritura (la de liquidación) lo vuelva a
+encontrar. El resto de los campos (folio, operador, ruta, cliente…) se sigue
+colocando por coincidencia de encabezado, y esos se reconocen **sin distinguir
+mayúsculas, acentos ni signos**: `Folio`, `FOLIO` y `folio` son la misma
+columna, y `KM inicial` corresponde a `KM_INICIAL`.
 
-Los encabezados se reconocen **sin distinguir mayúsculas, acentos ni signos**:
-`Folio`, `FOLIO` y `folio` son la misma columna, y `KM inicial` corresponde a
-`KM_INICIAL`. Lo mismo para localizar la columna del folio con la que se
-identifica el renglón del viaje.
+Un fallo al escribir en la sábana no tumba la operación que lo originó (guardar
+la solicitud o liquidar): esa queda guardada igual en el Sheet, y la app
+**muestra un aviso en pantalla** explicando qué pasó.
 
-Un fallo al escribir en la sábana no tumba la liquidación: esa queda guardada
-igual, y ahora la app **muestra un aviso en pantalla** explicando qué pasó
-(antes fallaba en silencio).
-
-**Si el odómetro no aparece en la sábana**, corre el menú
-**Master de Ruta → Probar sábana** dentro del Google Sheet. Sin modificar nada,
-te dice si el ID está configurado, si la sábana se puede abrir, qué hojas tiene,
-si encontró la hoja `Transportadora`, qué encabezado hay hoy en AC y AD, y si
-existe una columna de folio con la que emparejar el renglón del viaje.
+**Si algo no llega a la sábana**, corre el menú **Master de Ruta → Probar
+sábana** dentro del Google Sheet. Sin modificar nada, te dice si el ID está
+configurado, si la sábana se puede abrir, qué hojas tiene, si encontró
+`Transportadora`, qué encabezado hay hoy en cada una de las columnas fijas, y
+si existe una columna de CP (o folio, como respaldo) con la que ubicar el
+renglón del viaje.
 
 ## Objetivo semanal de KM
 
@@ -251,6 +273,41 @@ objetivos de cumplimiento. Todo lo demás aparece deshabilitado.
 Igual que el resto del control de acceso, esto es un candado de interfaz: evita
 errores y cambios indebidos en el uso normal, pero no sustituye una validación
 en el servidor.
+
+## Dispersión de gastos
+
+En **Liquidación**, junto al botón *Liquidar viaje* aparece el botón
+**Dispersión** — solo cuando el servicio ya está liquidado:
+
+- **Gris, "○ Dispersión pendiente"** — todavía no se confirma. Un auditor o un
+  administrador puede darle clic; antes de mandar la confirmación se muestra un
+  resumen de los montos capturados (combustible real, casetas, pensión,
+  viáticos, maniobras, talachas, dádivas, estacionamientos) para revisarlos.
+- **Verde, "✔ Dispersado"** — ya se confirmó. Muestra quién y cuándo.
+
+Al confirmarse, **los campos del servicio quedan bloqueados** (odómetro, fecha
+finalizado, todos los gastos, la casilla de evidencia) y los botones de
+Liquidar / Enviar a aclaración se ocultan: ya no se puede modificar información
+de un servicio cuyo gasto ya se le pagó al operador. Mientras esté pendiente,
+los campos se editan con normalidad. Una solicitud cuyo gasto ya se dispersó
+tampoco se puede cancelar.
+
+Solo un **administrador** puede revertir una dispersión ya confirmada (por si
+se marcó por error); un auditor no puede deshacer su propia confirmación desde
+la app.
+
+En **Liquidación** también hay una tarjeta discreta que dice cuántos servicios
+liquidados **hoy** siguen pendientes de dispersar (por ejemplo, *"3 servicios
+pendientes de dispersar hoy"*), y la tabla de servicios trae una columna con el
+estado de cada uno.
+
+### Rol Auditor
+
+Ve únicamente las pestañas **Liquidación**, **Pre-Nómina** e **Indicadores**;
+no entra a Rutas, Solicitud de Gasto ni Administración. Su función es revisar
+que los gastos capturados en Liquidación sean los reales antes de confirmar la
+dispersión. En Pre-Nómina tiene los mismos candados que un operativo o
+supervisor: no modifica objetivos, sueldo ni montos.
 
 ## Bitácora
 

@@ -47,7 +47,7 @@ var HOJAS = {
                 'ECONOMICO','PLACAS','TIPO_UNIDAD','OPERADOR','REMOLQUE1','REMOLQUE2','DOLLY',
                 'RUTA','CLIENTE','TIPO_SERVICIO','TIPO_VIAJE','KM','KM_CARGADOS','KM_VACIOS',
                 'COMBUSTIBLE','RENDIMIENTO','LITROS_COMBUSTIBLE','LITROS_UREA','DEPOSITO_UREA',
-                'PENSION','COMIDA','COSTO_CASETAS','TARIFA_CASETAS','EJECUTIVO','TOTAL'],
+                'PENSION','COMIDA','COSTO_CASETAS','TARIFA_CASETAS','COMBUSTIBLE_ASIGNADO','EJECUTIVO','TOTAL'],
 
   NOMINAS: ['ID','OPERADOR','MODO','PERIODO','SEMANAS','SUELDO_BRUTO','IMPUESTO_PCT','IMPUESTOS',
             'SUELDO_NETO','BONO_CUMPLIMIENTO','KM','KM_RUTA','KM_ODOMETRO','FUENTE_KM',
@@ -56,14 +56,16 @@ var HOJAS = {
             'APOYO_VIAJE','APOYO_PCT','APOYO_AUTORIZADO','AUTORIZADO_POR',
             'TOTAL','REGISTRADO_POR','FECHA_REGISTRO'],
 
-  /* ESTADO: LIQUIDADO | ACLARACION */
+  /* ESTADO: LIQUIDADO | ACLARACION. DISPERSION: SI | NO — confirmación del
+     auditor de que los gastos capturados son los que se le pagan al operador. */
   LIQUIDACION: ['ID','FOLIO','CARTAS_PORTE','FECHA_CARGA','FECHA_FINALIZADO','RUTA','CLIENTE','OPERADOR',
                 'COMB_PROYECTADO','CASETAS_PROYECTADO','COMB_REAL','CASETAS_REAL',
                 'PENSION_LIQ','VIATICOS','MANIOBRAS','TALACHAS','DADIVAS','ESTACIONAMIENTOS',
                 'ODOMETRO_INICIAL','ODOMETRO_FINAL','KM_ODOMETRO','KM_RUTA','DIFERENCIA_KM','REVISAR_KM',
                 'EVIDENCIA','ESTADO','FECHA_LIQUIDACION','LIQUIDADO_POR',
                 'MOTIVO_ACLARACION','ACLARACION_POR','ACLARACION_FECHA',
-                'AUTORIZADO_POR','FECHA_AUTORIZACION','NOTA_AUTORIZACION'],
+                'AUTORIZADO_POR','FECHA_AUTORIZACION','NOTA_AUTORIZACION',
+                'DISPERSION','DISPERSADO_POR','FECHA_DISPERSION'],
 
   /* Solicitudes canceladas: copia completa de la solicitud más el motivo y
      las firmas de quién la cancela y quién la autoriza. */
@@ -102,12 +104,26 @@ var HOJA_SABANA = 'Transportadora';
 
 /**
  * Columnas de la sábana que se escriben por POSICIÓN, no por nombre de
- * encabezado. El kilometraje del odómetro va a AC y AD de la hoja
- * Transportadora. Si en la sábana cambian de lugar, se ajusta aquí.
+ * encabezado. Si en la sábana cambian de lugar, se ajusta aquí.
+ *
+ * Se escriben en dos momentos distintos, cada uno con su propio grupo de
+ * columnas fijas:
+ *  - Al GUARDAR LA SOLICITUD (antes de viajar): lo que se le asigna al
+ *    operador para el servicio.
+ *  - Al LIQUIDAR (al terminar el viaje): lo real, ya conciliado.
  */
-var SABANA_COLUMNAS_FIJAS = [
-  { columna: 'AC', campo: 'ODOMETRO_INICIAL' },   // KM inicial
-  { columna: 'AD', campo: 'ODOMETRO_FINAL'   }    // KM final
+var SABANA_COLUMNAS_SOLICITUD = [
+  { columna: 'AF', campo: 'COMBUSTIBLE_ASIGNADO' },
+  { columna: 'AI', campo: 'COSTO_CASETAS'        },
+  { columna: 'AJ', campo: 'PENSION'              },
+  { columna: 'AK', campo: 'COMIDA'               }   // "Viáticos" en la sábana
+];
+var SABANA_COLUMNAS_LIQUIDACION = [
+  { columna: 'AC', campo: 'ODOMETRO_INICIAL' },       // KM inicial
+  { columna: 'AD', campo: 'ODOMETRO_FINAL'   },       // KM final
+  { columna: 'AL', campo: 'MANIOBRAS'        },
+  { columna: 'AM', campo: 'TALACHAS'         },
+  { columna: 'AN', campo: 'DADIVAS'          }
 ];
 
 /* ------------------------------------------------------------------ *
@@ -139,7 +155,12 @@ function doPost(e) {
     asignarIdsFaltantes();
 
     switch (p.action) {
-      case 'upsert':      upsert(p.sheet, p.record);        break;
+      case 'upsert':
+        upsert(p.sheet, p.record);
+        // Al guardar una solicitud de gasto se copia a la sábana lo que se
+        // le asigna al operador, ubicando el renglón por CP.
+        if (p.sheet === 'SOLICITUDES') escribirSabanaSolicitud(p.record);
+        break;
       case 'bulkUpsert':  bulkUpsert(p.sheet, p.records);   break;
       case 'delete':      borrar(p.sheet, [p.id]);          break;
       case 'deleteMany':  borrar(p.sheet, p.ids || []);     break;
@@ -147,6 +168,7 @@ function doPost(e) {
       case 'setConfig':   setConfig(p.clave, p.valor);      break;
       case 'liquidar':    liquidar(p.record);               break;
       case 'cancelarSolicitud': cancelarSolicitud(p.record); break;
+      case 'dispersar':   upsert('LIQUIDACION', p.record);  break;
       default:
         throw new Error('Acción no reconocida: ' + p.action);
     }
@@ -469,6 +491,15 @@ function registrarAccion(p) {
                   ' · KM: ' + p.record.KM + ' (' + p.record.FUENTE_KM + ')';
       }
       break;
+    case 'dispersar':
+      hoja = 'LIQUIDACION';
+      registro = (p.record && p.record.FOLIO) || '';
+      var esDispersion = p.record && String(p.record.DISPERSION).toUpperCase() === 'SI';
+      accion = esDispersion ? 'DISPERSIÓN CONFIRMADA' : 'DISPERSIÓN REVERTIDA';
+      detalle = esDispersion
+        ? 'Confirmada por: ' + (p.record && p.record.DISPERSADO_POR)
+        : 'Revertida a pendiente';
+      break;
     case 'bulkUpsert':
       accion = 'IMPORTACIÓN';
       detalle = (p.records ? p.records.length : 0) + ' registro(s) importados';
@@ -630,35 +661,48 @@ var avisoSabana = '';
 
 function liquidar(record) {
   upsert('LIQUIDACION', record);
-  avisoSabana = '';
+  intentarEscribirSabana(record, SABANA_COLUMNAS_LIQUIDACION, 'liquidación');
+}
 
+/**
+ * Se llama al guardar una Solicitud de Gasto: copia a la sábana lo que se le
+ * asigna al operador para el servicio (combustible, casetas, pensión,
+ * viáticos), ubicando el renglón por CP.
+ */
+function escribirSabanaSolicitud(record) {
+  intentarEscribirSabana(record, SABANA_COLUMNAS_SOLICITUD, 'solicitud de gasto');
+}
+
+/** Envuelve escribirSabana(): nunca lanza, y deja el resultado en avisoSabana
+    para que el front se entere si algo falló (antes fallaba en silencio). */
+function intentarEscribirSabana(record, columnasFijas, contexto) {
+  avisoSabana = '';
   var cfg = leerConfig();
   var idSabana = String(cfg.SABANA_SHEET_ID || '').trim();
   if (!idSabana) {
-    avisoSabana = 'No hay un ID de sábana configurado, así que el odómetro no se copió a la hoja Transportadora. ' +
-                  'Captúralo en Administración → ID del Google Sheet de la sábana.';
+    avisoSabana = 'No hay un ID de sábana configurado, así que los datos de ' + contexto +
+                  ' no se copiaron a la hoja Transportadora. Captúralo en Administración → ' +
+                  'ID del Google Sheet de la sábana.';
     return;
   }
-
   try {
-    escribirSabana(idSabana, record);
+    escribirSabana(idSabana, record, columnasFijas);
   } catch (err) {
-    // La liquidación ya quedó guardada: no se tumba la operación por la sábana
-    avisoSabana = 'La liquidación se guardó, pero no se pudo escribir en la sábana: ' +
+    // El registro ya quedó guardado en el Sheet: no se tumba la operación por la sábana
+    avisoSabana = 'Se guardó, pero no se pudo escribir en la sábana (' + contexto + '): ' +
                   String(err && err.message || err);
     Logger.log(avisoSabana);
   }
 }
 
 /**
- * Agrega el renglón a la sábana haciendo coincidir los encabezados por nombre,
- * así que respeta el orden de columnas que ya tenga esa hoja. Las columnas de
- * la sábana que no existan en el registro se dejan vacías.
- *
- * Excepción: el kilometraje del odómetro va SIEMPRE a las columnas fijas
- * AC y AD (ver SABANA_COLUMNAS_FIJAS), sin importar cómo se llamen ahí.
+ * Agrega o actualiza el renglón de la sábana. El renglón se ubica por la
+ * COLUMNA DE CP (carta porte) de la sábana; si esa columna no existe, se cae
+ * a ubicarlo por FOLIO. Los campos comunes (folio, operador, ruta…) se
+ * escriben por coincidencia de encabezado; las columnas indicadas en
+ * `columnasFijas` van SIEMPRE a esa posición, sin importar cómo se llamen ahí.
  */
-function escribirSabana(idSabana, record) {
+function escribirSabana(idSabana, record, columnasFijas) {
   var hoja = SpreadsheetApp.openById(idSabana).getSheetByName(HOJA_SABANA);
   if (!hoja) throw new Error('La sábana no tiene una hoja llamada ' + HOJA_SABANA);
 
@@ -667,18 +711,31 @@ function escribirSabana(idSabana, record) {
 
   // El renglón se extiende si las columnas fijas caen más allá del encabezado
   var ancho = heads.length;
-  SABANA_COLUMNAS_FIJAS.forEach(function (c) {
+  columnasFijas.forEach(function (c) {
     var n = letraAColumna(c.columna);
     if (n > ancho) ancho = n;
   });
 
-  // Si ya existe el folio, se actualiza en lugar de duplicar
-  var colFolio = buscarColumnaFolio(heads);
+  // El renglón se ubica por CP; si la sábana no tiene columna de CP, por folio
+  var colCP = buscarColumnaCP(heads);
+  var usaCP = colCP >= 0;
+  var colClave = usaCP ? colCP : buscarColumnaFolio(heads);
+  var valorClave = usaCP ? cpPrincipal(record.CARTAS_PORTE) : record.FOLIO;
+
+  if (colClave < 0) {
+    throw new Error('La sábana no tiene una columna de CP ni de FOLIO con la que ubicar el renglón del viaje');
+  }
+  if (!valorClave) {
+    throw new Error(usaCP
+      ? 'La solicitud no tiene carta porte capturada: no se puede ubicar el renglón por CP'
+      : 'La solicitud no tiene folio');
+  }
+
   var fila = -1;
-  if (colFolio >= 0 && hoja.getLastRow() >= 2) {
-    var folios = hoja.getRange(2, colFolio + 1, hoja.getLastRow() - 1, 1).getValues();
-    for (var i = 0; i < folios.length; i++) {
-      if (String(folios[i][0]) === String(record.FOLIO)) { fila = i + 2; break; }
+  if (hoja.getLastRow() >= 2) {
+    var claves = hoja.getRange(2, colClave + 1, hoja.getLastRow() - 1, 1).getValues();
+    for (var i = 0; i < claves.length; i++) {
+      if (String(claves[i][0]).trim() === String(valorClave).trim()) { fila = i + 2; break; }
     }
   }
 
@@ -698,16 +755,34 @@ function escribirSabana(idSabana, record) {
     for (var k = 0; k < ancho; k++) {
       valores.push(campoDe[k] ? record[campoDe[k]] : '');
     }
+    // Si el renglón es nuevo y la sábana usa CP, hay que sembrar la columna
+    // de CP: si no, el próximo write no lo va a poder ubicar.
+    if (usaCP) valores[colCP] = valorClave;
     fila = hoja.getLastRow() + 1;
   }
 
   // Columnas fijas por posición: mandan sobre lo que diga el encabezado
-  SABANA_COLUMNAS_FIJAS.forEach(function (c) {
+  columnasFijas.forEach(function (c) {
     if (record[c.campo] === undefined || record[c.campo] === '') return;
     valores[letraAColumna(c.columna) - 1] = record[c.campo];
   });
 
   hoja.getRange(fila, 1, 1, ancho).setValues([valores]);
+}
+
+/** Primera carta porte de la lista (la solicitud puede traer varias). */
+function cpPrincipal(cartasPorte) {
+  var partes = String(cartasPorte || '').split(/[,\s]+/).filter(function (x) { return x; });
+  return partes.length ? partes[0] : '';
+}
+
+/** Busca la columna de CP tolerando mayúsculas, acentos y puntuación. */
+function buscarColumnaCP(heads) {
+  for (var i = 0; i < heads.length; i++) {
+    var h = clave(heads[i]);
+    if (h === 'CP' || h === 'CARTAPORTE' || h === 'CARTASPORTE' || h === 'NOCP' || h === 'NUMCP' || h === 'NCP') return i;
+  }
+  return -1;
 }
 
 /**
@@ -749,18 +824,33 @@ function probarSabana() {
   msg.push('Hoja "' + HOJA_SABANA + '" encontrada: ' + heads.length + ' columnas, ' +
            Math.max(hoja.getLastRow() - 1, 0) + ' renglones de datos.');
 
-  SABANA_COLUMNAS_FIJAS.forEach(function (c) {
+  msg.push('');
+  msg.push('Columnas fijas — al guardar la SOLICITUD (combustible, casetas, pensión, viáticos):');
+  SABANA_COLUMNAS_SOLICITUD.forEach(function (c) {
+    var n = letraAColumna(c.columna);
+    msg.push('  ' + c.columna + ' (columna ' + n + ') ← ' + c.campo +
+             '   encabezado actual: "' + (heads[n - 1] || '(vacío)') + '"');
+  });
+  msg.push('Columnas fijas — al LIQUIDAR (odómetro, maniobras, talachas, dádivas):');
+  SABANA_COLUMNAS_LIQUIDACION.forEach(function (c) {
     var n = letraAColumna(c.columna);
     msg.push('  ' + c.columna + ' (columna ' + n + ') ← ' + c.campo +
              '   encabezado actual: "' + (heads[n - 1] || '(vacío)') + '"');
   });
 
-  var colFolio = buscarColumnaFolio(heads);
-  msg.push(colFolio >= 0
-    ? 'Columna de folio: ' + (colFolio + 1) + ' ("' + heads[colFolio] + '"). Los folios ya existentes se actualizan.'
-    : 'NO hay columna de folio: cada liquidación AGREGA un renglón nuevo al final ' +
-      'en lugar de completar el renglón del viaje. Si esperabas que llenara un renglón ya existente, ' +
-      'ese es el motivo: agrega una columna FOLIO a la hoja Transportadora.');
+  msg.push('');
+  var colCP = buscarColumnaCP(heads);
+  if (colCP >= 0) {
+    msg.push('Columna de CP: ' + (colCP + 1) + ' ("' + heads[colCP] + '"). El renglón se ubica por CP.');
+  } else {
+    var colFolio = buscarColumnaFolio(heads);
+    if (colFolio >= 0) {
+      msg.push('NO hay columna de CP; se ubica por FOLIO: columna ' + (colFolio + 1) + ' ("' + heads[colFolio] + '").');
+    } else {
+      msg.push('NO hay columna de CP ni de FOLIO: cada escritura AGREGA un renglón nuevo al final ' +
+               'en lugar de completar el renglón del viaje. Agrega una columna CP (o FOLIO) a la hoja Transportadora.');
+    }
+  }
 
   return reportar(msg.join('\n'));
 }
