@@ -2002,16 +2002,16 @@ function etiquetaEstadoLiq(solId){
 }
 function dispersado(solId){ const l=liqDe(solId); return !!(l && String(l.DISPERSION).toUpperCase()==='SI'); }
 function etiquetaDispersion(solId){
-  if(!estaLiquidado(solId)) return '<span class="tag">—</span>';
+  const l = liqDe(solId);
+  if(!l) return '<span class="tag">—</span>';
   return dispersado(solId)
     ? '<span class="tag ok-disp">Dispersado</span>'
     : '<span class="tag pend-disp">Pendiente</span>';
 }
-/* Cuántos servicios liquidados HOY siguen pendientes de dispersar */
+/* Cuántos servicios HOY siguen pendientes de dispersar */
 function pendientesDeDispersarHoy(){
   const hoy = hoyISO();
   return DB.LIQUIDACION.filter(l=>
-    String(l.ESTADO).toUpperCase()==='LIQUIDADO' &&
     String(l.DISPERSION).toUpperCase()!=='SI' &&
     String(l.FECHA_LIQUIDACION||'').slice(0,10)===hoy
   ).length;
@@ -2069,8 +2069,8 @@ function abrirLiq(id){
 function pintarBotonDispersion(id, l){
   const btn = $('btnDispersar');
   const liquidado = estaLiquidado(id);
-  btn.style.display = liquidado? '' : 'none';
-  if(!liquidado){ $('lqDispInfo').innerHTML=''; return; }
+  btn.style.display = !liquidado? '' : 'none';
+  if(liquidado){ $('lqDispInfo').innerHTML=''; return; }
 
   const disp = dispersado(id);
   btn.classList.toggle('btn-disp-ok', disp);
@@ -2283,8 +2283,8 @@ $('btnAutorizar').addEventListener('click', async ()=>{
 $('btnDispersar').addEventListener('click', async ()=>{
   if(!liqEditando) return;
   const s = DB.SOLICITUDES.find(x=>String(x.ID)===String(liqEditando)); if(!s) return;
-  const l = liqDe(liqEditando); if(!l || String(l.ESTADO).toUpperCase()!=='LIQUIDADO'){
-    toast('Solo se puede dispersar un viaje ya liquidado.', true); return;
+  const l = liqDe(liqEditando); if(!l){
+    toast('Falta información del viaje para dispersar.', true); return;
   }
 
   if(dispersado(liqEditando)){
