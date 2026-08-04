@@ -193,6 +193,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 <nav><div class="tabs">
   <button class="tab active" data-sec="rutas">Rutas</button>
   <button class="tab" data-sec="solicitud">Solicitud de Gasto</button>
+  <button class="tab" data-sec="dispersiones">Dispersiones</button>
   <button class="tab" data-sec="liquidacion">Liquidación</button>
   <button class="tab" data-sec="prenomina">Pre-Nómina</button>
   <button class="tab" data-sec="indicadores">Indicadores</button>
@@ -263,6 +264,9 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
   <div class="card">
     <h2>Solicitud de gasto <span class="tag">OPE-FOR-06 · V3</span></h2>
     <div class="sub">Los datos de unidad y ruta se llenan en automático desde los catálogos.</div>
+    <div id="sSolBloqueada" style="display:none;background:var(--surface2);border:1px solid var(--ok);border-radius:10px;padding:12px 14px;margin-bottom:14px">
+      🔒 Esta solicitud ya fue <b>dispersada</b> al operador y no se puede modificar. Si hay un error, debe cancelarse y volver a autorizarse por un supervisor.
+    </div>
 
     <div class="grid g4">
       <div><label>Folio (automático)</label><input id="sFolio" readonly></div>
@@ -345,9 +349,55 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 
   <div class="card">
     <h2>Solicitudes recientes</h2>
+    <div class="sub">Haz clic en un renglón para abrirla y modificarla, mientras siga pendiente de dispersión.</div>
     <div class="twrap" style="max-height:420px;overflow-y:auto"><table>
-      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr><th>Folio</th><th>Fecha serv.</th><th>Ruta</th><th>Operador</th><th>Económico</th><th class="right">KM</th><th class="right">Total</th><th></th></tr></thead>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr><th>Folio</th><th>Fecha serv.</th><th>Ruta</th><th>Operador</th><th>Económico</th><th class="right">KM</th><th class="right">Total</th><th>Dispersión</th><th></th></tr></thead>
       <tbody id="tbodySol"></tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============ DISPERSIONES ============ -->
+<section class="sec" id="sec-dispersiones">
+  <div class="card">
+    <h2>Dispersión de gastos</h2>
+    <div class="sub">El auditor revisa la solicitud de gasto y confirma la dispersión al operador. Mientras esté pendiente, el área de operaciones puede seguir modificando la solicitud (operador, unidad, ruta, etc.). Una vez dispersada, la solicitud queda bloqueada.</div>
+    <div class="mini" id="dispPend" style="margin-bottom:10px"></div>
+    <div class="grid g3">
+      <div style="grid-column:1/3"><label>Buscar</label><input id="dxBusca" placeholder="🔍 Folio, operador, ruta…"></div>
+      <div><label>Estado</label><select id="dxEstado"><option value="todos">Todos</option><option value="pendientes">Pendientes</option><option value="dispersados">Dispersados</option></select></div>
+    </div>
+  </div>
+
+  <div class="card" id="dispDetalle" style="display:none">
+    <h3>Solicitud · <span id="dispFolioTit"></span></h3>
+    <div class="grid g4" style="margin-bottom:12px">
+      <div><label>Folio</label><input id="dFolio" readonly></div>
+      <div><label>Fecha de servicio</label><input id="dFecha" readonly></div>
+      <div><label>Ruta</label><input id="dRuta" readonly></div>
+      <div><label>Operador</label><input id="dOperador" readonly></div>
+    </div>
+    <div class="grid g3" style="margin-bottom:12px">
+      <div><label>Combustible asignado ($)</label><input id="dComb" readonly class="num"></div>
+      <div><label>Casetas ($)</label><input id="dCasetas" readonly class="num"></div>
+      <div><label>Pensión ($)</label><input id="dPension" readonly class="num"></div>
+      <div><label>Comida ($)</label><input id="dComida" readonly class="num"></div>
+      <div><label>Depósito de urea ($)</label><input id="dUrea" readonly class="num"></div>
+      <div><label>Total ($)</label><input id="dTotal" readonly class="num"></div>
+    </div>
+    <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+      <button class="btn btn-s" id="btnDispersarSol" style="background:var(--chip);color:var(--ink2)">Dispersar</button>
+      <button class="btn btn-s" id="btnDispCerrar">Cerrar</button>
+    </div>
+    <div class="mini" id="dispInfo" style="margin-top:8px"></div>
+  </div>
+
+  <div class="card">
+    <div class="twrap" style="max-height:500px;overflow-y:auto"><table>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
+        <th>Folio</th><th>Fecha serv.</th><th>Operador</th><th>Económico</th><th>Ruta</th><th class="right">Total</th><th>Estado</th><th></th>
+      </tr></thead>
+      <tbody id="tbodyDisp"></tbody>
     </table></div>
   </div>
 </section>
@@ -357,7 +407,6 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
   <div class="card">
     <h2>Liquidación de viajes</h2>
     <div class="sub">Busca el servicio por carta porte, folio, operador o ruta. Captura los datos reales y los gastos adicionales. Un viaje <b>no liquidado</b> no contará para el pago en pre-nómina.</div>
-    <div class="mini" id="liqDispPend" style="margin-bottom:10px"></div>
     <div class="grid g3">
       <div style="grid-column:1/3"><label>Buscar</label><input id="xBusca" placeholder="🔍 Carta porte, folio, operador o ruta…"></div>
       <div><label>Estado</label><select id="xEstado"><option value="todos">Todos</option><option value="pendientes">Pendientes</option><option value="aclaracion">En aclaración</option><option value="liquidados">Liquidados</option></select></div>
@@ -429,10 +478,8 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:12px">
       <label style="display:flex;gap:10px;align-items:center;font-size:14px;text-transform:none;letter-spacing:0;font-weight:700;color:var(--ink)"><input type="checkbox" id="lqEvidencia" style="width:18px;height:18px;min-width:18px"> Entregó evidencia completa</label>
       <button class="btn btn-p" id="btnLiquidar">✔ Liquidar viaje</button>
-      <button class="btn btn-s" id="btnDispersar" style="display:none;background:var(--chip);color:var(--ink2)">Dispersar</button>
       <button class="btn btn-s" id="btnLiqCancelar">Cancelar</button>
     </div>
-    <div class="mini" id="lqDispInfo" style="margin-top:8px"></div>
   </div>
 
   <div class="card">
@@ -441,7 +488,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <th>Folio</th><th>CP</th><th>Operador</th><th>Ruta</th><th>Cliente</th><th>Fecha carga</th>
         <th class="right">Comb. proy.</th><th class="right">Casetas proy.</th>
         <th class="right">KM ruta</th><th class="right">KM odóm.</th>
-        <th>Estado</th><th>Dispersión</th><th></th>
+        <th>Estado</th><th></th>
       </tr></thead>
       <tbody id="tbodyLiq"></tbody>
     </table></div>
@@ -1047,6 +1094,7 @@ document.querySelectorAll('.tab[data-sec]').forEach(b=>b.addEventListener('click
   if(b.dataset.sec==='indicadores') pintarIndicadores();
   if(b.dataset.sec==='prenomina') pintarPrenomina();
   if(b.dataset.sec==='liquidacion') pintarLiquidacion();
+  if(b.dataset.sec==='dispersiones') pintarTablaDispersiones();
 }));
 $('themeBtn').addEventListener('click',()=>{
   const html=document.documentElement;
@@ -1242,6 +1290,7 @@ function editarRuta(id){
    SOLICITUD DE GASTO
 ===================================================== */
 let cartasPorte = [''];
+let solEditando = null;
 
 function folioAuto(){
   const base = cfgNum('FOLIO_INICIAL',2050);
@@ -1449,11 +1498,17 @@ function armarSolicitud(){
   };
 }
 $('btnGuardarSol').addEventListener('click', async ()=>{
-  // Validar cartas porte duplicadas
+  if(solEditando && dispersadoSol(solEditando)){
+    toast('Esta solicitud ya fue dispersada; no se puede modificar.', true); return;
+  }
+  // Validar cartas porte duplicadas (ignorando la propia solicitud si se edita)
   const cpsIngresadas = cartasPorte.filter(Boolean);
   if(cpsIngresadas.length){
     const cpExistentes = new Set();
-    DB.SOLICITUDES.forEach(s=>{ String(s.CARTAS_PORTE||'').split(/[,\s]+/).filter(Boolean).forEach(c=>cpExistentes.add(c)); });
+    DB.SOLICITUDES.forEach(s=>{
+      if(solEditando && String(s.ID)===String(solEditando)) return;
+      String(s.CARTAS_PORTE||'').split(/[,\s]+/).filter(Boolean).forEach(c=>cpExistentes.add(c));
+    });
     const dup = cpsIngresadas.find(c=>cpExistentes.has(c));
     if(dup){
       if(!confirm('⚠ La Carta Porte '+dup+' ya fue registrada en otra solicitud.\n\nRevisa e ingresa otra Carta Porte.\n\n¿Deseas continuar de todos modos?')) return;
@@ -1465,13 +1520,16 @@ $('btnGuardarSol').addEventListener('click', async ()=>{
   if(!$('sOperador').value){ toast('Selecciona al operador.', true); return; }
   if(avisarRutaSoloFull()) return;   // candado: ruta optimizada para Full
   const reg = armarSolicitud();
+  if(solEditando) reg.ID = solEditando;
   if(await apiEnviar({action:'upsert', sheet:'SOLICITUDES', record:reg})){
-    toast('Solicitud '+reg.FOLIO+' guardada en el Sheet');
-    $('sFolio').value = folioAuto();
+    toast('Solicitud '+reg.FOLIO+(solEditando?' actualizada':' guardada')+' en el Sheet');
+    nuevaSolicitud();
   }
 });
 $('btnNuevaSol').addEventListener('click', nuevaSolicitud);
 function nuevaSolicitud(){
+  solEditando = null;
+  aplicarCandadoSolicitud(false);
   cartasPorte=[''];
   ['sEco','sOperador','sRem1','sRem2','sDolly','sRuta','sEjecutivo','sTipoUnidad'].forEach(id=>$(id).value='');
   $('sRutaBusca').value='';
@@ -1486,6 +1544,68 @@ function nuevaSolicitud(){
   $('ureaLBox').style.display='none'; $('ureaDBox').style.display='none';
   $('sRem2').disabled=true; $('sDolly').disabled=true;
   pintarCP(); recalcularSolicitud();
+}
+
+/* Carga una solicitud existente en el formulario para modificarla. Si ya fue
+   dispersada, se muestra en modo de solo lectura: operaciones ya no puede
+   tocar operador, unidad, ruta ni montos. */
+const CAMPOS_SOL_EDITABLES = [
+  'sFechaServ','sArrastre','sEco','sTipoUnidad','sOperador','sRem1','sRem2','sDolly',
+  'sRutaBusca','sPension','sComida','sLitrosUrea','sDepUrea','sEjecutivo'
+];
+function aplicarCandadoSolicitud(bloqueado){
+  CAMPOS_SOL_EDITABLES.forEach(id=>{ $(id).disabled = bloqueado; });
+  document.querySelectorAll('#cpWrap input,#cpWrap button').forEach(el=>el.disabled=bloqueado);
+  $('btnAddCP').style.display = bloqueado? 'none' : '';
+  $('btnGuardarSol').style.display = bloqueado? 'none' : '';
+  $('btnNuevoOp').style.display = bloqueado? 'none' : '';
+  $('sSolBloqueada').style.display = bloqueado? '' : 'none';
+}
+function cargarSolicitudEnFormulario(id){
+  const s = DB.SOLICITUDES.find(x=>String(x.ID)===String(id)); if(!s) return;
+  solEditando = id;
+
+  cartasPorte = String(s.CARTAS_PORTE||'').split(/[,\s]+/).filter(Boolean);
+  if(!cartasPorte.length) cartasPorte=[''];
+  pintarCP();
+
+  $('sFolio').value = s.FOLIO;
+  $('sFechaSol').value = fmtFecha(s.FECHA_SOLICITUD||hoyISO());
+  $('sFechaServ').value = String(s.FECHA_SERVICIO||'').slice(0,10) || hoyISO();
+  $('sArrastre').value = s.TIPO_ARRASTRE || 'CARGADO';
+
+  const u = DB.UNIDADES.find(x=>String(x.ECONOMICO)===String(s.ECONOMICO));
+  $('sEco').value = u? u.ID : '';
+  alCambiarUnidad();
+  if(s.TIPO_UNIDAD){ $('sTipoUnidad').value = s.TIPO_UNIDAD; aplicarTipoUnidad(); }
+
+  const op = DB.OPERADORES.find(x=>String(x.NOMBRE)===String(s.OPERADOR));
+  $('sOperador').value = op? op.ID : '';
+
+  const rem1 = DB.REMOLQUES.find(x=>String(x.ECONOMICO)===String(s.REMOLQUE1));
+  $('sRem1').value = rem1? rem1.ID : '';
+  const rem2 = DB.REMOLQUES.find(x=>String(x.ECONOMICO)===String(s.REMOLQUE2));
+  $('sRem2').value = rem2? rem2.ID : '';
+  const dolly = DB.REMOLQUES.find(x=>String(x.ECONOMICO)===String(s.DOLLY));
+  $('sDolly').value = dolly? dolly.ID : '';
+
+  const r = DB.RUTAS.find(x=>String(x.RUTA)===String(s.RUTA) && String(x.CLIENTE||'')===String(s.CLIENTE||''));
+  $('sRuta').value = r? r.ID : '';
+  $('sRutaBusca').value = r? `${r.RUTA}${r.CLIENTE?' ('+r.CLIENTE+')':''}` : (s.RUTA||'');
+  alCambiarRuta();
+
+  $('sPension').value = num(nf(s.PENSION),2);
+  $('sComida').value = num(nf(s.COMIDA),2);
+  if(nf(s.LITROS_UREA)){ $('sLitrosUrea').value = num(nf(s.LITROS_UREA),1); $('sLitrosUrea').dataset.manual='1'; }
+  if(nf(s.DEPOSITO_UREA)){ $('sDepUrea').value = num(nf(s.DEPOSITO_UREA),2); $('sDepUrea').dataset.manual='1'; }
+
+  const ej = DB.EJECUTIVOS.find(x=>String(x.NOMBRE)===String(s.EJECUTIVO));
+  $('sEjecutivo').value = ej? ej.ID : '';
+
+  recalcularSolicitud();
+  aplicarCandadoSolicitud(dispersadoSol(id));
+  document.querySelector('.tab[data-sec="solicitud"]').click();
+  $('sec-solicitud').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 $('btnPdfSol').addEventListener('click',()=>{
@@ -1523,13 +1643,127 @@ function pintarListaSol(){
   const tb=$('tbodySol'); tb.innerHTML='';
   [...DB.SOLICITUDES].reverse().slice(0,40).forEach(s=>{
     const tr=document.createElement('tr');
+    tr.style.cursor='pointer';
+    tr.title='Clic para abrir y modificar';
+    tr.dataset.sedit=s.ID;
     tr.innerHTML=`<td><b>${esc(s.FOLIO)}</b></td><td>${fmtFecha(s.FECHA_SERVICIO)}</td><td>${esc(s.RUTA)}</td><td>${esc(s.OPERADOR)}</td><td>${esc(s.ECONOMICO)}</td>
       <td class="right num">${num(s.KM,1)}</td><td class="right num">${money(s.TOTAL)}</td>
+      <td>${etiquetaDispersionSol(s.ID)}</td>
       <td><button class="btn btn-d btn-sm" data-srm="${s.ID}" title="Cancelar la solicitud">✕</button></td>`;
     tb.appendChild(tr);
   });
-  tb.querySelectorAll('[data-srm]').forEach(b=>b.addEventListener('click',()=>abrirCancelacion(b.dataset.srm)));
+  tb.querySelectorAll('[data-srm]').forEach(b=>b.addEventListener('click',e=>{ e.stopPropagation(); abrirCancelacion(b.dataset.srm); }));
+  tb.querySelectorAll('[data-sedit]').forEach(tr=>tr.addEventListener('click',()=>cargarSolicitudEnFormulario(tr.dataset.sedit)));
 }
+
+/* =====================================================
+   DISPERSIONES — el auditor confirma el pago del gasto solicitado por
+   operaciones. Vive sobre la SOLICITUD, no sobre la liquidación: puede
+   dispersarse antes o después de que el viaje se liquide.
+===================================================== */
+function pintarTablaDispersiones(){
+  const filtro = ($('dxBusca').value||'').toUpperCase();
+  const estado = $('dxEstado').value;
+  const tb=$('tbodyDisp'); tb.innerHTML='';
+  const filas = [...DB.SOLICITUDES].reverse().filter(s=>{
+    const disp = dispersadoSol(s.ID);
+    if(estado==='pendientes' && disp) return false;
+    if(estado==='dispersados' && !disp) return false;
+    if(!filtro) return true;
+    return [s.FOLIO,s.OPERADOR,s.RUTA].some(v=>String(v).toUpperCase().includes(filtro));
+  });
+  filas.forEach(s=>{
+    const disp = dispersadoSol(s.ID);
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td><b>${esc(s.FOLIO)}</b></td><td>${fmtFecha(s.FECHA_SERVICIO)}</td><td>${esc(s.OPERADOR)}</td><td>${esc(s.ECONOMICO)}</td><td>${esc(s.RUTA)}</td>
+      <td class="right num">${money(s.TOTAL)}</td>
+      <td>${etiquetaDispersionSol(s.ID)}</td>
+      <td><button class="btn btn-${disp?'s':'p'} btn-sm" data-xdisp="${s.ID}">${disp?'Ver':'Revisar'}</button></td>`;
+    tb.appendChild(tr);
+  });
+  if(!filas.length) tb.innerHTML='<tr><td colspan="8" class="mini">Sin solicitudes que coincidan.</td></tr>';
+  tb.querySelectorAll('[data-xdisp]').forEach(b=>b.addEventListener('click',()=>abrirDispersion(b.dataset.xdisp)));
+  pintarResumenDispersion();
+}
+$('dxBusca').addEventListener('input', pintarTablaDispersiones);
+$('dxEstado').addEventListener('change', pintarTablaDispersiones);
+
+let dispEditando = null;
+function abrirDispersion(id){
+  const s = DB.SOLICITUDES.find(x=>String(x.ID)===String(id)); if(!s) return;
+  dispEditando = id;
+  $('dispDetalle').style.display='';
+  $('dispFolioTit').textContent = s.FOLIO;
+  $('dFolio').value = s.FOLIO;
+  $('dFecha').value = fmtFecha(s.FECHA_SERVICIO);
+  $('dRuta').value = s.RUTA;
+  $('dOperador').value = s.OPERADOR;
+  $('dComb').value = money(nf(s.COMBUSTIBLE_ASIGNADO));
+  $('dCasetas').value = money(nf(s.COSTO_CASETAS));
+  $('dPension').value = money(nf(s.PENSION));
+  $('dComida').value = money(nf(s.COMIDA));
+  $('dUrea').value = money(nf(s.DEPOSITO_UREA));
+  $('dTotal').value = money(nf(s.TOTAL));
+  pintarBotonDispersar(id, s);
+  $('dispDetalle').scrollIntoView({behavior:'smooth',block:'start'});
+}
+$('btnDispCerrar').addEventListener('click',()=>{ $('dispDetalle').style.display='none'; dispEditando=null; });
+
+/* Gris "Dispersar" mientras está pendiente —exclusivo del auditor—; verde
+   "Dispersado" una vez confirmada —solo el administrador puede revertirla,
+   como respaldo ante un error. */
+function pintarBotonDispersar(id, s){
+  const btn = $('btnDispersarSol');
+  const disp = dispersadoSol(id);
+  btn.classList.toggle('btn-disp-ok', disp);
+  btn.classList.toggle('btn-disp-pend', !disp);
+  btn.textContent = disp? '✔ Dispersado' : 'Dispersar';
+  if(disp){
+    $('dispInfo').innerHTML = `Dispersado por <b>${esc(s.DISPERSADO_POR||'—')}</b> el <b>${fmtFecha(s.FECHA_DISPERSION)||'—'}</b>.`;
+    btn.disabled = !puedeRevertirDispersion();
+    btn.title = puedeRevertirDispersion()? 'Revertir la dispersión' : 'Ya fue confirmada; solo un administrador puede revertirla';
+  } else {
+    $('dispInfo').innerHTML = puedeDispersar()
+      ? 'Revisa que los montos solicitados sean correctos antes de confirmar.'
+      : 'Solo un usuario auditor puede confirmar la dispersión.';
+    btn.disabled = !puedeDispersar();
+    btn.title = puedeDispersar()? '' : 'Solo un usuario auditor puede confirmar la dispersión';
+  }
+}
+
+$('btnDispersarSol').addEventListener('click', async ()=>{
+  if(!dispEditando) return;
+  const s = DB.SOLICITUDES.find(x=>String(x.ID)===String(dispEditando)); if(!s) return;
+
+  if(dispersadoSol(dispEditando)){
+    if(!puedeRevertirDispersion()) return;   // el botón ya estaba deshabilitado, por si acaso
+    if(!confirm('Esta dispersión ya está confirmada. ¿Revertirla a pendiente?')) return;
+    const reg = Object.assign({}, s, { DISPERSION:'NO', DISPERSADO_POR:'', FECHA_DISPERSION:'' });
+    if(await apiEnviar({action:'upsert', sheet:'SOLICITUDES', record:reg})){
+      toast('Dispersión revertida a pendiente');
+      pintarBotonDispersar(dispEditando, DB.SOLICITUDES.find(x=>String(x.ID)===String(dispEditando)));
+      pintarTablaDispersiones();
+    }
+    return;
+  }
+
+  if(!puedeDispersar()) return;
+  const resumen =
+    `Combustible asignado: ${money(nf(s.COMBUSTIBLE_ASIGNADO))}\n`+
+    `Casetas: ${money(nf(s.COSTO_CASETAS))}\n`+
+    `Pensión: ${money(nf(s.PENSION))}\n`+
+    `Comida: ${money(nf(s.COMIDA))}\n`+
+    `Depósito de urea: ${money(nf(s.DEPOSITO_UREA))}\n`+
+    `Total: ${money(nf(s.TOTAL))}`;
+  if(!confirm('Confirmar dispersión al operador '+s.OPERADOR+' — Folio '+s.FOLIO+'\n\n'+resumen+'\n\n¿Los montos son correctos?')) return;
+
+  const reg = Object.assign({}, s, { DISPERSION:'SI', DISPERSADO_POR: nombreUsuario(), FECHA_DISPERSION: hoyISO() });
+  if(await apiEnviar({action:'upsert', sheet:'SOLICITUDES', record:reg})){
+    toast('Dispersión confirmada para el folio '+s.FOLIO);
+    pintarBotonDispersar(dispEditando, DB.SOLICITUDES.find(x=>String(x.ID)===String(dispEditando)));
+    pintarTablaDispersiones();
+  }
+});
 
 /* =====================================================
    CANCELACIÓN DE SOLICITUDES (requiere supervisor)
@@ -1539,7 +1773,7 @@ let solCancelando = null;
 function abrirCancelacion(id){
   const s = DB.SOLICITUDES.find(x=>String(x.ID)===String(id));
   if(!s){ toast('No se encontró la solicitud.', true); return; }
-  if(dispersado(id)){
+  if(dispersadoSol(id)){
     modal('No se puede cancelar','El gasto de este servicio ya fue <b>dispersado</b> al operador. Una solicitud dispersada no se puede cancelar.','🔒');
     return;
   }
@@ -2000,28 +2234,23 @@ function etiquetaEstadoLiq(solId){
   if(e==='ACLARACION') return '<span class="tag" style="background:var(--bad);color:#fff">Aclaración</span>';
   return '<span class="tag">Pendiente</span>';
 }
-function dispersado(solId){ const l=liqDe(solId); return !!(l && String(l.DISPERSION).toUpperCase()==='SI'); }
-function etiquetaDispersion(solId){
-  const l = liqDe(solId);
-  if(!l) return '<span class="tag">—</span>';
-  return dispersado(solId)
+/* La dispersión vive en la SOLICITUD, no en la liquidación: el auditor
+   dispersa el gasto que operaciones solicitó, antes o después de liquidar. */
+function dispersadoSol(solId){ const s=DB.SOLICITUDES.find(x=>String(x.ID)===String(solId)); return !!(s && String(s.DISPERSION).toUpperCase()==='SI'); }
+function etiquetaDispersionSol(solId){
+  return dispersadoSol(solId)
     ? '<span class="tag ok-disp">Dispersado</span>'
     : '<span class="tag pend-disp">Pendiente</span>';
 }
-/* Cuántos servicios HOY siguen pendientes de dispersar */
-function pendientesDeDispersarHoy(){
-  const hoy = hoyISO();
-  return DB.LIQUIDACION.filter(l=>
-    String(l.DISPERSION).toUpperCase()!=='SI' &&
-    String(l.FECHA_LIQUIDACION||'').slice(0,10)===hoy
-  ).length;
+function pendientesDispersion(){
+  return DB.SOLICITUDES.filter(s=>String(s.DISPERSION).toUpperCase()!=='SI').length;
 }
-function pintarTarjetaDispersion(){
-  const n = pendientesDeDispersarHoy();
-  const el = $('liqDispPend');
+function pintarResumenDispersion(){
+  const n = pendientesDispersion();
+  const el = $('dispPend');
   el.textContent = n>0
-    ? `⏳ ${n} servicio${n>1?'s':''} pendiente${n>1?'s':''} de dispersar hoy`
-    : 'Sin pendientes de dispersar hoy';
+    ? `⏳ ${n} solicitud${n>1?'es':''} pendiente${n>1?'s':''} de dispersar`
+    : 'Sin pendientes de dispersar';
   el.style.color = n>0? 'var(--accent)' : 'var(--ink2)';
 }
 
@@ -2058,53 +2287,7 @@ function abrirLiq(id){
   $('lqAutorizaNota').value = '';
   calcOdometro();
   pintarCajaAclaracion(id, l);
-  pintarBotonDispersion(id, l);
   $('liqDetalle').scrollIntoView({behavior:'smooth',block:'start'});
-}
-
-/* Botón de Dispersión: confirma frente al operador los gastos ya liquidados.
-   Solo aparece cuando el viaje está LIQUIDADO. Gris "Dispersar" mientras esté
-   pendiente —exclusivo del auditor—; verde "Dispersado" una vez confirmada
-   —solo el administrador puede revertirla, como respaldo ante un error. */
-function pintarBotonDispersion(id, l){
-  const btn = $('btnDispersar');
-  const liquidado = estaLiquidado(id);
-  btn.style.display = !liquidado? '' : 'none';
-  if(liquidado){ $('lqDispInfo').innerHTML=''; return; }
-
-  const disp = dispersado(id);
-  btn.classList.toggle('btn-disp-ok', disp);
-  btn.classList.toggle('btn-disp-pend', !disp);
-  btn.textContent = disp? '✔ Dispersado' : 'Dispersar';
-
-  if(disp){
-    $('lqDispInfo').innerHTML =
-      `Dispersado por <b>${esc(l.DISPERSADO_POR||'—')}</b> el <b>${fmtFecha(l.FECHA_DISPERSION)||'—'}</b>.`;
-    // Solo el administrador puede revertir una dispersión ya confirmada
-    btn.disabled = !puedeRevertirDispersion();
-    btn.title = puedeRevertirDispersion()? 'Revertir la dispersión' : 'Ya fue confirmada; solo un administrador puede revertirla';
-  } else {
-    $('lqDispInfo').innerHTML = puedeDispersar()
-      ? 'Revisa que los gastos capturados sean los reales antes de confirmar.'
-      : 'Solo un usuario auditor puede confirmar la dispersión.';
-    btn.disabled = !puedeDispersar();
-    btn.title = puedeDispersar()? '' : 'Solo un usuario auditor puede confirmar la dispersión';
-  }
-
-  aplicarCandadoDispersion(disp);
-}
-
-/* Con la dispersión ya confirmada, los datos del servicio quedan bloqueados:
-   nadie vuelve a tocar montos que ya se le pagaron al operador. */
-const CAMPOS_LIQ_EDITABLES = [
-  'lqFechaFin','lqOdoIni','lqOdoFin','lqCombR','lqCasR','lqPension','lqViaticos',
-  'lqManiobras','lqTalachas','lqDadivas','lqEstac','lqEvidencia'
-];
-function aplicarCandadoDispersion(bloqueado){
-  CAMPOS_LIQ_EDITABLES.forEach(id=>{ $(id).disabled = bloqueado; });
-  $('btnLiquidar').style.display = bloqueado? 'none' : '';
-  $('btnAclaracion').style.display = bloqueado? 'none' : '';
-  if(bloqueado) $('lqAutorizaBox').style.display = 'none';
 }
 
 /* Caja de autorización: aparece cuando el servicio ya está en aclaración */
@@ -2277,48 +2460,6 @@ $('btnAutorizar').addEventListener('click', async ()=>{
   }
 });
 
-/* Dispersión: exclusiva del auditor, confirma que los gastos que se le van a
-   pagar al operador coinciden con lo real. Solo aplica a viajes liquidados.
-   El administrador solo puede revertir una ya confirmada. */
-$('btnDispersar').addEventListener('click', async ()=>{
-  if(!liqEditando) return;
-  const s = DB.SOLICITUDES.find(x=>String(x.ID)===String(liqEditando)); if(!s) return;
-  const l = liqDe(liqEditando); if(!l){
-    toast('Falta información del viaje para dispersar.', true); return;
-  }
-
-  if(dispersado(liqEditando)){
-    if(!puedeRevertirDispersion()) return;   // el botón ya estaba deshabilitado, por si acaso
-    if(!confirm('Esta dispersión ya está confirmada. ¿Revertirla a pendiente?')) return;
-    const reg = Object.assign({}, l, { DISPERSION:'NO', DISPERSADO_POR:'', FECHA_DISPERSION:'' });
-    if(await apiEnviar({action:'dispersar', record:reg})){
-      toast('Dispersión revertida a pendiente');
-      pintarBotonDispersion(liqEditando, liqDe(liqEditando));
-    }
-    return;
-  }
-
-  if(!puedeDispersar()) return;
-  const resumen =
-    `Combustible real: ${money(nf(l.COMB_REAL))}\n`+
-    `Casetas real: ${money(nf(l.CASETAS_REAL))}\n`+
-    `Pensión: ${money(nf(l.PENSION_LIQ))}\n`+
-    `Viáticos: ${money(nf(l.VIATICOS))}\n`+
-    `Maniobras: ${money(nf(l.MANIOBRAS))}\n`+
-    `Talachas: ${money(nf(l.TALACHAS))}\n`+
-    `Dádivas: ${money(nf(l.DADIVAS))}\n`+
-    `Estacionamientos: ${money(nf(l.ESTACIONAMIENTOS))}`;
-  if(!confirm('Confirmar dispersión al operador '+s.OPERADOR+' — Folio '+s.FOLIO+'\n\n'+resumen+'\n\n¿Los montos son correctos?')) return;
-
-  const reg = Object.assign({}, l, {
-    DISPERSION:'SI', DISPERSADO_POR: nombreUsuario(), FECHA_DISPERSION: hoyISO()
-  });
-  if(await apiEnviar({action:'dispersar', record:reg})){
-    toast('Dispersión confirmada para el folio '+s.FOLIO);
-    pintarBotonDispersion(liqEditando, liqDe(liqEditando));
-  }
-});
-
 function pintarLiquidacion(){
   const q=($('xBusca').value||'').toUpperCase();
   const estado=$('xEstado').value;
@@ -2347,13 +2488,11 @@ function pintarLiquidacion(){
       <td class="right num">${num(nf(s.KM),1)}</td>
       <td class="right num"${revisar?' style="color:var(--bad);font-weight:700"':''}>${odo===null?'—':num(odo,1)+(revisar?' ⚠':'')}</td>
       <td>${etiquetaEstadoLiq(s.ID)}</td>
-      <td>${etiquetaDispersion(s.ID)}</td>
       <td><button class="btn btn-${liq?'s':'p'} btn-sm" data-xliq="${s.ID}">${accion}</button></td>`;
     tb.appendChild(tr);
   });
-  if(!filas.length) tb.innerHTML='<tr><td colspan="13" class="mini">Sin solicitudes que coincidan.</td></tr>';
+  if(!filas.length) tb.innerHTML='<tr><td colspan="12" class="mini">Sin solicitudes que coincidan.</td></tr>';
   tb.querySelectorAll('[data-xliq]').forEach(b=>b.addEventListener('click',()=>abrirLiq(b.dataset.xliq)));
-  pintarTarjetaDispersion();
 }
 $('xBusca').addEventListener('input', pintarLiquidacion);
 $('xEstado').addEventListener('change', pintarLiquidacion);
@@ -2450,10 +2589,10 @@ const ADMIN = {
 let admHoja='UNIDADES';
 let adminOk=false;
 
-/* Pestañas visibles según el rol. El auditor solo revisa Liquidación,
-   Pre-Nómina e Indicadores: no da de alta rutas ni solicitudes, ni entra a
-   Administración. */
-const SECCIONES_AUDITOR = ['liquidacion','prenomina','indicadores'];
+/* Pestañas visibles según el rol. El auditor confirma dispersiones y revisa
+   Liquidación, Pre-Nómina e Indicadores: no da de alta rutas ni solicitudes,
+   ni entra a Administración. */
+const SECCIONES_AUDITOR = ['dispersiones','liquidacion','prenomina','indicadores'];
 function aplicarPermisos(){
   adminOk = esAdmin();
   $('adminLock').style.display = adminOk? 'none' : '';
@@ -2466,10 +2605,11 @@ function aplicarPermisos(){
     t.style.display = (soloAuditoria && !SECCIONES_AUDITOR.includes(t.dataset.sec))? 'none' : '';
   });
 
-  // Si la pestaña activa quedó oculta para este rol, se cambia a Liquidación
+  // Si la pestaña activa quedó oculta para este rol, se cambia a Dispersiones
+  // (o Liquidación para los demás roles, que no tienen restricción de pestañas)
   const activa = document.querySelector('.tab.active[data-sec]');
   if(activa && activa.style.display==='none'){
-    const destino = document.querySelector('.tab[data-sec="liquidacion"]');
+    const destino = document.querySelector('.tab[data-sec="'+(soloAuditoria?'dispersiones':'liquidacion')+'"]');
     if(destino) destino.click();
   }
 
@@ -2713,8 +2853,10 @@ function refrescarTodo(){
   pintarSelectsSolicitud();
   alCambiarUnidad(); alCambiarRuta();
   pintarListaSol();
+  pintarResumenDispersion();
   if(document.querySelector('#sec-prenomina.active')) pintarPrenomina(); else pintarNominas();
   if(document.querySelector('#sec-liquidacion.active')) pintarLiquidacion();
+  if(document.querySelector('#sec-dispersiones.active')) pintarTablaDispersiones();
   if(document.querySelector('#sec-indicadores.active')) pintarIndicadores();
   if(usuarioActual){ aplicarPermisos(); return; }
   pistaLogin();

@@ -81,7 +81,7 @@ Se puede llenar a mano en el Sheet, o desde **Administración → Casetas**
 |---|---|---|---|---|---|---|
 | `ADMIN` | sí | sí | sí | no | sí | todas |
 | `SUP` | no | no | sí | no | no | todas menos Administración |
-| `AUDITOR` | no | no | no | sí | no | solo Liquidación, Pre-Nómina, Indicadores |
+| `AUDITOR` | no | no | no | sí | no | solo Dispersiones, Liquidación, Pre-Nómina, Indicadores |
 | `OPERATIVO` | no | no | no | no | no | todas menos Administración |
 
 Mientras la hoja `USUARIOS` esté vacía, la app permite entrar con **admin /
@@ -119,7 +119,7 @@ la constante `BITACORA_MAX`.
 `configurarHojas()` las agrega solo:
 
 - `RUTAS`: `OPTIMIZADA_FULL`, `COSTO_CASETAS_2E`, `COSTO_CASETAS_5E`, `COSTO_CASETAS_9E`
-- `SOLICITUDES`: `TARIFA_CASETAS`
+- `SOLICITUDES`: `TARIFA_CASETAS`, `DISPERSION`, `DISPERSADO_POR`, `FECHA_DISPERSION`
 - `LIQUIDACION`: `ODOMETRO_INICIAL`, `ODOMETRO_FINAL`, `KM_ODOMETRO`, `KM_RUTA`,
   `DIFERENCIA_KM`, `REVISAR_KM`, `LIQUIDADO_POR`, `MOTIVO_ACLARACION`,
   `ACLARACION_POR`, `ACLARACION_FECHA`, `AUTORIZADO_POR`, `FECHA_AUTORIZACION`,
@@ -277,39 +277,51 @@ en el servidor.
 
 ## Dispersión de gastos
 
-En **Liquidación**, junto al botón *Liquidar viaje* aparece el botón
-**Dispersar** — solo cuando el servicio ya está liquidado:
+La dispersión confirma que el **gasto que Operaciones solicitó** (combustible
+asignado, casetas, pensión, comida, depósito de urea) ya se le pagó al
+operador. Vive sobre la **Solicitud de Gasto**, no sobre la liquidación: puede
+dispersarse antes o después de que el viaje se liquide — son procesos
+independientes.
+
+Tiene su propia pestaña, **Dispersiones**, con una tabla de todas las
+solicitudes y su estado (Pendiente / Dispersado). Al abrir una:
 
 - **Gris, "Dispersar"** — todavía no se confirma. Es **exclusivo del rol
   auditor**: nadie más puede activarlo, ni siquiera el administrador. Antes de
-  mandar la confirmación se muestra un resumen de los montos capturados
-  (combustible real, casetas, pensión, viáticos, maniobras, talachas, dádivas,
-  estacionamientos) para revisarlos.
+  mandar la confirmación se muestra un resumen de los montos solicitados para
+  revisarlos.
 - **Verde, "✔ Dispersado"** — ya se confirmó. Muestra quién y cuándo.
-
-Al confirmarse, **los campos del servicio quedan bloqueados** (odómetro, fecha
-finalizado, todos los gastos, la casilla de evidencia) y los botones de
-Liquidar / Enviar a aclaración se ocultan: ya no se puede modificar información
-de un servicio cuyo gasto ya se le pagó al operador. Mientras esté pendiente,
-los campos se editan con normalidad. Una solicitud cuyo gasto ya se dispersó
-tampoco se puede cancelar.
 
 Solo un **administrador** puede revertir una dispersión ya confirmada (por si
 se marcó por error) — pero no puede confirmarla él mismo; esa parte es
 exclusiva del auditor.
 
-En **Liquidación** también hay una tarjeta discreta que dice cuántos servicios
-liquidados **hoy** siguen pendientes de dispersar (por ejemplo, *"3 servicios
-pendientes de dispersar hoy"*), y la tabla de servicios trae una columna con el
-estado de cada uno.
+### Candado sobre la Solicitud de Gasto
+
+Mientras la dispersión esté **pendiente**, el área de Operaciones puede abrir
+la solicitud desde la tabla de **Solicitudes recientes** (clic en el
+renglón) y modificarla por completo: operador, unidad, remolques, ruta,
+pensión, comida, etc. — igual que si la estuviera capturando.
+
+En cuanto se **confirma la dispersión**, la solicitud queda bloqueada: todos
+los campos se deshabilitan, el botón de guardar se oculta y aparece un aviso
+explicando que ya no se puede modificar. Si hay un error, la única salida es
+**cancelar la solicitud** (requiere motivo y credenciales de un supervisor o
+administrador) y que Operaciones capture una nueva, autorizada de nuevo por
+supervisión. Una solicitud ya dispersada tampoco se puede cancelar sin pasar
+antes por la reversión de un administrador.
+
+La pestaña Dispersiones tiene una tarjeta discreta con cuántas solicitudes
+siguen pendientes de dispersar, y un buscador/filtro por folio, operador o
+ruta.
 
 ### Rol Auditor
 
-Ve únicamente las pestañas **Liquidación**, **Pre-Nómina** e **Indicadores**;
-no entra a Rutas, Solicitud de Gasto ni Administración. Su función es revisar
-que los gastos capturados en Liquidación sean los reales antes de confirmar la
-dispersión. En Pre-Nómina tiene los mismos candados que un operativo o
-supervisor: no modifica objetivos, sueldo ni montos.
+Ve únicamente las pestañas **Dispersiones**, **Liquidación**, **Pre-Nómina** e
+**Indicadores**; no entra a Rutas, Solicitud de Gasto ni Administración. Su
+función es revisar que los montos de la solicitud sean correctos antes de
+confirmar la dispersión. En Pre-Nómina tiene los mismos candados que un
+operativo o supervisor: no modifica objetivos, sueldo ni montos.
 
 ## Bitácora
 
