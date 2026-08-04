@@ -35,8 +35,12 @@ var HOJAS = {
   /* Catálogo de casetas: un costo por categoría de ejes */
   CASETAS: ['ID','NOMBRE','CARRETERA','COSTO_2E','COSTO_5E','COSTO_9E'],
 
-  /* Acceso a la app. ROL: ADMIN | OPERATIVO — ACTIVO: SI | NO */
-  USUARIOS: ['ID','USUARIO','NOMBRE','PASSWORD','ROL','ACTIVO'],
+  /* Acceso a la app. ROL: ADMIN | SUP | AUDITOR | OPERATIVO — ACTIVO: SI | NO.
+     PESTANAS: lista de pestañas separadas por coma que puede ver este usuario
+     (rutas,solicitud,dispersiones,liquidacion,prenomina,indicadores). Vacío
+     = se usan las pestañas por defecto de su rol. Administración es aparte:
+     siempre exclusiva de ROL=ADMIN, nunca se otorga por esta columna. */
+  USUARIOS: ['ID','USUARIO','NOMBRE','PASSWORD','ROL','ACTIVO','PESTANAS'],
 
   RUTAS: ['ID','RUTA','CLIENTE','TIPO_SERVICIO','TIPO_VIAJE','TIPO_UNIDAD','EQUIPO_ARRASTRE',
           'TRAMOS_JSON','TOTAL_KM','KM_CARGADOS','KM_VACIOS','KM_POSICIONAMIENTO',

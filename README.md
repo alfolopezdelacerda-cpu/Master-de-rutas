@@ -71,13 +71,13 @@ Se puede llenar a mano en el Sheet, o desde **Administración → Casetas**
 
 ### Hoja `USUARIOS`
 
-| ID | USUARIO | NOMBRE | PASSWORD | ROL | ACTIVO |
-|----|---------|--------|----------|-----|--------|
+| ID | USUARIO | NOMBRE | PASSWORD | ROL | ACTIVO | PESTANAS |
+|----|---------|--------|----------|-----|--------|----------|
 
 - `ACTIVO` — `SI` / `NO`
 - `ROL` — uno de cuatro:
 
-| Rol | Administración | Objetivos y parámetros | Autoriza aclaraciones y cancelaciones | Confirma dispersión | Revierte dispersión | Pestañas visibles |
+| Rol | Administración | Objetivos y parámetros | Autoriza aclaraciones y cancelaciones | Confirma dispersión | Revierte dispersión | Pestañas por defecto |
 |---|---|---|---|---|---|---|
 | `ADMIN` | sí | sí | sí | no | sí | todas |
 | `SUP` | no | no | sí | no | no | todas menos Administración |
@@ -87,6 +87,26 @@ Se puede llenar a mano en el Sheet, o desde **Administración → Casetas**
 Mientras la hoja `USUARIOS` esté vacía, la app permite entrar con **admin /
 admin** para poder crear el primer administrador. En cuanto exista al menos un
 usuario, ese acceso inicial deja de funcionar.
+
+#### Permisos de pestañas por usuario
+
+`PESTANAS` guarda una lista separada por comas (por ejemplo
+`solicitud,dispersiones`) con las pestañas que ese usuario en particular puede
+ver, **por encima** de lo que le tocaría por su rol. Vacío (el caso normal) =
+se usan las pestañas por defecto de su rol, de la tabla de arriba.
+
+Se administra desde **Administración → Usuarios**, columna **Permisos**: el
+botón muestra "Por rol" cuando el usuario no tiene nada personalizado, o el
+número de pestañas cuando sí. Al hacer clic se abre un panel con una casilla
+por pestaña (selección múltiple) — **Rutas, Solicitud de Gasto, Dispersiones,
+Liquidación, Pre-Nómina, Indicadores** — para marcar exactamente cuáles puede
+ver ese usuario, sin importar su rol. El botón **Restablecer al rol** limpia
+la personalización y vuelve a las pestañas por defecto.
+
+**Administración queda fuera de este panel a propósito**: sigue siendo
+exclusiva de `ROL=ADMIN` y no se puede otorgar a otros usuarios desde aquí,
+para no exponer por accidente el borrado masivo, la configuración de precios
+ni la URL de conexión al Sheet.
 
 ### Hoja `SOLICITUDES_CANCELADAS`
 

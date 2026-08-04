@@ -135,15 +135,20 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 .userchip{font-size:12px;font-weight:600;padding:5px 12px;border-radius:99px;background:rgba(255,255,255,.12);white-space:nowrap}
 
 /* Modal de aviso */
-#modalWrap,#cancelWrap{position:fixed;inset:0;z-index:210;background:rgba(9,14,24,.55);display:none;align-items:center;justify-content:center;padding:20px}
-#modalWrap.show,#cancelWrap.show{display:flex}
-#cancelWrap{z-index:220}
-#cancelWrap .mbox{max-height:92vh;overflow-y:auto}
+#modalWrap,#cancelWrap,#permWrap{position:fixed;inset:0;z-index:210;background:rgba(9,14,24,.55);display:none;align-items:center;justify-content:center;padding:20px}
+#modalWrap.show,#cancelWrap.show,#permWrap.show{display:flex}
+#cancelWrap,#permWrap{z-index:220}
+#cancelWrap .mbox,#permWrap .mbox{max-height:92vh;overflow-y:auto}
 #modalWrap .mbox{width:100%;max-width:460px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.3);padding:26px;text-align:center}
 #modalWrap .mico{font-size:40px;margin-bottom:8px}
 #modalWrap h3{font-size:20px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
 #modalWrap .mtxt{font-size:14px;color:var(--ink2);line-height:1.55;margin-bottom:20px}
 #modalWrap .mtxt b{color:var(--ink)}
+#permWrap .mbox{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.3);padding:26px}
+#permWrap .mico{font-size:40px;margin-bottom:8px;text-align:center}
+#permWrap h3{font-size:20px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;text-align:center}
+#permWrap .mtxt{font-size:14px;color:var(--ink2);line-height:1.55;margin-bottom:14px}
+#permWrap .mtxt b{color:var(--ink)}
 
 .printArea{display:none}
 @media print{
@@ -781,6 +786,25 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
       <button class="btn btn-s" id="canCerrar">Cancelar</button>
       <button class="btn btn-d" id="canConfirmar">✕ Cancelar la solicitud</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ PERMISOS DE PESTAÑAS POR USUARIO ============ -->
+<div id="permWrap">
+  <div class="mbox" style="max-width:460px">
+    <div class="mico">🔐</div>
+    <h3>Permisos de pestañas</h3>
+    <div class="mtxt" style="text-align:center" id="permDatos"></div>
+    <div class="mini" style="margin-bottom:14px">
+      Marca las pestañas que este usuario puede ver. Si no marcas ninguna, se usan las pestañas por
+      defecto de su rol. Administración siempre queda reservada a los usuarios con rol Administrador.
+    </div>
+    <div id="permLista" style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+      <button class="btn btn-s" id="permRestablecer">Restablecer al rol</button>
+      <button class="btn btn-s" id="permCerrar">Cancelar</button>
+      <button class="btn btn-p" id="permGuardar">💾 Guardar permisos</button>
     </div>
   </div>
 </div>
@@ -2569,7 +2593,8 @@ const ADMIN = {
     csv:'NOMBRE, CARRETERA, COSTO_2E, COSTO_5E, COSTO_9E' },
   USUARIOS:{ cols:[
       {k:'USUARIO',raw:true},{k:'NOMBRE'},{k:'PASSWORD',raw:true},
-      {k:'ROL',opts:['OPERATIVO','SUP','AUDITOR','ADMIN']},{k:'ACTIVO',opts:['SI','NO']}] },
+      {k:'ROL',opts:['OPERATIVO','SUP','AUDITOR','ADMIN']},{k:'ACTIVO',opts:['SI','NO']},
+      {k:'PESTANAS',tipo:'permisos'}] },
   OPERADORES:{ cols:[{k:'NOMBRE'},{k:'PAGO_NOMINAL_SEMANAL',tipo:'number'},{k:'ACTIVO',opts:['SI','NO']}],
     csv:'NOMBRE, PAGO_NOMINAL_SEMANAL, ACTIVO' },
   EJECUTIVOS:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
@@ -2589,27 +2614,43 @@ const ADMIN = {
 let admHoja='UNIDADES';
 let adminOk=false;
 
-/* Pestañas visibles según el rol. El auditor confirma dispersiones y revisa
-   Liquidación, Pre-Nómina e Indicadores: no da de alta rutas ni solicitudes,
-   ni entra a Administración. */
+/* Pestañas visibles: por defecto según el rol, pero un administrador puede
+   otorgar un conjunto distinto a cada usuario desde Administración →
+   Usuarios → Permisos (campo PESTANAS, lista separada por comas). Vacío =
+   se usan las pestañas por defecto del rol. Administración queda aparte:
+   siempre exclusiva del rol ADMIN, nunca se otorga por este panel. */
+const SECCIONES_INFO = {
+  rutas:'Rutas', solicitud:'Solicitud de Gasto', dispersiones:'Dispersiones',
+  liquidacion:'Liquidación', prenomina:'Pre-Nómina', indicadores:'Indicadores'
+};
+const TODAS_LAS_SECCIONES = Object.keys(SECCIONES_INFO);
 const SECCIONES_AUDITOR = ['dispersiones','liquidacion','prenomina','indicadores'];
+function seccionesPorDefecto(rol){
+  return String(rol||'').toUpperCase()==='AUDITOR' ? SECCIONES_AUDITOR : TODAS_LAS_SECCIONES;
+}
+function seccionesPermitidas(usuario){
+  usuario = usuario || usuarioActual;
+  if(!usuario) return TODAS_LAS_SECCIONES;
+  const custom = String(usuario.PESTANAS||'').split(',').map(s=>s.trim()).filter(Boolean);
+  return custom.length? custom : seccionesPorDefecto(usuario.ROL);
+}
 function aplicarPermisos(){
   adminOk = esAdmin();
   $('adminLock').style.display = adminOk? 'none' : '';
   $('adminPanel').style.display = adminOk? '' : 'none';
   document.querySelectorAll('.tab-admin').forEach(t=>t.style.display = adminOk? '' : 'none');
 
-  const soloAuditoria = esAuditor();
+  const permitidas = seccionesPermitidas();
   document.querySelectorAll('.tab[data-sec]').forEach(t=>{
     if(t.dataset.sec==='admin') return;   // ya se decidió arriba
-    t.style.display = (soloAuditoria && !SECCIONES_AUDITOR.includes(t.dataset.sec))? 'none' : '';
+    t.style.display = permitidas.includes(t.dataset.sec)? '' : 'none';
   });
 
-  // Si la pestaña activa quedó oculta para este rol, se cambia a Dispersiones
-  // (o Liquidación para los demás roles, que no tienen restricción de pestañas)
+  // Si la pestaña activa quedó oculta para este usuario, se cambia a la
+  // primera pestaña que sí tenga permitida.
   const activa = document.querySelector('.tab.active[data-sec]');
   if(activa && activa.style.display==='none'){
-    const destino = document.querySelector('.tab[data-sec="'+(soloAuditoria?'dispersiones':'liquidacion')+'"]');
+    const destino = permitidas[0] && document.querySelector('.tab[data-sec="'+permitidas[0]+'"]');
     if(destino) destino.click();
   }
 
@@ -2648,6 +2689,49 @@ document.querySelectorAll('.atab').forEach(b=>b.addEventListener('click',()=>{
   b.classList.add('active'); admHoja=b.dataset.adm; pintarAdmin();
 }));
 
+/* Panel de permisos: qué pestañas puede ver cada usuario, con selección
+   múltiple. Vacío = pestañas por defecto de su rol. */
+let permEditando = null;
+function abrirPermisos(id){
+  const u = DB.USUARIOS.find(x=>String(x.ID)===String(id)); if(!u) return;
+  permEditando = id;
+  const seleccionadas = String(u.PESTANAS||'').split(',').map(s=>s.trim()).filter(Boolean);
+  const usaDefault = !seleccionadas.length;
+  const defecto = seccionesPorDefecto(u.ROL);
+  $('permDatos').innerHTML = `Usuario <b>${esc(u.NOMBRE||u.USUARIO)}</b> · Rol <b>${esc(etiquetaRol(u.ROL))}</b>`
+    + (usaDefault? '<br><span class="mini">Usando las pestañas por defecto del rol.</span>' : '');
+  $('permLista').innerHTML = TODAS_LAS_SECCIONES.map(k=>{
+    const marcado = usaDefault? defecto.includes(k) : seleccionadas.includes(k);
+    return `<label style="display:flex;align-items:center;gap:10px;font-size:14px;text-transform:none;letter-spacing:0;font-weight:600;color:var(--ink)">
+      <input type="checkbox" data-permk="${k}" ${marcado?'checked':''} style="width:18px;height:18px;min-width:18px"> ${esc(SECCIONES_INFO[k])}
+    </label>`;
+  }).join('');
+  $('permWrap').classList.add('show');
+}
+function cerrarPermisos(){ $('permWrap').classList.remove('show'); permEditando=null; }
+$('permCerrar').addEventListener('click', cerrarPermisos);
+$('permWrap').addEventListener('click', e=>{ if(e.target===$('permWrap')) cerrarPermisos(); });
+$('permRestablecer').addEventListener('click', async ()=>{
+  if(!permEditando) return;
+  const u = DB.USUARIOS.find(x=>String(x.ID)===String(permEditando)); if(!u) return;
+  const reg = Object.assign({}, u, { PESTANAS:'' });
+  if(await apiEnviar({action:'upsert', sheet:'USUARIOS', record:reg})){
+    toast('Se restablecieron las pestañas por defecto del rol');
+    cerrarPermisos();
+  }
+});
+$('permGuardar').addEventListener('click', async ()=>{
+  if(!permEditando) return;
+  const u = DB.USUARIOS.find(x=>String(x.ID)===String(permEditando)); if(!u) return;
+  const marcadas = [...document.querySelectorAll('#permLista input[data-permk]:checked')].map(c=>c.dataset.permk);
+  const reg = Object.assign({}, u, { PESTANAS: marcadas.join(',') });
+  if(await apiEnviar({action:'upsert', sheet:'USUARIOS', record:reg})){
+    toast('Permisos guardados');
+    cerrarPermisos();
+  }
+});
+document.addEventListener('keydown', e=>{ if(e.key==='Escape') cerrarPermisos(); });
+
 function admSeleccionados(){
   return [...$('admBody').querySelectorAll('input[type=checkbox][data-sel]:checked')].map(c=>c.dataset.sel);
 }
@@ -2671,6 +2755,10 @@ function pintarAdmin(){
     const tr=document.createElement('tr');
     const celdas = def.cols.map(c=>{
       if(def.soloLectura) return `<td>${esc(r[c.k])}</td>`;
+      if(c.tipo==='permisos'){
+        const n = String(r[c.k]||'').split(',').map(s=>s.trim()).filter(Boolean).length;
+        return `<td><button class="btn btn-s btn-sm" data-permrow="${r.ID}">🔐 ${n? n+' pestaña'+(n>1?'s':'') : 'Por rol'}</button></td>`;
+      }
       if(c.opts) return `<td><select data-id="${r.ID}" data-k="${c.k}">${c.opts.map(o=>`<option${String(r[c.k])===o?' selected':''}>${o}</option>`).join('')}</select></td>`;
       return `<td><input type="${c.tipo||'text'}" step="any" value="${esc(r[c.k])}" data-id="${r.ID}" data-k="${c.k}"></td>`;
     }).join('');
@@ -2697,6 +2785,7 @@ function pintarAdmin(){
     if(admHoja==='SOLICITUDES'){ abrirCancelacion(b.dataset.adel); return; }
     if(confirm('¿Eliminar el registro?')){ if(await apiEnviar({action:'delete', sheet:admHoja, id:b.dataset.adel})) toast('Registro eliminado'); }
   }));
+  tb.querySelectorAll('[data-permrow]').forEach(b=>b.addEventListener('click',()=>abrirPermisos(b.dataset.permrow)));
 }
 $('btnAdmAdd').addEventListener('click', async ()=>{
   const def=ADMIN[admHoja]; if(def.soloLectura) return;
