@@ -126,6 +126,11 @@ var SABANA_COLUMNAS_LIQUIDACION = [
   { columna: 'AN', campo: 'DADIVAS'          }
 ];
 
+/* Columna de la sábana con la que se ubica el renglón del viaje: la CP. Es
+   POSICIÓN fija (no se busca por nombre de encabezado), porque en la
+   sábana real esa columna no siempre se llama literalmente "CP". */
+var SABANA_COL_CP = 'N';
+
 /* ------------------------------------------------------------------ *
  *  Puntos de entrada HTTP
  * ------------------------------------------------------------------ */
@@ -697,10 +702,11 @@ function intentarEscribirSabana(record, columnasFijas, contexto) {
 
 /**
  * Agrega o actualiza el renglón de la sábana. El renglón se ubica por la
- * COLUMNA DE CP (carta porte) de la sábana; si esa columna no existe, se cae
- * a ubicarlo por FOLIO. Los campos comunes (folio, operador, ruta…) se
- * escriben por coincidencia de encabezado; las columnas indicadas en
- * `columnasFijas` van SIEMPRE a esa posición, sin importar cómo se llamen ahí.
+ * columna de CP (posición fija, ver SABANA_COL_CP) — si la solicitud no trae
+ * carta porte, se cae a ubicarlo por FOLIO como respaldo. Los campos comunes
+ * (folio, operador, ruta…) se escriben por coincidencia de encabezado; las
+ * columnas indicadas en `columnasFijas` (y la de CP) van SIEMPRE a su
+ * posición, sin importar cómo se llame ahí el encabezado.
  */
 function escribirSabana(idSabana, record, columnasFijas) {
   var hoja = SpreadsheetApp.openById(idSabana).getSheetByName(HOJA_SABANA);
@@ -709,26 +715,27 @@ function escribirSabana(idSabana, record, columnasFijas) {
   var heads = encabezados(hoja);
   if (!heads.length) throw new Error('La hoja ' + HOJA_SABANA + ' no tiene encabezados');
 
-  // El renglón se extiende si las columnas fijas caen más allá del encabezado
+  var colCP = letraAColumna(SABANA_COL_CP) - 1;   // 0-based
+
+  // El renglón se extiende si las columnas fijas (o la de CP) caen más allá del encabezado
   var ancho = heads.length;
   columnasFijas.forEach(function (c) {
     var n = letraAColumna(c.columna);
     if (n > ancho) ancho = n;
   });
+  if (colCP + 1 > ancho) ancho = colCP + 1;
 
-  // El renglón se ubica por CP; si la sábana no tiene columna de CP, por folio
-  var colCP = buscarColumnaCP(heads);
-  var usaCP = colCP >= 0;
-  var colClave = usaCP ? colCP : buscarColumnaFolio(heads);
-  var valorClave = usaCP ? cpPrincipal(record.CARTAS_PORTE) : record.FOLIO;
-
-  if (colClave < 0) {
-    throw new Error('La sábana no tiene una columna de CP ni de FOLIO con la que ubicar el renglón del viaje');
-  }
+  // Se ubica por CP; si la solicitud no trae carta porte, se cae a folio
+  var colClave = colCP;
+  var valorClave = cpPrincipal(record.CARTAS_PORTE);
   if (!valorClave) {
-    throw new Error(usaCP
-      ? 'La solicitud no tiene carta porte capturada: no se puede ubicar el renglón por CP'
-      : 'La solicitud no tiene folio');
+    var colFolio = buscarColumnaFolio(heads);
+    if (colFolio >= 0 && record.FOLIO) {
+      colClave = colFolio;
+      valorClave = record.FOLIO;
+    } else {
+      throw new Error('La solicitud no tiene carta porte capturada: no se puede ubicar el renglón en la columna ' + SABANA_COL_CP);
+    }
   }
 
   var fila = -1;
@@ -755,9 +762,9 @@ function escribirSabana(idSabana, record, columnasFijas) {
     for (var k = 0; k < ancho; k++) {
       valores.push(campoDe[k] ? record[campoDe[k]] : '');
     }
-    // Si el renglón es nuevo y la sábana usa CP, hay que sembrar la columna
-    // de CP: si no, el próximo write no lo va a poder ubicar.
-    if (usaCP) valores[colCP] = valorClave;
+    // Renglón nuevo: se siembra la columna clave para que la siguiente
+    // escritura (p.ej. la liquidación, después de la solicitud) lo encuentre.
+    valores[colClave] = valorClave;
     fila = hoja.getLastRow() + 1;
   }
 
@@ -774,15 +781,6 @@ function escribirSabana(idSabana, record, columnasFijas) {
 function cpPrincipal(cartasPorte) {
   var partes = String(cartasPorte || '').split(/[,\s]+/).filter(function (x) { return x; });
   return partes.length ? partes[0] : '';
-}
-
-/** Busca la columna de CP tolerando mayúsculas, acentos y puntuación. */
-function buscarColumnaCP(heads) {
-  for (var i = 0; i < heads.length; i++) {
-    var h = clave(heads[i]);
-    if (h === 'CP' || h === 'CARTAPORTE' || h === 'CARTASPORTE' || h === 'NOCP' || h === 'NUMCP' || h === 'NCP') return i;
-  }
-  return -1;
 }
 
 /**
@@ -839,18 +837,14 @@ function probarSabana() {
   });
 
   msg.push('');
-  var colCP = buscarColumnaCP(heads);
-  if (colCP >= 0) {
-    msg.push('Columna de CP: ' + (colCP + 1) + ' ("' + heads[colCP] + '"). El renglón se ubica por CP.');
-  } else {
-    var colFolio = buscarColumnaFolio(heads);
-    if (colFolio >= 0) {
-      msg.push('NO hay columna de CP; se ubica por FOLIO: columna ' + (colFolio + 1) + ' ("' + heads[colFolio] + '").');
-    } else {
-      msg.push('NO hay columna de CP ni de FOLIO: cada escritura AGREGA un renglón nuevo al final ' +
-               'en lugar de completar el renglón del viaje. Agrega una columna CP (o FOLIO) a la hoja Transportadora.');
-    }
-  }
+  var colCP = letraAColumna(SABANA_COL_CP) - 1;
+  msg.push('Columna de CP (fija): ' + SABANA_COL_CP + ' (columna ' + (colCP + 1) + ')' +
+           '   encabezado actual: "' + (heads[colCP] || '(vacío)') + '"');
+  msg.push('El renglón se ubica por el valor de esa columna. Si una solicitud no trae ' +
+           'carta porte, se cae a ubicarlo por FOLIO en su lugar: ' +
+           (buscarColumnaFolio(heads) >= 0
+             ? 'columna ' + (buscarColumnaFolio(heads) + 1) + ' ("' + heads[buscarColumnaFolio(heads)] + '").'
+             : 'pero la sábana tampoco tiene una columna de folio, así que en ese caso fallaría.'));
 
   return reportar(msg.join('\n'));
 }

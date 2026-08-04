@@ -197,16 +197,17 @@ funcionan sin importar cómo se titulen ahí. Si en la sábana cambian de lugar,
 se ajusta en `SABANA_COLUMNAS_SOLICITUD` y `SABANA_COLUMNAS_LIQUIDACION` del
 Apps Script.
 
-**Cómo se ubica el renglón:** la app busca en la sábana una columna cuyo
-nombre sea `CP`, `Carta Porte` o similar, y ahí busca la primera carta porte de
-la solicitud (`CARTAS_PORTE` puede traer varias, separadas por coma — se usa
-la primera). Si la sábana no tiene columna de CP, se cae a buscar por `FOLIO`
-como antes. Si el renglón no existe, se crea uno nuevo y se siembra la columna
-de CP para que la siguiente escritura (la de liquidación) lo vuelva a
-encontrar. El resto de los campos (folio, operador, ruta, cliente…) se sigue
-colocando por coincidencia de encabezado, y esos se reconocen **sin distinguir
-mayúsculas, acentos ni signos**: `Folio`, `FOLIO` y `folio` son la misma
-columna, y `KM inicial` corresponde a `KM_INICIAL`.
+**Cómo se ubica el renglón:** la columna de CP es la **N**, por posición fija
+(constante `SABANA_COL_CP`) — no importa cómo esté titulada esa columna en la
+sábana. Ahí se busca la primera carta porte de la solicitud (`CARTAS_PORTE`
+puede traer varias, separadas por coma — se usa la primera). Si una solicitud
+no trae carta porte, se cae a ubicar el renglón por `FOLIO` como respaldo. Si
+el renglón no existe, se crea uno nuevo y se siembra la columna N para que la
+siguiente escritura (la de liquidación) lo vuelva a encontrar. El resto de los
+campos (folio, operador, ruta, cliente…) se sigue colocando por coincidencia
+de encabezado, y esos sí se reconocen **sin distinguir mayúsculas, acentos ni
+signos**: `Folio`, `FOLIO` y `folio` son la misma columna, y `KM inicial`
+corresponde a `KM_INICIAL`.
 
 Un fallo al escribir en la sábana no tumba la operación que lo originó (guardar
 la solicitud o liquidar): esa queda guardada igual en el Sheet, y la app
