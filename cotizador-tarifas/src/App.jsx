@@ -239,12 +239,23 @@ input[type=range]{width:100%;accent-color:var(--accent);cursor:pointer}
 .cfg-title{font-size:12px;font-weight:700;color:var(--text3);margin-bottom:12px;padding-bottom:10px;border-bottom:1px solid var(--border)}
 .cfg-badge{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--green);background:var(--green-dim);border:1px solid rgba(5,150,105,.22);border-radius:20px;padding:2px 9px;margin-left:8px;font-weight:500}
 .footer{text-align:center;font-size:10px;color:var(--text2);margin-top:28px;opacity:.8}
+.modal-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;z-index:10000}
+.modal-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--radius);padding:22px;width:280px;box-shadow:0 20px 50px rgba(15,23,42,.25)}
+.modal-title{font-size:13px;font-weight:700;color:var(--text3);margin-bottom:12px}
+.modal-error{font-size:11px;color:#c43d3d;margin-top:6px}
 `;
+
+const ADMIN_PASSWORD = "poncho";
 
 export default function App() {
   const [page, setPage]     = useState("cotizador");
   const [saving, setSaving] = useState(false);
   const [toasts, setToasts] = useState([]);
+
+  const [adminUnlocked, setAdminUnlocked] = useState(false);
+  const [showAdminPrompt, setShowAdminPrompt] = useState(false);
+  const [adminPwd, setAdminPwd] = useState("");
+  const [adminPwdError, setAdminPwdError] = useState(false);
 
   const [cliente, setCliente]     = useState("");
   const [ejecutivo, setEjecutivo] = useState("");
@@ -319,6 +330,19 @@ export default function App() {
     addToast("Datos de administrador guardados para todos", "success");
   };
 
+  const openAdmin = () => {
+    if (adminUnlocked) { setPage("admin"); return; }
+    setAdminPwd(""); setAdminPwdError(false); setShowAdminPrompt(true);
+  };
+
+  const submitAdminPwd = () => {
+    if (adminPwd === ADMIN_PASSWORD) {
+      setAdminUnlocked(true); setShowAdminPrompt(false); setPage("admin");
+    } else {
+      setAdminPwdError(true);
+    }
+  };
+
   const reset = () => {
     setCliente(""); setEjecutivo(""); setOrigen(""); setDestino("");
     setRotacion("8"); setDistancia("0"); setCasetas("0"); setSinIva(false);
@@ -343,10 +367,9 @@ export default function App() {
     ];
     try {
       const url = APPS_SCRIPT_URL + "?data=" + encodeURIComponent(JSON.stringify(row));
-      const w = window.open(url, "_blank");
-      if (!w) addToast("Permite ventanas emergentes para poder guardar", "warn");
-      else addToast(`Cotización ${id} guardada en Google Sheets`, "success");
-    } catch(e) { addToast("No se pudo enviar: " + e.message, "warn"); }
+      await fetch(url, { method: "GET", mode: "no-cors" });
+      addToast(`Cotización ${id} guardada en Google Sheets`, "success");
+    } catch(e) { addToast("No se pudo guardar: " + e.message, "warn"); }
     setSaving(false);
   };
 
@@ -389,6 +412,28 @@ export default function App() {
         {toasts.map(t => (<div key={t.id} className={`toast-pill ${t.type}`}>{t.type==="success"?"✓":t.type==="info"?"ℹ":"⚠"} {t.msg}</div>))}
       </div>
 
+      {showAdminPrompt && (
+        <div className="modal-overlay" onClick={()=>setShowAdminPrompt(false)}>
+          <div className="modal-card" onClick={e=>e.stopPropagation()}>
+            <div className="modal-title">Acceso a Administrador</div>
+            <input
+              style={inputStyle}
+              type="password"
+              autoFocus
+              value={adminPwd}
+              onChange={e=>{setAdminPwd(e.target.value); setAdminPwdError(false);}}
+              onKeyDown={e=>{if(e.key==="Enter") submitAdminPwd();}}
+              placeholder="Contraseña"
+            />
+            {adminPwdError && <div className="modal-error">Contraseña incorrecta</div>}
+            <div className="btn-row" style={{marginTop:14}}>
+              <button className="btn btn-ghost" onClick={()=>setShowAdminPrompt(false)}>Cancelar</button>
+              <button className="btn btn-primary" onClick={submitAdminPwd}>Entrar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="app">
         <div className="topbar">
           <div className="logo">
@@ -401,7 +446,7 @@ export default function App() {
           <div className="tabs">
             <button type="button" className={`tab${page==="cotizador"?" active":""}`} onClick={()=>setPage("cotizador")}>Cotizador</button>
             <button type="button" className={`tab${page==="config"?" active":""}`} onClick={()=>setPage("config")}>Configuración</button>
-            <button type="button" className={`tab${page==="admin"?" active":""}`} onClick={()=>setPage("admin")}>Administrador</button>
+            <button type="button" className={`tab${page==="admin"?" active":""}`} onClick={openAdmin}>Administrador</button>
           </div>
         </div>
 
@@ -621,7 +666,7 @@ export default function App() {
         )}
 
         {/* ── ADMINISTRADOR ── */}
-        {page==="admin" && (
+        {page==="admin" && adminUnlocked && (
           <div className="cfg-grid">
             <div className="cfg-card">
               <div className="cfg-title">Administración directa — sueldos base{adminSaved && <span className="cfg-badge">✓ Guardado</span>}</div>
