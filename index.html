@@ -240,10 +240,10 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     </div>
 
     <hr class="sep">
-    <label>Casetas de la ruta</label>
-    <div class="sub" style="margin-bottom:10px">Se toman del catálogo <b>Casetas</b> (Administración). El costo se calcula solo según el tipo de unidad.</div>
+    <label>Otras casetas de la ruta</label>
+    <div class="sub" style="margin-bottom:10px">Se toman del catálogo <b>Casetas</b> (Administración). El costo se calcula solo según el tipo de unidad. Para ubicar una caseta entre dos tramos específicos, usa el botón "＋ Caseta después de este tramo" junto a cada tramo, arriba; aquí van las que no están ligadas a un tramo en particular.</div>
     <div id="casetasWrap" style="margin-bottom:10px"></div>
-    <button class="btn btn-s btn-sm" id="btnAddCaseta">＋ Agregar caseta</button>
+    <button class="btn btn-s btn-sm" id="btnAddCaseta">＋ Agregar caseta suelta</button>
     <div class="mini" id="rCasetasDesglose" style="margin-top:10px"></div>
 
     <hr class="sep">
@@ -1064,12 +1064,16 @@ function resolverCaseta(ref){
   return casetaPorId(ref.ID) || casetaPorNombre(ref.NOMBRE);
 }
 function refCaseta(cat){ return { ID: cat.ID||'', NOMBRE: cat.NOMBRE||'' }; }
-/* Acepta el formato nuevo [{ID,NOMBRE}] y el viejo ["NOMBRE", …] */
+/* Acepta el formato nuevo [{ID,NOMBRE,TRAMO}] y el viejo ["NOMBRE", …].
+   TRAMO (opcional) es el índice del tramo después del cual va la caseta,
+   para poder ubicarla entre tramos en vez de en una lista suelta. */
 function leerCasetasRuta(ruta){
   let arr=[];
   try{ arr = JSON.parse((ruta && ruta.CASETAS_JSON) || '[]'); }catch(e){ arr=[]; }
   if(!Array.isArray(arr)) return [];
-  return arr.map(x=> typeof x==='string' ? {ID:'', NOMBRE:x} : {ID:x.ID||'', NOMBRE:x.NOMBRE||''});
+  return arr.map(x=> typeof x==='string'
+    ? {ID:'', NOMBRE:x}
+    : {ID:x.ID||'', NOMBRE:x.NOMBRE||'', TRAMO: typeof x.TRAMO==='number'? x.TRAMO : undefined});
 }
 /* Suma el costo de las casetas de una ruta para un tipo de unidad dado.
    Las casetas sin ID (capturadas antes del catálogo) suman 0 y se reportan aparte. */
@@ -1136,6 +1140,34 @@ let casetasRuta = [];
 let editandoRutaId = null;
 function nuevoTramo(){ return { origen:'', destino:'', estado:'CARGADO', km:'' }; }
 
+/* Selector de una caseta (usado tanto entre tramos como en la lista suelta).
+   idx es la posición de esa caseta dentro del arreglo global casetasRuta. */
+function casetaSelectorHTML(idx){
+  const c = casetasRuta[idx];
+  const campo = campoTarifa($('rTipoUnidad').value);
+  // El value es la POSICIÓN en el catálogo, no el ID: así funciona aunque las
+  // filas del Sheet se hayan capturado sin ID.
+  const cat = resolverCaseta(c);
+  const sel = cat? DB.CASETAS.indexOf(cat) : -1;
+  const opts = DB.CASETAS.map((x,j)=>
+    `<option value="${j}"${j===sel?' selected':''}>${esc(x.NOMBRE)} · ${money(nf(x[campo]))}</option>`).join('');
+  const vacia = `<option value="-1"${sel<0?' selected':''}>${sel<0&&c.NOMBRE? esc(c.NOMBRE)+' (fuera del catálogo)' : '— Selecciona —'}</option>`;
+  return `<div style="flex:1"><select data-ci="${idx}">${vacia}${opts}</select></div>
+    <button class="xbtn" data-cdel="${idx}" title="Quitar caseta">✕</button>`;
+}
+function bindCasetaSelectores(container){
+  container.querySelectorAll('select[data-ci]').forEach(el=>el.addEventListener('change',()=>{
+    const idx = +el.dataset.ci;
+    const tramoPrevio = casetasRuta[idx].TRAMO;
+    const cat = DB.CASETAS[parseInt(el.value,10)];
+    casetasRuta[idx] = Object.assign(cat? refCaseta(cat) : {ID:'', NOMBRE:''}, {TRAMO: tramoPrevio});
+    pintarTramos(); pintarCasetas(); calcularRuta();
+  }));
+  container.querySelectorAll('[data-cdel]').forEach(el=>el.addEventListener('click',()=>{
+    casetasRuta.splice(+el.dataset.cdel,1);
+    pintarTramos(); pintarCasetas(); calcularRuta();
+  }));
+}
 function pintarTramos(){
   const w = $('tramosWrap'); w.innerHTML='';
   tramos.forEach((t,i)=>{
@@ -1152,45 +1184,55 @@ function pintarTramos(){
       <div><label>KM</label><input type="number" min="0" step="0.1" class="num" value="${t.km}" data-i="${i}" data-k="km"></div>
       <button class="xbtn" data-del="${i}" title="Quitar tramo">✕</button>`;
     w.appendChild(div);
+
+    // Casetas ubicadas después de este tramo (entre este tramo y el siguiente)
+    const enEsteTramo = casetasRuta.map((c,idx)=>idx).filter(idx=>casetasRuta[idx].TRAMO===i);
+    const cw = document.createElement('div');
+    cw.style.cssText='margin:2px 0 14px 26px;display:flex;flex-direction:column;gap:8px';
+    cw.innerHTML = enEsteTramo.map(idx=>
+      `<div style="display:flex;gap:8px;align-items:end;max-width:420px">${casetaSelectorHTML(idx)}</div>`).join('')
+      + `<button class="btn btn-s btn-sm" data-addcaseta="${i}" style="align-self:flex-start">🛣 ＋ Caseta después de este tramo</button>`;
+    w.appendChild(cw);
+    bindCasetaSelectores(cw);
   });
-  w.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',()=>{
+  w.querySelectorAll('.tramo input,.tramo select').forEach(el=>el.addEventListener('input',()=>{
     tramos[+el.dataset.i][el.dataset.k] = el.dataset.k==='km'? el.value : el.value.toUpperCase();
     if(el.tagName==='INPUT' && el.dataset.k!=='km') el.value = el.value.toUpperCase();
     calcularRuta();
   }));
-  w.querySelectorAll('[data-del]').forEach(el=>el.addEventListener('click',()=>{ tramos.splice(+el.dataset.del,1); if(!tramos.length) tramos.push(nuevoTramo()); pintarTramos(); }));
+  w.querySelectorAll('[data-del]').forEach(el=>el.addEventListener('click',()=>{
+    const d = +el.dataset.del;
+    // Las casetas de ese tramo se recorren al tramo anterior (o quedan sueltas si era el primero)
+    casetasRuta.forEach(c=>{
+      if(typeof c.TRAMO!=='number') return;
+      if(c.TRAMO===d) c.TRAMO = d>0? d-1 : undefined;
+      else if(c.TRAMO>d) c.TRAMO -= 1;
+    });
+    tramos.splice(d,1);
+    if(!tramos.length) tramos.push(nuevoTramo());
+    pintarTramos(); pintarCasetas();
+  }));
+  w.querySelectorAll('[data-addcaseta]').forEach(el=>el.addEventListener('click',()=>{
+    if(!DB.CASETAS.length){ modal('Catálogo vacío','Primero captura las casetas en <b>Administración → Casetas</b>, con su costo para 2, 5 y 9 ejes. Después podrás agregarlas a las rutas.','🛣'); return; }
+    casetasRuta.push({ID:'', NOMBRE:'', TRAMO:+el.dataset.addcaseta});
+    pintarTramos();
+  }));
   calcularRuta();
 }
 function pintarCasetas(){
   const w=$('casetasWrap'); w.innerHTML='';
+  const sueltas = casetasRuta.map((c,idx)=>idx).filter(idx=>typeof casetasRuta[idx].TRAMO!=='number');
   if(!DB.CASETAS.length){
     w.innerHTML='<div class="mini" style="color:var(--bad)">El catálogo de casetas está vacío. Ve a <b>Administración → Casetas</b> y captura las casetas con su costo por tipo de unidad.</div>';
-    if(!casetasRuta.length) return;
+    if(!sueltas.length) return;
   }
-  const campo = campoTarifa($('rTipoUnidad').value);
-  casetasRuta.forEach((c,i)=>{
+  sueltas.forEach(idx=>{
     const d=document.createElement('div');
     d.style.cssText='display:flex;gap:8px;align-items:end;margin-bottom:10px';
-    // El value es la POSICIÓN en el catálogo, no el ID: así funciona aunque las
-    // filas del Sheet se hayan capturado sin ID.
-    const cat = resolverCaseta(c);
-    const sel = cat? DB.CASETAS.indexOf(cat) : -1;
-    const opts = DB.CASETAS.map((x,j)=>
-      `<option value="${j}"${j===sel?' selected':''}>${esc(x.NOMBRE)} · ${money(nf(x[campo]))}</option>`).join('');
-    const vacia = `<option value="-1"${sel<0?' selected':''}>${sel<0&&c.NOMBRE? esc(c.NOMBRE)+' (fuera del catálogo)' : '— Selecciona —'}</option>`;
-    d.innerHTML=`
-      <div style="flex:1"><label>Caseta ${i+1}</label>
-        <select data-ci="${i}">${vacia}${opts}</select>
-      </div>
-      <button class="xbtn" data-cdel="${i}" style="margin-bottom:9px">✕</button>`;
+    d.innerHTML = casetaSelectorHTML(idx);
     w.appendChild(d);
   });
-  w.querySelectorAll('select[data-ci]').forEach(el=>el.addEventListener('change',()=>{
-    const cat = DB.CASETAS[parseInt(el.value,10)];
-    casetasRuta[+el.dataset.ci] = cat? refCaseta(cat) : {ID:'', NOMBRE:''};
-    pintarCasetas(); calcularRuta();
-  }));
-  w.querySelectorAll('[data-cdel]').forEach(el=>el.addEventListener('click',()=>{ casetasRuta.splice(+el.dataset.cdel,1); pintarCasetas(); calcularRuta(); }));
+  bindCasetaSelectores(w);
 }
 function nombreRuta(){
   const partes = tramos.filter(t=>t.origen).map(t=>t.origen.trim());
@@ -1265,7 +1307,11 @@ $('btnGuardarRuta').addEventListener('click', async ()=>{
     KM_VACIOS: suma('VACÍO'),
     KM_POSICIONAMIENTO: suma('POSICIONAMIENTO'),
     OPTIMIZADA_FULL: $('rOptFull').checked? 'SI' : 'NO',
-    CASETAS_JSON: JSON.stringify(casetasRuta.filter(resolverCaseta).map(c=>refCaseta(resolverCaseta(c)))),
+    CASETAS_JSON: JSON.stringify(casetasRuta.filter(resolverCaseta).map(c=>{
+      const ref = refCaseta(resolverCaseta(c));
+      if(typeof c.TRAMO==='number') ref.TRAMO = c.TRAMO;
+      return ref;
+    })),
     COSTO_CASETAS: r2(nf($('rCostoCasetas').dataset.v)),
     COSTO_CASETAS_2E: r2(costoCasetas(casetasRuta,'RABÓN').total),
     COSTO_CASETAS_5E: r2(costoCasetas(casetasRuta,'SENCILLO').total),

@@ -160,6 +160,18 @@ Las rutas capturadas antes de este cambio conservan su `COSTO_CASETAS` guardado 
 lo siguen usando en la solicitud. Para que se recalculen por tipo de unidad hay
 que editarlas y seleccionar sus casetas del catálogo.
 
+### Casetas entre tramos
+
+Además de la lista de "Otras casetas de la ruta" (casetas sueltas, sin ubicación
+particular), cada tramo tiene su propio botón **"＋ Caseta después de este
+tramo"**: la caseta que agregues ahí queda ligada a la posición entre ese tramo
+y el siguiente, para que quede claro en qué parte del recorrido va. Internamente
+se guarda como un campo `TRAMO` (el índice del tramo) dentro de cada entrada de
+`CASETAS_JSON`; el costo total no cambia por esto, se sigue sumando igual sin
+importar la posición. Si borras el tramo del que dependía una caseta, la caseta
+se recorre al tramo anterior, o pasa a la lista de casetas sueltas si era el
+primero.
+
 ## Ruta optimizada para Full
 
 En el alta de ruta hay un interruptor **Optimizada para Full**. Al activarlo la
@@ -188,29 +200,29 @@ botón de autorizar.
 Mientras un viaje esté en aclaración no cuenta como liquidado, así que tampoco
 cuenta para el pago en pre-nómina.
 
-### La sábana: dos momentos de escritura, ubicados por CP
+### La sábana: se escribe solo al liquidar, ubicada por CP
 
-La app escribe en la hoja **Transportadora** de la sábana en dos momentos
-distintos, cada uno con sus propias columnas fijas, y **ambos ubican el
-renglón por carta porte (CP)** — no por folio:
+La app escribe en la hoja **Transportadora** de la sábana en **un único
+momento: al liquidar el viaje**. Guardar la Solicitud de Gasto **no** toca la
+sábana — solo queda registrada en el Sheet interno de la app. Esto es a
+propósito: mientras el viaje no esté liquidado, es normal capturar y corregir
+varias veces la solicitud, y no tiene sentido escribir en la sábana en cada
+corrección.
 
-**Al guardar la Solicitud de Gasto** (antes del viaje, lo que se le asigna al
-operador):
+Al liquidar, se combinan y escriben **juntos, en el mismo renglón**, los datos
+de la solicitud original y los de la liquidación:
 
-- **AF** — combustible asignado (el importe en $, no los litros)
-- **AI** — casetas
-- **AJ** — pensión
-- **AK** — viáticos (se toma del campo *Comida* de la solicitud; es el único
-  candidato que existe en ese formulario — si tu sábana entiende "viáticos"
-  como otra cosa, dímelo y lo ajusto)
-
-**Al liquidar** (al terminar el viaje, lo real ya conciliado):
-
-- **AC** — odómetro inicial (KM inicial)
-- **AD** — odómetro final (KM final)
-- **AL** — maniobras
-- **AM** — talachas
-- **AN** — dádivas
+- **AF** — combustible asignado (el importe en $, no los litros; viene de la solicitud)
+- **AI** — casetas (de la solicitud)
+- **AJ** — pensión (de la solicitud)
+- **AK** — viáticos (de la solicitud, campo *Comida* — es el único candidato
+  que existe en ese formulario; si tu sábana entiende "viáticos" como otra
+  cosa, dímelo y lo ajusto)
+- **AC** — odómetro inicial (KM inicial, de la liquidación)
+- **AD** — odómetro final (KM final, de la liquidación)
+- **AL** — maniobras (de la liquidación)
+- **AM** — talachas (de la liquidación)
+- **AN** — dádivas (de la liquidación)
 
 Todas van por **posición de columna**, no por nombre de encabezado, así que
 funcionan sin importar cómo se titulen ahí. Si en la sábana cambian de lugar,
@@ -221,17 +233,15 @@ Apps Script.
 (constante `SABANA_COL_CP`) — no importa cómo esté titulada esa columna en la
 sábana. Ahí se busca la primera carta porte de la solicitud (`CARTAS_PORTE`
 puede traer varias, separadas por coma — se usa la primera). Si una solicitud
-no trae carta porte, se cae a ubicar el renglón por `FOLIO` como respaldo. Si
-el renglón no existe, se crea uno nuevo y se siembra la columna N para que la
-siguiente escritura (la de liquidación) lo vuelva a encontrar. El resto de los
-campos (folio, operador, ruta, cliente…) se sigue colocando por coincidencia
-de encabezado, y esos sí se reconocen **sin distinguir mayúsculas, acentos ni
-signos**: `Folio`, `FOLIO` y `folio` son la misma columna, y `KM inicial`
-corresponde a `KM_INICIAL`.
+no trae carta porte, se cae a ubicar el renglón por `FOLIO` como respaldo. El
+resto de los campos (folio, operador, ruta, cliente…) se coloca por
+coincidencia de encabezado, y esos sí se reconocen **sin distinguir
+mayúsculas, acentos ni signos**: `Folio`, `FOLIO` y `folio` son la misma
+columna, y `KM inicial` corresponde a `KM_INICIAL`.
 
-Un fallo al escribir en la sábana no tumba la operación que lo originó (guardar
-la solicitud o liquidar): esa queda guardada igual en el Sheet, y la app
-**muestra un aviso en pantalla** explicando qué pasó.
+Un fallo al escribir en la sábana no tumba la liquidación que lo originó: esa
+queda guardada igual en el Sheet, y la app **muestra un aviso en pantalla**
+explicando qué pasó.
 
 **Si algo no llega a la sábana**, corre el menú **Master de Ruta → Probar
 sábana** dentro del Google Sheet. Sin modificar nada, te dice si el ID está
@@ -354,6 +364,31 @@ Script, y la identidad del usuario la manda la app. Sirve para saber quién hizo
 qué en el uso normal del sistema, pero alguien que llame directo a la URL
 `/exec` puede escribir con el nombre que quiera. Es trazabilidad operativa, no
 una auditoría a prueba de manipulación.
+
+## Rendimiento del backend
+
+Cada acción que llega al Apps Script (`doPost`) hacía dos barridos completos de
+**todas** las hojas de datos en cada guardado: uno para asignar IDs a filas
+capturadas a mano en el Sheet, y otro (`leerTodo()`) para devolver el estado
+completo a la app. Con el catálogo creciendo, eso hacía cada guardado cada vez
+más lento y, si el bloqueo (`LockService`) no alcanzaba a liberarse a tiempo,
+terminaba en el error de "no se pudo guardar".
+
+Dos ajustes para que los guardados sean rápidos sin importar qué tan grandes
+sean las demás hojas:
+
+- **El barrido de IDs faltantes ahora es selectivo.** En cada `doPost` solo se
+  revisa la hoja (o las hojas) que esa acción realmente toca — por ejemplo,
+  guardar una solicitud ya no revisa Rutas, Unidades, Clientes, etc. El barrido
+  **completo** de todas las hojas se sigue haciendo, pero solo al cargar o
+  presionar **⟳ Actualizar** (`doGet`), que ocurre con mucha menos frecuencia
+  que cada guardado individual.
+- **La sábana ya no se escribe al guardar la solicitud de gasto** (ver más
+  arriba), lo que le quitaba una llamada a un Sheet externo (`openById`, que en
+  Apps Script es notablemente lenta) a cada guardado de solicitud.
+- El tiempo de espera del bloqueo (`lock.waitLock`) subió de 30 a 45 segundos,
+  como margen adicional para que un guardado que sí tarda no le gane el
+  bloqueo al siguiente y truene con error.
 
 ## Nota sobre el acceso
 

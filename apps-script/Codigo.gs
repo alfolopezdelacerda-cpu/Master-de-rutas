@@ -145,16 +145,35 @@ var SABANA_COL_CP = 'N';
 
 function doGet() {
   try {
+    // Barrido completo de IDs faltantes: solo aquí, en la carga/actualización
+    // (no en cada doPost), para no pagar ese costo en cada registro guardado.
+    asignarIdsFaltantes();
     return json({ ok: true, data: leerTodo() });
   } catch (err) {
     return json({ ok: false, error: String(err && err.message || err) });
   }
 }
 
+/** Hojas que puede tocar cada acción, para no barrer IDs faltantes de TODAS
+    las hojas en cada doPost (eso era buena parte de la lentitud al guardar). */
+function hojasDeAccion(p) {
+  switch (p.action) {
+    case 'upsert':
+    case 'bulkUpsert':
+    case 'delete':
+    case 'deleteMany':
+      return p.sheet ? [p.sheet] : [];
+    case 'liquidar':           return ['LIQUIDACION', 'SOLICITUDES'];
+    case 'cancelarSolicitud':  return ['SOLICITUDES', HOJA_CANCELADAS];
+    case 'dispersar':          return ['LIQUIDACION'];
+    default:                   return [];
+  }
+}
+
 function doPost(e) {
   var lock = LockService.getScriptLock();
   try {
-    lock.waitLock(30000);
+    lock.waitLock(45000);
 
     var p = JSON.parse((e && e.postData && e.postData.contents) || '{}');
 
@@ -164,15 +183,16 @@ function doPost(e) {
       return json({ ok: true, logged: true });
     }
 
-    // Las filas capturadas a mano en el Sheet pueden venir sin ID
-    asignarIdsFaltantes();
+    // Las filas capturadas a mano en el Sheet pueden venir sin ID. Antes se
+    // barrían TODAS las hojas en cada doPost; ahora solo las que esta acción
+    // va a tocar (el barrido completo ocurre en doGet, al cargar/actualizar).
+    asignarIdsFaltantes(hojasDeAccion(p));
 
     switch (p.action) {
       case 'upsert':
+        // La sábana solo se escribe al LIQUIDAR (ver liquidar()): guardar la
+        // solicitud de gasto no toca la sábana.
         upsert(p.sheet, p.record);
-        // Al guardar una solicitud de gasto se copia a la sábana lo que se
-        // le asigna al operador, ubicando el renglón por CP.
-        if (p.sheet === 'SOLICITUDES') escribirSabanaSolicitud(p.record);
         break;
       case 'bulkUpsert':  bulkUpsert(p.sheet, p.records);   break;
       case 'delete':      borrar(p.sheet, [p.id]);          break;
@@ -621,11 +641,16 @@ function registrarBitacora(usuario, accion, hoja, registro, detalle) {
  * Rellena la columna ID de las filas capturadas a mano en el Sheet.
  * Sin ID, la app no puede distinguir un registro de otro: era la causa de que
  * al elegir una caseta se guardara siempre la primera del catálogo.
+ *
+ * @param {string[]} [soloHojas] Si se pasa, solo barre esas hojas (más
+ *   rápido). Sin argumento, barre todas — se usa en doGet() para la carga
+ *   completa; doPost() pasa solo las hojas que la acción va a tocar.
  */
-function asignarIdsFaltantes() {
+function asignarIdsFaltantes(soloHojas) {
   var total = 0;
+  var lista = soloHojas === undefined ? HOJAS_DATOS : soloHojas;
 
-  HOJAS_DATOS.forEach(function (nombre) {
+  lista.forEach(function (nombre) {
     if (nombre === HOJA_BITACORA) return;
 
     var hoja = hojaDe(nombre);
@@ -672,18 +697,24 @@ function asignarIdsFaltantes() {
    usuario se entere: antes fallaba en silencio y no había forma de saberlo. */
 var avisoSabana = '';
 
+/**
+ * La sábana se escribe únicamente aquí, al liquidar: se combinan los datos
+ * de la solicitud original (combustible asignado, casetas, pensión,
+ * viáticos) con los de la liquidación (odómetro, maniobras, talachas,
+ * dádivas) y se escriben juntos en un solo renglón, ubicado por CP.
+ */
 function liquidar(record) {
   upsert('LIQUIDACION', record);
-  intentarEscribirSabana(record, SABANA_COLUMNAS_LIQUIDACION, 'liquidación');
+  var solicitud = buscarRegistroPorId('SOLICITUDES', record.ID) || {};
+  var combinado = {};
+  Object.keys(solicitud).forEach(function (k) { combinado[k] = solicitud[k]; });
+  Object.keys(record).forEach(function (k) { combinado[k] = record[k]; });
+  var columnas = SABANA_COLUMNAS_SOLICITUD.concat(SABANA_COLUMNAS_LIQUIDACION);
+  intentarEscribirSabana(combinado, columnas, 'liquidación');
 }
 
-/**
- * Se llama al guardar una Solicitud de Gasto: copia a la sábana lo que se le
- * asigna al operador para el servicio (combustible, casetas, pensión,
- * viáticos), ubicando el renglón por CP.
- */
-function escribirSabanaSolicitud(record) {
-  intentarEscribirSabana(record, SABANA_COLUMNAS_SOLICITUD, 'solicitud de gasto');
+function buscarRegistroPorId(nombre, id) {
+  return leerHoja(nombre).find(function (r) { return String(r.ID) === String(id); }) || null;
 }
 
 /** Envuelve escribirSabana(): nunca lanza, y deja el resultado en avisoSabana
@@ -831,13 +862,14 @@ function probarSabana() {
            Math.max(hoja.getLastRow() - 1, 0) + ' renglones de datos.');
 
   msg.push('');
-  msg.push('Columnas fijas — al guardar la SOLICITUD (combustible, casetas, pensión, viáticos):');
+  msg.push('La sábana solo se escribe AL LIQUIDAR (guardar la solicitud de gasto ya no la toca). En ese momento se escriben juntas:');
+  msg.push('Columnas de la SOLICITUD (combustible, casetas, pensión, viáticos):');
   SABANA_COLUMNAS_SOLICITUD.forEach(function (c) {
     var n = letraAColumna(c.columna);
     msg.push('  ' + c.columna + ' (columna ' + n + ') ← ' + c.campo +
              '   encabezado actual: "' + (heads[n - 1] || '(vacío)') + '"');
   });
-  msg.push('Columnas fijas — al LIQUIDAR (odómetro, maniobras, talachas, dádivas):');
+  msg.push('Columnas de la LIQUIDACIÓN (odómetro, maniobras, talachas, dádivas):');
   SABANA_COLUMNAS_LIQUIDACION.forEach(function (c) {
     var n = letraAColumna(c.columna);
     msg.push('  ' + c.columna + ' (columna ' + n + ') ← ' + c.campo +
