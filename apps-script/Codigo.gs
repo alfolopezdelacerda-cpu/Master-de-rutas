@@ -133,8 +133,8 @@ var HOJA_SABANA = 'Transportadora';
 var SABANA_COLUMNAS_LIQUIDACION = [
   { columna: 'AC', campo: 'ODOMETRO_INICIAL'     },   // KM inicial
   { columna: 'AD', campo: 'ODOMETRO_FINAL'       },   // KM final
-  { columna: 'AF', campo: 'COMBUSTIBLE_ASIGNADO' },   // de la solicitud
-  { columna: 'AG', campo: 'COMB_REAL'            },   // Combustible $
+  { columna: 'AF', campo: 'COMB_REAL'            },   // Combustible $
+  { columna: 'AG', campo: 'COMBUSTIBLE_ASIGNADO' },   // de la solicitud
   { columna: 'AI', campo: 'CASETAS_REAL'         },   // Casetas
   { columna: 'AJ', campo: 'PENSION_LIQ'          },   // Pensión
   { columna: 'AK', campo: 'VIATICOS'             },   // Viáticos
@@ -786,9 +786,7 @@ function escribirSabana(idSabana, record, columnasFijas) {
     }
   }
   if (fila < 0) {
-    // Renglón nuevo: se siembra únicamente la celda de CP/folio para ubicarlo.
-    fila = hoja.getLastRow() + 1;
-    hoja.getRange(fila, colClave).setValue(valorClave);
+    throw new Error('No se encontró la CP en Sábana');
   }
 
   columnasFijas.forEach(function (c) {
