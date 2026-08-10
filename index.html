@@ -338,10 +338,17 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <div class="mini" id="sCasetasDesglose" style="margin-top:10px"></div>
 
     <hr class="sep">
+    <h3>Gastos adicionales al operador</h3>
+    <div class="sub" style="margin-bottom:10px">Adelantos que no son parte del gasto del viaje en sí — adelanto de nómina, pensión u hotel, por ejemplo. Se comprueban al liquidar.</div>
+    <div id="gastosAdicWrap" style="margin-bottom:10px"></div>
+    <button class="btn btn-s btn-sm" id="btnAddGastoAdic">＋ Agregar gasto adicional</button>
+
+    <hr class="sep">
     <div class="grid g2">
       <div>
         <div class="totrow"><span>Dispersión de combustible</span><b class="num" id="tDispComb">$0.00</b></div>
         <div class="totrow"><span>Dispersión en efectivo (casetas + pensión + comida + urea)</span><b class="num" id="tDispEfec">$0.00</b></div>
+        <div class="totrow" id="tGastosAdicBox"><span>Gastos adicionales al operador</span><b class="num" id="tGastosAdic">$0.00</b></div>
         <div class="totrow big"><span>Gasto total del viaje</span><span class="num" id="tTotal">$0.00</span></div>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end;justify-content:flex-end">
@@ -457,6 +464,15 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       <div><label>Dádivas ($)</label><input id="lqDadivas" type="number" step="0.01" min="0" class="num" value="0"></div>
       <div><label>Estacionamientos ($)</label><input id="lqEstac" type="number" step="0.01" min="0" class="num" value="0"></div>
     </div>
+
+    <!-- Comprobación de los adelantos al operador capturados en la solicitud -->
+    <div id="lqAdelantosBox" style="display:none">
+      <h3 style="margin-top:10px">Comprobación de adelantos al operador</h3>
+      <div class="sub" style="margin-bottom:10px">Confirma cuánto comprobó el operador de cada adelanto que se le dio (adelanto de nómina, pensión, hotel…). La diferencia se descuenta o se abona en su Pre-Nómina.</div>
+      <div id="lqAdelantosWrap"></div>
+      <div class="totrow" style="margin-top:8px"><span>Diferencia total (a favor / en contra del operador)</span><b class="num" id="lqAdelantosDif">$0.00</b></div>
+    </div>
+
     <!-- Aclaración: cuando el odómetro se sale de la tolerancia -->
     <div id="lqAclaraBox" style="display:none;background:var(--surface2);border:1px solid var(--bad);border-radius:10px;padding:14px;margin-top:12px">
       <h3 style="color:var(--bad);margin-bottom:8px">Este viaje debe entrar a aclaración</h3>
@@ -529,12 +545,9 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <h3>Sueldo</h3>
         <div class="grid g3" style="margin-bottom:10px">
           <div><label>Semanas consideradas</label><input id="pSemanasN" type="number" min="1" step="1" value="1"></div>
-          <div><label>% impuestos al sueldo</label><input id="pImpPct" type="number" min="0" max="100" step="0.1"></div>
           <div><label>% bono cumplimiento</label><input id="pBonoPct" type="number" min="0" max="100" step="1"></div>
         </div>
         <div class="totrow"><span>Sueldo bruto (semanal × semanas)</span><b class="num" id="pNominal">$0.00</b></div>
-        <div class="totrow"><span>Impuestos sobre el sueldo</span><b class="num neg" id="pImp">−$0.00</b></div>
-        <div class="totrow"><span>Sueldo neto</span><b class="num" id="pNeto">$0.00</b></div>
       </div>
 
       <div class="card">
@@ -555,19 +568,8 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
           <div><label>Objetivo semanal (km)</label><input id="pObjKm" type="number" min="0" step="1"></div>
           <div><label>Pago por km extra ($)</label><input id="pPagoKmX" type="number" min="0" step="0.1"></div>
         </div>
-        <label>KM que cuentan para el objetivo</label>
-        <div style="display:flex;gap:18px;flex-wrap:wrap;margin-bottom:12px" id="pFuenteBox">
-          <label style="display:flex;gap:8px;align-items:center;font-size:13.5px;text-transform:none;letter-spacing:0;font-weight:600;color:var(--ink);margin:0">
-            <input type="radio" name="pFuenteKm" value="RUTA" checked style="width:16px;height:16px;min-width:16px"> Proyectados en la ruta
-          </label>
-          <label style="display:flex;gap:8px;align-items:center;font-size:13.5px;text-transform:none;letter-spacing:0;font-weight:600;color:var(--ink);margin:0">
-            <input type="radio" name="pFuenteKm" value="ODOMETRO" style="width:16px;height:16px;min-width:16px"> Registrados por odómetro
-          </label>
-        </div>
-        <div class="totrow"><span><b>KM realizados</b> <span class="mini" id="pKmFuente"></span></span><b class="num" id="pKm">0</b></div>
-        <!-- Solo se muestra la fuente que NO se está usando, como referencia -->
-        <div class="totrow" id="pKmRutaBox"><span class="mini">KM proyectados en las rutas (referencia)</span><b class="num mini" id="pKmRuta">0</b></div>
-        <div class="totrow" id="pKmOdoBox"><span class="mini">KM registrados por odómetro (referencia)</span><b class="num mini" id="pKmOdo">0</b></div>
+        <div class="totrow"><span><b>KM realizados</b> <span class="mini">(por odómetro)</span></span><b class="num" id="pKm">0</b></div>
+        <div class="totrow"><span class="mini">KM proyectados en las rutas (solo informativo)</span><b class="num mini" id="pKmRuta">0</b></div>
         <div class="totrow"><span>Objetivo del periodo (obj × semanas)</span><b class="num" id="pObjTot">0</b></div>
         <div class="totrow"><span>Cumplimiento del objetivo</span><b class="num" id="pCumplePct">0%</b></div>
         <div class="totrow"><span>KM extra</span><b class="num" id="pKmX">0</b></div>
@@ -600,6 +602,16 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         </div>
         <div class="totrow"><span>Litros ahorrados</span><b class="num" id="pLAhorro">0</b></div>
         <div class="totrow"><span>Pago por rendimiento eficiente</span><b class="num pos" id="pPagoRend">$0.00</b></div>
+      </div>
+
+      <div class="card" id="pDescuentosBox" style="display:none">
+        <h3>Descuentos por adelantos al operador</h3>
+        <div class="sub" style="margin-bottom:10px">Diferencia entre lo adelantado (nómina, pensión, hotel…) y lo comprobado en cada viaje liquidado del periodo. Positivo se descuenta; negativo (comprobó de más) se abona.</div>
+        <div class="twrap"><table>
+          <thead><tr><th>Folio</th><th>Concepto</th><th class="right">Asignado</th><th class="right">Comprobado</th><th class="right">Diferencia</th></tr></thead>
+          <tbody id="tbodyDescuentos"></tbody>
+        </table></div>
+        <div class="totrow" style="margin-top:8px"><span>Total del periodo</span><b class="num" id="pDescuentoTotal">$0.00</b></div>
       </div>
 
       <div class="card">
@@ -678,7 +690,6 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       <h3 style="margin-top:18px">Pre-nómina</h3>
       <div class="grid g4">
         <div><label>% bono cumplimiento</label><input id="cfgBonoPct" type="number" step="1"></div>
-        <div><label>% impuestos al sueldo</label><input id="cfgImpPct" type="number" step="0.1"></div>
         <div><label>Pago por km extra ($)</label><input id="cfgKmX" type="number" step="0.1"></div>
         <div><label>Apoyo para viaje ($)</label><input id="cfgApoyo" type="number" step="50"></div>
         <div><label>$ litro ahorrado (diésel)</label><input id="cfgBLD" type="number" step="0.5"></div>
@@ -896,8 +907,6 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
   </table>
   <table class="prTable" style="margin-top:6px">
     <tr><td class="prLbl">SUELDO BRUTO</td><td id="pnBruto"></td></tr>
-    <tr><td class="prLbl">IMPUESTOS SOBRE EL SUELDO</td><td id="pnImp"></td></tr>
-    <tr><td class="prLbl">SUELDO NETO</td><td id="pnNeto"></td></tr>
     <tr><td class="prLbl">BONO POR CUMPLIMIENTO</td><td id="pnBono"></td></tr>
     <tr><td class="prLbl">KM EXTRA (SOBRE OBJETIVO <span id="pnObjKm"></span>)</td><td id="pnKmX"></td></tr>
     <tr><td class="prLbl">PAGO POR KM EXTRA</td><td id="pnPagoKm"></td></tr>
@@ -905,6 +914,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <tr><td class="prLbl">LITROS AHORRADOS</td><td id="pnLA"></td></tr>
     <tr><td class="prLbl">PAGO POR RENDIMIENTO EFICIENTE</td><td id="pnPagoRend"></td></tr>
     <tr><td class="prLbl">APOYO PARA VIAJE</td><td id="pnApoyo"></td></tr>
+    <tr><td class="prLbl">DESCUENTO POR ADELANTOS AL OPERADOR</td><td id="pnDescuento"></td></tr>
     <tr><td class="prLbl" style="font-size:13px">TOTAL A PAGAR AL OPERADOR</td><td id="pnTotal" style="font-weight:bold;font-size:13px"></td></tr>
   </table>
   <table class="prTable" style="margin-top:40px">
@@ -1360,6 +1370,43 @@ function editarRuta(id){
    SOLICITUD DE GASTO
 ===================================================== */
 let cartasPorte = [''];
+/* Gastos adicionales al operador: adelantos que no son parte del gasto del
+   viaje en sí (adelanto de nómina, pensión, hotel…). Se comprueban al
+   liquidar; la diferencia entre lo asignado y lo comprobado se descuenta (o
+   se abona, si comprobó de más) en la Pre-Nómina del operador. */
+const CONCEPTOS_GASTO_ADIC = ['ADELANTO DE NÓMINA','PENSIÓN','HOTEL','OTRO'];
+let gastosAdicionales = [];
+function pintarGastosAdicionales(){
+  const w = $('gastosAdicWrap'); w.innerHTML='';
+  gastosAdicionales.forEach((g,i)=>{
+    const d=document.createElement('div');
+    d.style.cssText='display:flex;gap:8px;align-items:end;margin-bottom:10px';
+    d.innerHTML=`
+      <div style="flex:2"><label>Concepto ${i+1}</label>
+        <select data-gi="${i}" data-gk="CONCEPTO">${CONCEPTOS_GASTO_ADIC.map(c=>`<option${g.CONCEPTO===c?' selected':''}>${c}</option>`).join('')}</select>
+      </div>
+      <div style="flex:1"><label>Monto ($)</label><input type="number" min="0" step="0.01" value="${g.MONTO}" data-gi="${i}" data-gk="MONTO"></div>
+      <button class="xbtn" data-gdel="${i}" title="Quitar gasto adicional">✕</button>`;
+    w.appendChild(d);
+  });
+  w.querySelectorAll('[data-gi]').forEach(el=>el.addEventListener('input',()=>{
+    const i=+el.dataset.gi, k=el.dataset.gk;
+    gastosAdicionales[i][k] = k==='MONTO'? el.value : el.value;
+    recalcularSolicitud();
+  }));
+  w.querySelectorAll('[data-gi][data-gk="CONCEPTO"]').forEach(el=>el.addEventListener('change',()=>{
+    gastosAdicionales[+el.dataset.gi].CONCEPTO = el.value;
+  }));
+  w.querySelectorAll('[data-gdel]').forEach(el=>el.addEventListener('click',()=>{
+    gastosAdicionales.splice(+el.dataset.gdel,1);
+    pintarGastosAdicionales(); recalcularSolicitud();
+  }));
+}
+$('btnAddGastoAdic').addEventListener('click',()=>{
+  gastosAdicionales.push({ CONCEPTO: CONCEPTOS_GASTO_ADIC[0], MONTO: 0 });
+  pintarGastosAdicionales(); recalcularSolicitud();
+});
+function totalGastosAdicionales(){ return gastosAdicionales.reduce((s,g)=>s+nf(g.MONTO),0); }
 let solEditando = null;
 
 function folioAuto(){
@@ -1510,9 +1557,12 @@ function recalcularSolicitud(){
   const dispComb = litros * precioComb(u? u.COMBUSTIBLE:'DIESEL');
   const depUrea = llevaUrea? nf($('sDepUrea').value) : 0;
   const dispEfec = nf($('sCasetas').dataset.v)+nf($('sPension').value)+nf($('sComida').value)+depUrea;
+  const gastosAdic = totalGastosAdicionales();
   $('tDispComb').textContent = money(dispComb);
   $('tDispEfec').textContent = money(dispEfec);
-  $('tTotal').textContent = money(dispComb+dispEfec);
+  $('tGastosAdic').textContent = money(gastosAdic);
+  $('tGastosAdicBox').style.display = gastosAdic>0? '' : 'none';
+  $('tTotal').textContent = money(dispComb+dispEfec+gastosAdic);
 }
 ['sPension','sComida'].forEach(id=>$(id).addEventListener('input',recalcularSolicitud));
 $('sLitrosUrea').addEventListener('input',()=>{ $('sLitrosUrea').dataset.manual='1'; if(!$('sDepUrea').dataset.manual){ $('sDepUrea').value=(nf($('sLitrosUrea').value)*cfgNum('PRECIO_UREA',20)).toFixed(2);} recalcularSolicitud(); });
@@ -1540,6 +1590,7 @@ function armarSolicitud(){
   const llevaUrea = u && String(u.UREA).toUpperCase()==='SI';
   const dispComb = parseMoney($('tDispComb').textContent);
   const dispEfec = parseMoney($('tDispEfec').textContent);
+  const gastosAdic = totalGastosAdicionales();
   return {
     ID: uid(),
     FOLIO: $('sFolio').value,
@@ -1564,14 +1615,16 @@ function armarSolicitud(){
     TARIFA_CASETAS: etiquetaTarifa($('sTipoUnidad').value),
     EJECUTIVO: ej? ej.NOMBRE:'',
     COMBUSTIBLE_ASIGNADO: r2(dispComb),
-    TOTAL: dispComb+dispEfec
+    GASTOS_ADICIONALES_JSON: JSON.stringify(gastosAdicionales.filter(g=>nf(g.MONTO)>0)),
+    TOTAL: dispComb+dispEfec+gastosAdic
   };
 }
 $('btnGuardarSol').addEventListener('click', async ()=>{
   if(solEditando && dispersadoSol(solEditando)){
     toast('Esta solicitud ya fue dispersada; no se puede modificar.', true); return;
   }
-  // Validar cartas porte duplicadas (ignorando la propia solicitud si se edita)
+  // Cartas porte duplicadas: bloquean el guardado por completo, no se puede
+  // continuar hasta que se corrija (ignorando la propia solicitud si se edita)
   const cpsIngresadas = cartasPorte.filter(Boolean);
   if(cpsIngresadas.length){
     const cpExistentes = new Set();
@@ -1581,7 +1634,10 @@ $('btnGuardarSol').addEventListener('click', async ()=>{
     });
     const dup = cpsIngresadas.find(c=>cpExistentes.has(c));
     if(dup){
-      if(!confirm('⚠ La Carta Porte '+dup+' ya fue registrada en otra solicitud.\n\nRevisa e ingresa otra Carta Porte.\n\n¿Deseas continuar de todos modos?')) return;
+      modal('Carta porte repetida',
+        'La carta porte <b>'+esc(dup)+'</b> ya está registrada en otra solicitud.<br><br>'+
+        'Corrígela o agrega una carta porte distinta antes de guardar.', '🚫');
+      return;
     }
   }
   if($('sFechaServ').value && $('sFechaServ').value < hoyISO()){ toast('La fecha de servicio no puede ser anterior a hoy.', true); return; }
@@ -1601,6 +1657,7 @@ function nuevaSolicitud(){
   solEditando = null;
   aplicarCandadoSolicitud(false);
   cartasPorte=[''];
+  gastosAdicionales=[]; pintarGastosAdicionales();
   ['sEco','sOperador','sRem1','sRem2','sDolly','sRuta','sEjecutivo','sTipoUnidad'].forEach(id=>$(id).value='');
   $('sRutaBusca').value='';
   ['sPlacas','sTipoServicio','sTipoViaje','sKm','sCombustible','sRend','sLitros'].forEach(id=>$(id).value='');
@@ -1626,7 +1683,9 @@ const CAMPOS_SOL_EDITABLES = [
 function aplicarCandadoSolicitud(bloqueado){
   CAMPOS_SOL_EDITABLES.forEach(id=>{ $(id).disabled = bloqueado; });
   document.querySelectorAll('#cpWrap input,#cpWrap button').forEach(el=>el.disabled=bloqueado);
+  document.querySelectorAll('#gastosAdicWrap input,#gastosAdicWrap select,#gastosAdicWrap button').forEach(el=>el.disabled=bloqueado);
   $('btnAddCP').style.display = bloqueado? 'none' : '';
+  $('btnAddGastoAdic').style.display = bloqueado? 'none' : '';
   $('btnGuardarSol').style.display = bloqueado? 'none' : '';
   $('btnNuevoOp').style.display = bloqueado? 'none' : '';
   $('sSolBloqueada').style.display = bloqueado? '' : 'none';
@@ -1671,6 +1730,10 @@ function cargarSolicitudEnFormulario(id){
 
   const ej = DB.EJECUTIVOS.find(x=>String(x.NOMBRE)===String(s.EJECUTIVO));
   $('sEjecutivo').value = ej? ej.ID : '';
+
+  try{ gastosAdicionales = JSON.parse(s.GASTOS_ADICIONALES_JSON||'[]'); }catch(e){ gastosAdicionales=[]; }
+  if(!Array.isArray(gastosAdicionales)) gastosAdicionales=[];
+  pintarGastosAdicionales();
 
   recalcularSolicitud();
   aplicarCandadoSolicitud(dispersadoSol(id));
@@ -1836,42 +1899,50 @@ $('btnDispersarSol').addEventListener('click', async ()=>{
 });
 
 /* =====================================================
-   CANCELACIÓN DE SOLICITUDES (requiere supervisor)
+   CANCELACIÓN DE SOLICITUDES (requiere supervisor; si ya está dispersada,
+   solo un auditor o administrador puede cancelarla, y queda marcada como
+   "Dispersión Cancelada")
 ===================================================== */
 let solCancelando = null;
+let cancelandoDispersada = false;
 
 function abrirCancelacion(id){
   const s = DB.SOLICITUDES.find(x=>String(x.ID)===String(id));
   if(!s){ toast('No se encontró la solicitud.', true); return; }
-  if(dispersadoSol(id)){
-    modal('No se puede cancelar','El gasto de este servicio ya fue <b>dispersado</b> al operador. Una solicitud dispersada no se puede cancelar.','🔒');
+  const disp = dispersadoSol(id);
+  if(disp && !(esAuditor() || esAdmin())){
+    modal('No se puede cancelar','El gasto de este servicio ya fue <b>dispersado</b> al operador. Solo un <b>auditor</b> o un <b>administrador</b> puede cancelar una solicitud ya dispersada.','🔒');
     return;
   }
   solCancelando = id;
+  cancelandoDispersada = disp;
   $('canDatos').innerHTML =
     `Folio <b>${esc(s.FOLIO)}</b> · ${esc(s.RUTA||'—')}<br>`+
     `Operador: <b>${esc(s.OPERADOR||'—')}</b> · Carta(s) porte: <b>${esc(s.CARTAS_PORTE||'—')}</b><br>`+
-    `Total: <b>${money(nf(s.TOTAL))}</b>`;
+    `Total: <b>${money(nf(s.TOTAL))}</b>`+
+    (disp? '<br><br><span style="color:var(--bad);font-weight:700">⚠ Esta solicitud ya fue dispersada. Al cancelarla quedará marcada como "Dispersión Cancelada" y requiere autorización de un auditor o administrador.</span>' : '');
   $('canMotivo').value=''; $('canUser').value=''; $('canPass').value=''; $('canErr').textContent='';
   $('cancelWrap').classList.add('show');
   $('canMotivo').focus();
 }
 function cerrarCancelacion(){
   $('cancelWrap').classList.remove('show');
-  solCancelando = null;
+  solCancelando = null; cancelandoDispersada = false;
 }
 $('canCerrar').addEventListener('click', cerrarCancelacion);
 $('cancelWrap').addEventListener('click',e=>{ if(e.target===$('cancelWrap')) cerrarCancelacion(); });
 $('canPass').addEventListener('keydown',e=>{ if(e.key==='Enter') $('canConfirmar').click(); });
 
-/* Valida las credenciales de quien autoriza. Debe ser SUP o ADMIN activo. */
-function validarSupervisor(user, pass){
+/* Valida las credenciales de quien autoriza contra un conjunto de roles
+   permitidos. Cancelar una solicitud normal requiere SUP o ADMIN; cancelar
+   una ya dispersada requiere AUDITOR o ADMIN. */
+function validarAutorizador(user, pass, rolesPermitidos){
   const u = String(user||'').trim().toLowerCase();
   const p = String(pass||'');
-  if(!u || !p) return { ok:false, error:'Captura el usuario y la contraseña del supervisor.' };
+  if(!u || !p) return { ok:false, error:'Captura el usuario y la contraseña de quien autoriza.' };
 
   if(!DB.USUARIOS.length){
-    if(u==='admin' && p==='admin') return { ok:true, usuario: USUARIO_INICIAL };
+    if(u==='admin' && p==='admin' && rolesPermitidos.includes('ADMIN')) return { ok:true, usuario: USUARIO_INICIAL };
     return { ok:false, error:'Usuario o contraseña incorrectos.' };
   }
   const encontrado = DB.USUARIOS.find(x=>String(x.USUARIO||'').trim().toLowerCase()===u);
@@ -1879,11 +1950,12 @@ function validarSupervisor(user, pass){
   if(String(encontrado.ACTIVO||'SI').toUpperCase()==='NO') return { ok:false, error:'Ese usuario está dado de baja.' };
 
   const rol = String(encontrado.ROL||'').toUpperCase();
-  if(rol!=='SUP' && rol!=='ADMIN'){
-    return { ok:false, error:'Ese usuario no tiene permiso para autorizar cancelaciones. Se necesita un supervisor o un administrador.' };
+  if(!rolesPermitidos.includes(rol)){
+    return { ok:false, error:'Ese usuario no tiene permiso para autorizar esta cancelación. Se necesita: '+rolesPermitidos.map(etiquetaRol).join(' o ')+'.' };
   }
   return { ok:true, usuario: encontrado };
 }
+function validarSupervisor(user, pass){ return validarAutorizador(user, pass, ['SUP','ADMIN']); }
 
 $('canConfirmar').addEventListener('click', async ()=>{
   if(!solCancelando) return;
@@ -1893,11 +1965,12 @@ $('canConfirmar').addEventListener('click', async ()=>{
   const motivo = ($('canMotivo').value||'').trim();
   if(!motivo){ $('canErr').textContent='Escribe el motivo de la cancelación.'; $('canMotivo').focus(); return; }
 
-  const auth = validarSupervisor($('canUser').value, $('canPass').value);
+  const auth = validarAutorizador($('canUser').value, $('canPass').value, cancelandoDispersada? ['AUDITOR','ADMIN'] : ['SUP','ADMIN']);
   if(!auth.ok){ $('canErr').textContent=auth.error; $('canPass').value=''; $('canPass').focus(); return; }
 
   $('canErr').textContent='';
   const registro = Object.assign({}, s, {
+    ESTADO_CANCELACION: cancelandoDispersada? 'DISPERSION CANCELADA' : 'CANCELADA',
     MOTIVO_CANCELACION: motivo,
     CANCELADA_POR: nombreUsuario(),
     AUTORIZADA_POR: auth.usuario.NOMBRE || auth.usuario.USUARIO,
@@ -1906,7 +1979,7 @@ $('canConfirmar').addEventListener('click', async ()=>{
   });
 
   if(await apiEnviar({action:'cancelarSolicitud', record:registro})){
-    toast('Solicitud '+s.FOLIO+' cancelada y registrada');
+    toast('Solicitud '+s.FOLIO+(cancelandoDispersada? ' — dispersión cancelada y registrada' : ' cancelada y registrada'));
     cerrarCancelacion();
   }
 });
@@ -1987,7 +2060,6 @@ function pintarPrenomina(){
   // Selects/valores por defecto
   const selT=$('pTipoU');
   if(!selT.options.length){ TIPOS_UNIDAD.forEach(t=>{const o=document.createElement('option');o.textContent=t;selT.appendChild(o);}); }
-  if($('pImpPct').value==='') $('pImpPct').value=cfgNum('IMPUESTO_SUELDO_PCT',0);
   if($('pBonoPct').value==='') $('pBonoPct').value=cfgNum('BONO_PCT',30);
   if($('pPagoKmX').value==='') $('pPagoKmX').value=cfgNum('PAGO_KM_EXTRA',2);
   calcularPrenomina();
@@ -2027,10 +2099,9 @@ function tipoPredominante(servicios, campo){
 let ultimoCalculoNom = null;
 
 /* Fuente de KM que cuenta para el objetivo: ruta proyectada u odómetro */
-function fuenteKm(){
-  const sel = document.querySelector('input[name="pFuenteKm"]:checked');
-  return sel? sel.value : 'RUTA';
-}
+/* El objetivo de KM solo cuenta lo registrado por odómetro; lo proyectado en
+   la ruta queda como referencia informativa (ver calcularPrenomina). */
+function fuenteKm(){ return 'ODOMETRO'; }
 
 /* Apoyo para viaje, escalonado según el cumplimiento del objetivo de KM.
    Un administrador puede autorizarlo al 100% aunque no se cumpla. */
@@ -2063,22 +2134,30 @@ function calcularApoyo(nServiciosLiq, cumplePct){
 }
 
 /* Campos que solo un administrador puede tocar. El operativo únicamente
-   captura el rendimiento real. */
+   captura el rendimiento real. Tipo de unidad y tipo de servicio son la
+   excepción: el supervisor también puede fijarlos (el objetivo de KM y el
+   pago semanal del operador siguen siendo exclusivos del administrador). */
 const CAMPOS_SOLO_ADMIN = [
-  'pSemanasN','pImpPct','pBonoPct',                    // Sueldo
-  'pTipoU','pTipoServ','pObjKm','pPagoKmX',            // Objetivo de KM
+  'pSemanasN','pBonoPct',                              // Sueldo
+  'pObjKm','pPagoKmX',                                 // Objetivo de KM
   'pRendObj','pBonoLitro',                             // Objetivo de rendimiento
   'pApoyoMonto'                                        // Apoyo para viaje
 ];
+const CAMPOS_ADMIN_O_SUP = ['pTipoU','pTipoServ'];
+function puedeEditarTipoPrenomina(){ return esAdmin() || rolActual()==='SUP'; }
 function aplicarPermisosPrenomina(){
   const admin = esAdmin();
+  const puedeTipo = puedeEditarTipoPrenomina();
   CAMPOS_SOLO_ADMIN.forEach(id=>{
     const el = $(id); if(!el) return;
     el.disabled = !admin;
     el.title = admin? '' : 'Solo el administrador puede modificar este campo';
   });
-  // La fuente de KM también es decisión del administrador
-  document.querySelectorAll('input[name="pFuenteKm"]').forEach(el=>{ el.disabled = !admin; });
+  CAMPOS_ADMIN_O_SUP.forEach(id=>{
+    const el = $(id); if(!el) return;
+    el.disabled = !puedeTipo;
+    el.title = puedeTipo? '' : 'Solo el administrador o un supervisor puede modificar este campo';
+  });
   $('pApoyoAdminBox').style.display = admin? '' : 'none';
   if(!admin) $('pApoyoAuth').checked = false;
   $('pAvisoSoloAdmin').style.display = admin? 'none' : '';
@@ -2099,7 +2178,7 @@ function calcularPrenomina(){
   const servAuto = tipoPredominante(servicios,'TIPO_SERVICIO');
   if(servAuto && !$('pTipoServ').dataset.manual && ['LOCAL','FORÁNEO'].includes(servAuto)) $('pTipoServ').value=servAuto;
   const servicio = $('pTipoServ').value || 'FORÁNEO';
-  $('pTipoServ').disabled = !CFG_OBJ_KM_LOCAL[tipo] || !esAdmin();
+  $('pTipoServ').disabled = !CFG_OBJ_KM_LOCAL[tipo] || !puedeEditarTipoPrenomina();
   if(!$('pObjKm').dataset.manual) $('pObjKm').value = objKm(tipo, servicio);
   if(!$('pRendObj').dataset.manual) $('pRendObj').value = objRend(tipo);
   const combPred = tipoPredominante(serviciosLiq,'COMBUSTIBLE') || 'DIESEL';
@@ -2108,23 +2187,21 @@ function calcularPrenomina(){
   if($('pApoyoMonto').value==='') $('pApoyoMonto').value = cfgNum('APOYO_VIAJE',1500);
 
   const bruto = (op? nf(op.PAGO_NOMINAL_SEMANAL):0) * semanas;
-  const impPct = nf($('pImpPct').value);
-  const imp = bruto*impPct/100;
-  const neto = bruto-imp;
 
-  // Solo los servicios LIQUIDADOS cuentan para KM y pago.
-  // Se calculan las dos fuentes y manda la que esté seleccionada.
+  // Solo los servicios LIQUIDADOS cuentan para KM y pago. El objetivo de KM
+  // solo considera lo registrado por odómetro; lo proyectado en ruta es
+  // puramente informativo (ver kmRuta abajo).
   const kmRuta = serviciosLiq.reduce((a,s)=>a+nf(s.KM),0);
   const kmOdo  = serviciosLiq.reduce((a,s)=>{
     const l = liqDe(s.ID);
     return a + (l? nf(l.KM_ODOMETRO) : 0);
   },0);
   const fuente = fuenteKm();
-  const km = fuente==='ODOMETRO'? kmOdo : kmRuta;
+  const km = kmOdo;
 
   const nPend = servicios.length - serviciosLiq.length;
   const nObs = [$('ob1'),$('ob2'),$('ob3')].filter(c=>c.checked).length;
-  const bono = neto*(nf($('pBonoPct').value)/100)/3*nObs;
+  const bono = bruto*(nf($('pBonoPct').value)/100)/3*nObs;
   const objTot = nf($('pObjKm').value)*semanas;
   const kmX = Math.max(0, km-objTot);
   const pagoKm = kmX*nf($('pPagoKmX').value);
@@ -2138,18 +2215,34 @@ function calcularPrenomina(){
   const pagoRend = ahorro*nf($('pBonoLitro').value);
 
   const apoyo = calcularApoyo(serviciosLiq.length, cumplePct);
-  const total = neto+bono+pagoKm+pagoRend+apoyo.monto;
+
+  // Descuentos por adelantos al operador (adelanto de nómina, pensión,
+  // hotel…) comprobados al liquidar cada viaje del periodo.
+  const descItems = [];
+  serviciosLiq.forEach(s=>{
+    const l = liqDe(s.ID); if(!l) return;
+    let gastos=[];
+    try{ gastos = JSON.parse(l.GASTOS_ADICIONALES_JSON||'[]'); }catch(e){ gastos=[]; }
+    if(!Array.isArray(gastos)) return;
+    gastos.forEach(g=>descItems.push({ folio:s.FOLIO, concepto:g.CONCEPTO, asignado:nf(g.ASIGNADO), real:nf(g.REAL), diferencia:nf(g.DIFERENCIA) }));
+  });
+  const descuentoGastos = descItems.reduce((a,d)=>a+d.diferencia,0);
+  const total = bruto+bono+pagoKm+pagoRend+apoyo.monto-descuentoGastos;
+
+  $('pDescuentosBox').style.display = descItems.length? '' : 'none';
+  const tbD=$('tbodyDescuentos'); tbD.innerHTML='';
+  descItems.forEach(d=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${esc(d.folio)}</td><td>${esc(d.concepto)}</td><td class="right num">${money(d.asignado)}</td><td class="right num">${money(d.real)}</td>
+      <td class="right num" style="color:${d.diferencia>0?'var(--bad)':d.diferencia<0?'var(--ok)':''}">${d.diferencia>=0?'':'−'}${money(Math.abs(d.diferencia))}</td>`;
+    tbD.appendChild(tr);
+  });
+  $('pDescuentoTotal').textContent = (descuentoGastos>=0?'':'−')+money(Math.abs(descuentoGastos)) + (descuentoGastos>0? ' (se descuenta)' : descuentoGastos<0? ' (se abona)' : '');
+  $('pDescuentoTotal').style.color = descuentoGastos>0? 'var(--bad)' : descuentoGastos<0? 'var(--ok)' : '';
 
   $('pNominal').textContent=money(bruto);
-  $('pImp').textContent='−'+money(imp);
-  $('pNeto').textContent=money(neto);
   $('pBono').textContent=money(bono);
   $('pKmRuta').textContent=num(kmRuta,1);
-  $('pKmOdo').textContent=num(kmOdo,1);
-  $('pKmFuente').textContent = fuente==='ODOMETRO'? '(por odómetro)' : '(proyectados en ruta)';
-  // La fuente en uso ya se muestra como "KM realizados": no se repite abajo
-  $('pKmRutaBox').style.display = fuente==='RUTA'? 'none' : '';
-  $('pKmOdoBox').style.display  = fuente==='ODOMETRO'? 'none' : '';
   $('pKm').textContent=num(km,1) + (nPend>0? ` (${nPend} viaje(s) sin liquidar no cuentan)`:'');
   $('pObjTot').textContent=num(objTot);
   $('pCumplePct').textContent=num(cumplePct,1)+'%';
@@ -2175,10 +2268,11 @@ function calcularPrenomina(){
   if(!servicios.length) tb.innerHTML='<tr><td colspan="5" class="mini">Sin servicios en el periodo seleccionado.</td></tr>';
 
   ultimoCalculoNom = op? {
-    op, etiqueta, servicios:serviciosLiq, semanas, bruto, impPct, imp, neto, bono, km,
+    op, etiqueta, servicios:serviciosLiq, semanas, bruto, bono, km,
     kmRuta, kmOdo, fuente, cumplePct,
     objKmSemanal:nf($('pObjKm').value), objTot, kmX, pagoKm, rObj, rReal, ahorro, pagoRend,
     apoyo: apoyo.monto, apoyoPct: apoyo.pct, apoyoAutorizado: apoyo.autorizado,
+    descuentoGastos, descItems,
     total, tipo, servicio
   } : null;
   pintarNominas();
@@ -2188,13 +2282,12 @@ $('pAnio').addEventListener('change',()=>{ pintarPrenomina(); });
 /* Se registra ANTES del bloque siguiente: al cambiar unidad o tipo de servicio
    el objetivo debe volver a calcularse solo, antes de que corra el recálculo. */
 ['pTipoU','pTipoServ'].forEach(id=>$(id).addEventListener('change',()=>{ delete $('pObjKm').dataset.manual; }));
-[['pSemanasN',1],['pImpPct',1],['pBonoPct',1],['pTipoU',1],['pTipoServ',1],['pObjKm',1],['pPagoKmX',1],['pRendObj',1],['pRendReal',0],['pBonoLitro',1]].forEach(([id,marca])=>{
+[['pSemanasN',1],['pBonoPct',1],['pTipoU',1],['pTipoServ',1],['pObjKm',1],['pPagoKmX',1],['pRendObj',1],['pRendReal',0],['pBonoLitro',1]].forEach(([id,marca])=>{
   $(id).addEventListener('input',()=>{ if(marca) $(id).dataset.manual='1'; calcularPrenomina(); });
   $(id).addEventListener('change',()=>{ if(marca) $(id).dataset.manual='1'; calcularPrenomina(); });
 });
 $('pOperador').addEventListener('change',()=>{ ['pSemanasN','pTipoU','pTipoServ','pObjKm','pRendObj','pBonoLitro'].forEach(id=>delete $(id).dataset.manual); $('pRendReal').value=''; });
 $('pModo').addEventListener('change',()=>{ delete $('pSemanasN').dataset.manual; });
-document.querySelectorAll('input[name="pFuenteKm"]').forEach(el=>el.addEventListener('change',calcularPrenomina));
 $('pApoyoAuth').addEventListener('change',calcularPrenomina);
 $('pApoyoMonto').addEventListener('input',calcularPrenomina);
 
@@ -2206,8 +2299,6 @@ $('btnPdfNom').addEventListener('click',()=>{
   $('pnServ').textContent=c.servicios.length; $('pnKm').textContent=num(c.km,1);
   $('pnTabla').innerHTML = c.servicios.map(s=>`<tr><td>${esc(s.RUTA)}</td><td>${esc(s.CARTAS_PORTE)}</td><td>${fmtFecha(s.FECHA_SERVICIO)}</td><td style="text-align:right">${num(s.KM,1)}</td></tr>`).join('') || '<tr><td colspan="4">Sin servicios</td></tr>';
   $('pnBruto').textContent=money(c.bruto);
-  $('pnImp').textContent='−'+money(c.imp)+' ('+c.impPct+'%)';
-  $('pnNeto').textContent=money(c.neto);
   $('pnBono').textContent=money(c.bono);
   $('pnObjKm').textContent=num(c.objTot)+' KM';
   $('pnKmX').textContent=num(c.kmX,1)+' KM';
@@ -2217,6 +2308,7 @@ $('btnPdfNom').addEventListener('click',()=>{
   $('pnLA').textContent=num(c.ahorro,1);
   $('pnPagoRend').textContent=money(c.pagoRend);
   $('pnApoyo').textContent=money(c.apoyo)+' ('+c.apoyoPct+'%'+(c.apoyoAutorizado?', autorizado':'')+')';
+  $('pnDescuento').textContent = c.descuentoGastos? ((c.descuentoGastos>=0?'−':'+')+money(Math.abs(c.descuentoGastos))) : '$0.00';
   $('pnTotal').textContent=money(c.total);
   document.body.classList.add('print-nom');
   window.print();
@@ -2230,13 +2322,14 @@ $('btnRegNom').addEventListener('click', async ()=>{
   const reg = {
     ID: c.op.ID+'|'+modo+'|'+c.etiqueta.replace(/\s/g,''),
     OPERADOR: c.op.NOMBRE, MODO: modo.toUpperCase(), PERIODO: c.etiqueta, SEMANAS: c.semanas,
-    SUELDO_BRUTO: r2(c.bruto), IMPUESTO_PCT: c.impPct, IMPUESTOS: r2(c.imp), SUELDO_NETO: r2(c.neto),
+    SUELDO_BRUTO: r2(c.bruto), IMPUESTO_PCT: 0, IMPUESTOS: 0, SUELDO_NETO: r2(c.bruto),
     BONO_CUMPLIMIENTO: r2(c.bono), KM: r2(c.km), OBJETIVO_KM: r2(c.objTot), KM_EXTRA: r2(c.kmX),
     PAGO_KM_EXTRA: r2(c.pagoKm), REND_OBJETIVO: c.rObj, REND_REAL: c.rReal,
     LITROS_AHORRADOS: r2(c.ahorro), PAGO_RENDIMIENTO: r2(c.pagoRend),
     KM_RUTA: r2(c.kmRuta), KM_ODOMETRO: r2(c.kmOdo), FUENTE_KM: c.fuente,
     CUMPLIMIENTO_PCT: r2(c.cumplePct), APOYO_VIAJE: r2(c.apoyo), APOYO_PCT: c.apoyoPct,
     APOYO_AUTORIZADO: c.apoyoAutorizado? 'SI':'NO', AUTORIZADO_POR: c.apoyoAutorizado? nombreUsuario():'',
+    DESCUENTO_GASTOS: r2(c.descuentoGastos),
     REGISTRADO_POR: nombreUsuario(),
     TOTAL: r2(c.total), FECHA_REGISTRO: hoyISO()
   };
@@ -2259,7 +2352,7 @@ function pintarNominas(){
 }
 $('btnCsvNom').addEventListener('click',()=>{
   if(!DB.NOMINAS.length){ toast('No hay nóminas registradas.', true); return; }
-  const cols=['OPERADOR','MODO','PERIODO','SEMANAS','SUELDO_BRUTO','IMPUESTO_PCT','IMPUESTOS','SUELDO_NETO','BONO_CUMPLIMIENTO','KM','KM_RUTA','KM_ODOMETRO','FUENTE_KM','OBJETIVO_KM','CUMPLIMIENTO_PCT','KM_EXTRA','PAGO_KM_EXTRA','REND_OBJETIVO','REND_REAL','LITROS_AHORRADOS','PAGO_RENDIMIENTO','APOYO_VIAJE','APOYO_PCT','APOYO_AUTORIZADO','TOTAL','REGISTRADO_POR','FECHA_REGISTRO'];
+  const cols=['OPERADOR','MODO','PERIODO','SEMANAS','SUELDO_BRUTO','IMPUESTO_PCT','IMPUESTOS','SUELDO_NETO','BONO_CUMPLIMIENTO','KM','KM_RUTA','KM_ODOMETRO','FUENTE_KM','OBJETIVO_KM','CUMPLIMIENTO_PCT','KM_EXTRA','PAGO_KM_EXTRA','REND_OBJETIVO','REND_REAL','LITROS_AHORRADOS','PAGO_RENDIMIENTO','APOYO_VIAJE','APOYO_PCT','APOYO_AUTORIZADO','DESCUENTO_GASTOS','TOTAL','REGISTRADO_POR','FECHA_REGISTRO'];
   const csv=[cols.join(',')].concat(DB.NOMINAS.map(n=>cols.map(c=>{
     const v=String(n[c]??''); return /[",\n]/.test(v)? '"'+v.replace(/"/g,'""')+'"' : v;
   }).join(','))).join('\n');
@@ -2348,6 +2441,7 @@ function abrirLiq(id){
   $('lqTalachas').value = l? nf(l.TALACHAS) : 0;
   $('lqDadivas').value = l? nf(l.DADIVAS) : 0;
   $('lqEstac').value = l? nf(l.ESTACIONAMIENTOS) : 0;
+  pintarAdelantosLiq(s, l);
   $('lqEvidencia').checked = l? String(l.EVIDENCIA).toUpperCase()==='SI' : false;
   $('lqOdoIni').value = l && l.ODOMETRO_INICIAL!==''? nf(l.ODOMETRO_INICIAL) : '';
   $('lqOdoFin').value = l && l.ODOMETRO_FINAL!==''? nf(l.ODOMETRO_FINAL) : '';
@@ -2358,6 +2452,66 @@ function abrirLiq(id){
   calcOdometro();
   pintarCajaAclaracion(id, l);
   $('liqDetalle').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* Comprobación de los adelantos al operador (adelanto de nómina, pensión,
+   hotel…) capturados en la solicitud. La diferencia entre lo asignado y lo
+   comprobado se descuenta (o se abona, si comprobó de más) en su Pre-Nómina. */
+function pintarAdelantosLiq(s, l){
+  let asignados=[];
+  try{ asignados = JSON.parse(s.GASTOS_ADICIONALES_JSON||'[]'); }catch(e){ asignados=[]; }
+  if(!Array.isArray(asignados)) asignados=[];
+
+  let previos=[];
+  try{ previos = l? JSON.parse(l.GASTOS_ADICIONALES_JSON||'[]') : []; }catch(e){ previos=[]; }
+  if(!Array.isArray(previos)) previos=[];
+
+  $('lqAdelantosBox').style.display = asignados.length? '' : 'none';
+  const w = $('lqAdelantosWrap'); w.innerHTML='';
+  if(!asignados.length){ calcularDiferenciaAdelantos(); return; }
+
+  asignados.forEach((g,i)=>{
+    const asignado = nf(g.MONTO);
+    const previo = previos[i];
+    const real = previo && previo.REAL!==undefined? nf(previo.REAL) : asignado;
+    const d=document.createElement('div');
+    d.className='grid g3'; d.style.marginBottom='10px';
+    d.innerHTML=`
+      <div><label>Concepto</label><input readonly value="${esc(g.CONCEPTO)}"></div>
+      <div><label>Asignado ($)</label><input readonly class="num" value="${money(asignado)}" data-adasig="${i}" data-adasigval="${asignado}"></div>
+      <div><label>Comprobado / real ($)</label><input type="number" min="0" step="0.01" class="num" value="${asignado}" data-adreal="${i}"></div>`;
+    w.appendChild(d);
+  });
+  w.querySelectorAll('[data-adreal]').forEach(el=>el.addEventListener('input', calcularDiferenciaAdelantos));
+  calcularDiferenciaAdelantos();
+}
+/* Diferencia = asignado − real. Positiva: se le dio de más → se descuenta en
+   nómina. Negativa: comprobó de más de su bolsa → se le abona en nómina. */
+function calcularDiferenciaAdelantos(){
+  const w = $('lqAdelantosWrap');
+  let dif = 0;
+  w.querySelectorAll('[data-adreal]').forEach(el=>{
+    const asignado = nf(w.querySelector(`[data-adasig="${el.dataset.adreal}"]`).dataset.adasigval);
+    dif += asignado - nf(el.value);
+  });
+  const el = $('lqAdelantosDif');
+  el.textContent = (dif>=0?'':'−')+money(Math.abs(dif)) + (dif>0? ' (a descontar)' : dif<0? ' (a favor del operador)' : '');
+  el.style.color = dif>0? 'var(--bad)' : dif<0? 'var(--ok)' : '';
+  return dif;
+}
+/* Arma el arreglo {CONCEPTO,ASIGNADO,REAL,DIFERENCIA} para guardar en la
+   liquidación, a partir de lo capturado en pantalla. */
+function armarAdelantosLiq(s){
+  let asignados=[];
+  try{ asignados = JSON.parse(s.GASTOS_ADICIONALES_JSON||'[]'); }catch(e){ asignados=[]; }
+  if(!Array.isArray(asignados) || !asignados.length) return [];
+  const w = $('lqAdelantosWrap');
+  return asignados.map((g,i)=>{
+    const asignado = nf(g.MONTO);
+    const realEl = w.querySelector(`[data-adreal="${i}"]`);
+    const real = realEl? nf(realEl.value) : asignado;
+    return { CONCEPTO: g.CONCEPTO, ASIGNADO: r2(asignado), REAL: r2(real), DIFERENCIA: r2(asignado-real) };
+  });
 }
 
 /* Caja de autorización: aparece cuando el servicio ya está en aclaración */
@@ -2442,6 +2596,9 @@ function armarLiquidacion(){
   const s = DB.SOLICITUDES.find(x=>String(x.ID)===String(liqEditando));
   if(!s){ toast('No se encontró la solicitud.', true); return null; }
 
+  const adelantos = armarAdelantosLiq(s);
+  const descuentoAdelantos = adelantos.reduce((a,g)=>a+nf(g.DIFERENCIA),0);
+
   return { s, odo, reg: {
     ID: s.ID, FOLIO: s.FOLIO, CARTAS_PORTE: s.CARTAS_PORTE,
     FECHA_CARGA: s.FECHA_SERVICIO, FECHA_FINALIZADO: $('lqFechaFin').value,
@@ -2454,7 +2611,9 @@ function armarLiquidacion(){
     ODOMETRO_INICIAL: r2(odo.ini), ODOMETRO_FINAL: r2(odo.fin),
     KM_ODOMETRO: r2(odo.total), KM_RUTA: r2(odo.kmRuta), DIFERENCIA_KM: r2(odo.dif),
     REVISAR_KM: odo.estado==='fuera'? 'SI' : 'NO',
-    EVIDENCIA: 'SI'
+    EVIDENCIA: 'SI',
+    GASTOS_ADICIONALES_JSON: JSON.stringify(adelantos),
+    DESCUENTO_GASTOS_ADICIONALES: r2(descuentoAdelantos)
   }};
 }
 
@@ -2652,7 +2811,7 @@ const ADMIN = {
   NOMINAS:{ soloLectura:true, cols:[{k:'OPERADOR'},{k:'PERIODO'},{k:'KM'},{k:'TOTAL'},{k:'FECHA_REGISTRO'}] },
   LIQUIDACION:{ soloLectura:true, cols:[{k:'FOLIO'},{k:'CLIENTE'},{k:'ESTADO'},{k:'COMB_REAL'},{k:'CASETAS_REAL'},{k:'FECHA_LIQUIDACION'}] },
   CANCELADAS:{ soloLectura:true, sinBorrar:true, invertido:true, hoja:'SOLICITUDES_CANCELADAS',
-    cols:[{k:'FECHA_CANCELACION'},{k:'FOLIO'},{k:'RUTA'},{k:'OPERADOR'},{k:'TOTAL'},
+    cols:[{k:'FECHA_CANCELACION'},{k:'FOLIO'},{k:'RUTA'},{k:'OPERADOR'},{k:'TOTAL'},{k:'ESTADO_CANCELACION'},
           {k:'MOTIVO_CANCELACION'},{k:'CANCELADA_POR'},{k:'AUTORIZADA_POR'},{k:'ROL_AUTORIZA'}] },
   BITACORA:{ soloLectura:true, sinBorrar:true, invertido:true,
     cols:[{k:'FECHA_HORA'},{k:'USUARIO'},{k:'NOMBRE'},{k:'ROL'},{k:'ACCION'},{k:'HOJA'},{k:'REGISTRO'},{k:'DETALLE'}] }
@@ -2706,7 +2865,7 @@ function aplicarPermisos(){
 const CFG_MAP = [
   ['PRECIO_DIESEL','cfgDiesel',26.31],['PRECIO_GASOLINA','cfgGasolina',23.46],['PRECIO_GAS','cfgGas',12.5],
   ['PRECIO_UREA','cfgUrea',20],['UREA_PCT','cfgUreaPct',5],['FOLIO_INICIAL','cfgFolio',2050],
-  ['BONO_PCT','cfgBonoPct',30],['IMPUESTO_SUELDO_PCT','cfgImpPct',0],['PAGO_KM_EXTRA','cfgKmX',2],
+  ['BONO_PCT','cfgBonoPct',30],['PAGO_KM_EXTRA','cfgKmX',2],
   ['APOYO_VIAJE','cfgApoyo',1500],
   ['BONO_LITRO_DIESEL','cfgBLD',16],['BONO_LITRO_GASOLINA','cfgBLG',12],
   ['OBJ_KM_FULL','cfgOKFull',2500],['OBJ_KM_SENCILLO','cfgOKSen',2500],['OBJ_KM_RABON','cfgOKRab',1000],

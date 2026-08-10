@@ -139,11 +139,15 @@ la constante `BITACORA_MAX`.
 `configurarHojas()` las agrega solo:
 
 - `RUTAS`: `OPTIMIZADA_FULL`, `COSTO_CASETAS_2E`, `COSTO_CASETAS_5E`, `COSTO_CASETAS_9E`
-- `SOLICITUDES`: `TARIFA_CASETAS`, `DISPERSION`, `DISPERSADO_POR`, `FECHA_DISPERSION`
+- `SOLICITUDES`: `TARIFA_CASETAS`, `DISPERSION`, `DISPERSADO_POR`, `FECHA_DISPERSION`,
+  `GASTOS_ADICIONALES_JSON`
 - `LIQUIDACION`: `ODOMETRO_INICIAL`, `ODOMETRO_FINAL`, `KM_ODOMETRO`, `KM_RUTA`,
   `DIFERENCIA_KM`, `REVISAR_KM`, `LIQUIDADO_POR`, `MOTIVO_ACLARACION`,
   `ACLARACION_POR`, `ACLARACION_FECHA`, `AUTORIZADO_POR`, `FECHA_AUTORIZACION`,
-  `NOTA_AUTORIZACION`
+  `NOTA_AUTORIZACION`, `GASTOS_ADICIONALES_JSON`, `DESCUENTO_GASTOS_ADICIONALES`
+- `NOMINAS`: `DESCUENTO_GASTOS`
+- `SOLICITUDES_CANCELADAS`: `ESTADO_CANCELACION`
+- `USUARIOS`: `PESTANAS`
 
 ## Cómo funciona el costo de casetas
 
@@ -200,44 +204,41 @@ botón de autorizar.
 Mientras un viaje esté en aclaración no cuenta como liquidado, así que tampoco
 cuenta para el pago en pre-nómina.
 
-### La sábana: se escribe solo al liquidar, ubicada por CP
+### La sábana: se escribe solo al liquidar, y solo esas celdas
 
 La app escribe en la hoja **Transportadora** de la sábana en **un único
 momento: al liquidar el viaje**. Guardar la Solicitud de Gasto **no** toca la
-sábana — solo queda registrada en el Sheet interno de la app. Esto es a
-propósito: mientras el viaje no esté liquidado, es normal capturar y corregir
-varias veces la solicitud, y no tiene sentido escribir en la sábana en cada
-corrección.
+sábana — solo queda registrada en el Sheet interno de la app.
 
-Al liquidar, se combinan y escriben **juntos, en el mismo renglón**, los datos
-de la solicitud original y los de la liquidación:
+La escritura es **quirúrgica**: se tocan, celda por celda con `setValue()`,
+**únicamente** estas diez columnas — ninguna otra celda del renglón se lee ni
+se vuelve a escribir, así que no hay riesgo de borrar información capturada
+ahí por otro medio:
 
-- **AF** — combustible asignado (el importe en $, no los litros; viene de la solicitud)
-- **AI** — casetas (de la solicitud)
-- **AJ** — pensión (de la solicitud)
-- **AK** — viáticos (de la solicitud, campo *Comida* — es el único candidato
-  que existe en ese formulario; si tu sábana entiende "viáticos" como otra
-  cosa, dímelo y lo ajusto)
-- **AC** — odómetro inicial (KM inicial, de la liquidación)
-- **AD** — odómetro final (KM final, de la liquidación)
-- **AL** — maniobras (de la liquidación)
-- **AM** — talachas (de la liquidación)
-- **AN** — dádivas (de la liquidación)
+| Columna | Campo | Origen |
+|---|---|---|
+| **AC** | Odómetro inicial (KM inicial) | Liquidación |
+| **AD** | Odómetro final (KM final) | Liquidación |
+| **AF** | Combustible asignado | Solicitud |
+| **AG** | Combustible $ (real) | Liquidación |
+| **AI** | Casetas (real) | Liquidación |
+| **AJ** | Pensión | Liquidación |
+| **AK** | Viáticos | Liquidación |
+| **AL** | Maniobras | Liquidación |
+| **AM** | Talachas | Liquidación |
+| **AN** | Dádivas | Liquidación |
 
 Todas van por **posición de columna**, no por nombre de encabezado, así que
 funcionan sin importar cómo se titulen ahí. Si en la sábana cambian de lugar,
-se ajusta en `SABANA_COLUMNAS_SOLICITUD` y `SABANA_COLUMNAS_LIQUIDACION` del
-Apps Script.
+se ajusta en `SABANA_COLUMNAS_LIQUIDACION` del Apps Script.
 
 **Cómo se ubica el renglón:** la columna de CP es la **N**, por posición fija
 (constante `SABANA_COL_CP`) — no importa cómo esté titulada esa columna en la
 sábana. Ahí se busca la primera carta porte de la solicitud (`CARTAS_PORTE`
 puede traer varias, separadas por coma — se usa la primera). Si una solicitud
-no trae carta porte, se cae a ubicar el renglón por `FOLIO` como respaldo. El
-resto de los campos (folio, operador, ruta, cliente…) se coloca por
-coincidencia de encabezado, y esos sí se reconocen **sin distinguir
-mayúsculas, acentos ni signos**: `Folio`, `FOLIO` y `folio` son la misma
-columna, y `KM inicial` corresponde a `KM_INICIAL`.
+no trae carta porte, se cae a ubicar el renglón por `FOLIO` como respaldo. Si
+el renglón no existe, se crea uno nuevo sembrando **solo** la celda de CP (o
+folio) — no se copia nada más al crearlo.
 
 Un fallo al escribir en la sábana no tumba la liquidación que lo originó: esa
 queda guardada igual en el Sheet, y la app **muestra un aviso en pantalla**
@@ -259,6 +260,13 @@ solo con el tipo de servicio predominante de los viajes del periodo. Los demás
 tipos de unidad tienen un objetivo único y el selector queda deshabilitado.
 
 ## Pre-Nómina
+
+### Sueldo
+
+El sueldo se paga en **bruto** (semanal × semanas del periodo): no hay
+descuento ni impuesto sobre el sueldo. Si necesitas restarle algo al
+operador, es a través de los **descuentos por adelantos** (ver más abajo), no
+de un porcentaje fijo sobre el sueldo.
 
 ### Apoyo para viaje
 
@@ -283,23 +291,34 @@ objetivo, con una casilla que solo él ve. Queda registrado en la nómina
 
 ### KM que cuentan para el objetivo
 
-Se elige cuál de las dos cifras cuenta. La seleccionada aparece como **KM
-realizados** y la otra debajo, como referencia — nunca se repite la misma cifra
-en dos renglones:
+Solo cuentan los **KM registrados por odómetro** (suma de `KM_ODOMETRO` de las
+liquidaciones) — es la única fuente que se usa contra el objetivo. Los **KM
+proyectados en la ruta** se siguen mostrando, pero puramente como referencia
+informativa; ya no hay selector para elegir entre una fuente u otra. En ambos
+casos solo cuentan los viajes **liquidados**.
 
-- **Proyectados en la ruta** — la suma de los KM de las rutas de los servicios.
-- **Registrados por odómetro** — la suma de `KM_ODOMETRO` de las liquidaciones.
+### Descuentos por adelantos al operador
 
-En ambos casos solo cuentan los viajes **liquidados**. La elección se guarda en
-la nómina (`FUENTE_KM`) junto con las dos cifras, y solo el administrador puede
-cambiarla.
+Si en la Solicitud de Gasto se capturaron **gastos adicionales** al operador
+(adelanto de nómina, pensión, hotel…) y ya se liquidó el viaje, la diferencia
+entre lo **asignado** y lo **comprobado** (ver "Gastos adicionales al
+operador" más abajo) aparece aquí, sumada por todos los viajes liquidados del
+periodo, y se **resta del total a pagar** (o se suma, si el operador comprobó
+más de lo que se le dio). La tarjeta lista cada concepto por folio y muestra
+el total del periodo.
 
 ### Permisos
 
-Los usuarios **operativo** y **supervisor** ven la pre-nómina completa pero no
-pueden modificar sueldo, objetivos, porcentajes, montos ni la fuente de KM. Lo único que captura
-es el **rendimiento real**; también puede elegir los periodos y marcar los
-objetivos de cumplimiento. Todo lo demás aparece deshabilitado.
+Los usuarios **operativo** no pueden modificar sueldo, objetivos, porcentajes,
+montos ni tipo de unidad/servicio. Lo único que captura es el **rendimiento
+real**; también puede elegir los periodos y marcar los objetivos de
+cumplimiento. Todo lo demás aparece deshabilitado.
+
+El **supervisor** tiene ese mismo candado, con una excepción: puede modificar
+**tipo de unidad** y **tipo de servicio** (los que definen qué objetivo de KM
+y de rendimiento aplican). El objetivo de KM en sí, el pago por km extra, las
+semanas consideradas, el % de bono y el pago semanal del operador siguen
+siendo exclusivos del **administrador**.
 
 Igual que el resto del control de acceso, esto es un candado de interfaz: evita
 errores y cambios indebidos en el uso normal, pero no sustituye una validación
@@ -334,16 +353,50 @@ renglón) y modificarla por completo: operador, unidad, remolques, ruta,
 pensión, comida, etc. — igual que si la estuviera capturando.
 
 En cuanto se **confirma la dispersión**, la solicitud queda bloqueada: todos
-los campos se deshabilitan, el botón de guardar se oculta y aparece un aviso
-explicando que ya no se puede modificar. Si hay un error, la única salida es
-**cancelar la solicitud** (requiere motivo y credenciales de un supervisor o
-administrador) y que Operaciones capture una nueva, autorizada de nuevo por
-supervisión. Una solicitud ya dispersada tampoco se puede cancelar sin pasar
-antes por la reversión de un administrador.
+los campos se deshabilitan y el botón de guardar se oculta. Si hay un error,
+la salida es **cancelarla**:
+
+- **Solicitud pendiente** (sin dispersar) — se cancela como siempre, con
+  motivo y credenciales de un **supervisor o administrador**.
+- **Solicitud ya dispersada** — solo un **auditor o administrador** puede
+  cancelarla (se le pide autorizarlo con esas credenciales, igual que en el
+  caso anterior). Al cancelarse queda marcada con estatus
+  **"Dispersión Cancelada"** en vez de "Cancelada" a secas, visible en
+  **Administración → Canceladas** (`ESTADO_CANCELACION`). Operaciones captura
+  una solicitud nueva si hace falta, autorizada de nuevo por supervisión.
 
 La pestaña Dispersiones tiene una tarjeta discreta con cuántas solicitudes
 siguen pendientes de dispersar, y un buscador/filtro por folio, operador o
 ruta.
+
+### Carta porte duplicada
+
+Al guardar una Solicitud de Gasto, si alguna de las cartas porte capturadas ya
+está registrada en otra solicitud, el guardado se **bloquea por completo**: no
+hay opción de "continuar de todos modos". Hay que corregir o quitar la carta
+porte repetida antes de poder guardar.
+
+## Gastos adicionales al operador
+
+Además del gasto propio del viaje (combustible, casetas, pensión, comida),
+la Solicitud de Gasto tiene una sección para capturar **adelantos** que no son
+parte de ese gasto: **adelanto de nómina, pensión (hospedaje) u hotel**, con
+selección múltiple de conceptos y su monto. Se suman al total de la solicitud
+en un renglón aparte ("Gastos adicionales al operador").
+
+**Comprobación al liquidar:** si la solicitud tenía adelantos, Liquidación
+muestra una caja con cada concepto y lo asignado, y un campo para capturar
+cuánto **comprobó** el operador. La diferencia (asignado − comprobado) puede
+ir en dos sentidos:
+
+- **Positiva** (comprobó de menos) → se **descuenta** en su Pre-Nómina.
+- **Negativa** (comprobó de más) → se **abona** en su Pre-Nómina.
+
+Esa diferencia, sumada por todos los viajes liquidados del periodo, aparece en
+la tarjeta **Descuentos por adelantos al operador** de Pre-Nómina y se
+resta (o suma) del total a pagar. Se guarda en la liquidación
+(`GASTOS_ADICIONALES_JSON`, `DESCUENTO_GASTOS_ADICIONALES`) y en la nómina
+registrada (`DESCUENTO_GASTOS`).
 
 ### Rol Auditor
 
