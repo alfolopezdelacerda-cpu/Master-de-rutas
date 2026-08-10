@@ -764,23 +764,15 @@ function escribirSabana(idSabana, record, columnasFijas) {
 
   var colCP = letraAColumna(SABANA_COL_CP);   // 1-based
 
-  // Se ubica por CP; si la solicitud no trae carta porte, se cae a folio
-  var colClave = colCP;
+  // Se ubica ÚNICAMENTE por CP en la columna N; no se toca ninguna otra columna
   var valorClave = cpPrincipal(record.CARTAS_PORTE);
   if (!valorClave) {
-    var heads = encabezados(hoja);
-    var colFolio = buscarColumnaFolio(heads);
-    if (colFolio >= 0 && record.FOLIO) {
-      colClave = colFolio + 1;   // buscarColumnaFolio devuelve 0-based
-      valorClave = record.FOLIO;
-    } else {
-      throw new Error('La solicitud no tiene carta porte capturada: no se puede ubicar el renglón en la columna ' + SABANA_COL_CP);
-    }
+    throw new Error('No se encontró la CP en Sábana');
   }
 
   var fila = -1;
   if (hoja.getLastRow() >= 2) {
-    var claves = hoja.getRange(2, colClave, hoja.getLastRow() - 1, 1).getValues();
+    var claves = hoja.getRange(2, colCP, hoja.getLastRow() - 1, 1).getValues();
     for (var i = 0; i < claves.length; i++) {
       if (String(claves[i][0]).trim() === String(valorClave).trim()) { fila = i + 2; break; }
     }
