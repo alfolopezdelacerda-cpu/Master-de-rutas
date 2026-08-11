@@ -496,6 +496,27 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       </div>
     </div>
 
+    <!-- Validación de Seguridad: solo administrador -->
+    <div id="lqSeguridadBox" style="background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <h3 style="margin:0">Validación de Seguridad</h3>
+        <span id="lqSeguridadEstado" class="mini" style="background:var(--bad);color:white;padding:4px 12px;border-radius:4px;font-weight:600">Pendiente de validación</span>
+      </div>
+      <div id="lqSeguridadForm" style="opacity:0.5;pointer-events:none">
+        <div class="grid g2" style="margin-bottom:12px">
+          <label style="display:flex;gap:10px;align-items:center;font-weight:normal"><input type="checkbox" id="lqSegIncidencias"> ¿Tuvo incidencias en ruta?</label>
+          <label style="display:flex;gap:10px;align-items:center;font-weight:normal"><input type="checkbox" id="lqSegTiempo" checked> ¿Llegó a tiempo?</label>
+        </div>
+        <div id="lqSegComentariosBox" style="display:none">
+          <label>Comentarios (cuando no llegó a tiempo)</label>
+          <textarea id="lqSegComentarios" rows="2" placeholder="Explica el motivo del retraso…" style="resize:vertical"></textarea>
+        </div>
+      </div>
+      <div id="lqSeguridadNoAdmin" class="mini" style="color:var(--bad);display:none;text-align:center;padding:12px">
+        Solo un administrador puede validar la seguridad del viaje.
+      </div>
+    </div>
+
     <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:12px">
       <label style="display:flex;gap:10px;align-items:center;font-size:14px;text-transform:none;letter-spacing:0;font-weight:700;color:var(--ink)"><input type="checkbox" id="lqEvidencia" style="width:18px;height:18px;min-width:18px"> Entregó evidencia completa</label>
       <button class="btn btn-p" id="btnLiquidar">✔ Liquidar viaje</button>
