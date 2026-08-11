@@ -562,13 +562,26 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 
   <div class="grid g2" style="align-items:start">
     <div>
-      <div class="card">
-        <h3>Sueldo</h3>
-        <div class="grid g3" style="margin-bottom:10px">
-          <div><label>Semanas consideradas</label><input id="pSemanasN" type="number" min="1" step="1" value="1"></div>
-          <div><label>% bono cumplimiento</label><input id="pBonoPct" type="number" min="0" max="100" step="1"></div>
+      <div class="card" style="position:relative">
+        <div style="position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:8px">
+          <label style="display:flex;gap:8px;align-items:center;font-size:13px;text-transform:none;letter-spacing:0;font-weight:600;margin:0;color:var(--ink2)">
+            <input type="checkbox" id="pTipoPagoFijo"> Pago fijo
+          </label>
         </div>
-        <div class="totrow"><span>Sueldo bruto (semanal × semanas)</span><b class="num" id="pNominal">$0.00</b></div>
+        <h3>Sueldo</h3>
+        <div id="pSueldoNormalBox">
+          <div class="grid g3" style="margin-bottom:10px">
+            <div><label>Semanas consideradas</label><input id="pSemanasN" type="number" min="1" step="1" value="1"></div>
+            <div><label>% bono cumplimiento</label><input id="pBonoPct" type="number" min="0" max="100" step="1"></div>
+          </div>
+          <div class="totrow"><span>Sueldo bruto (semanal × semanas)</span><b class="num" id="pNominal">$0.00</b></div>
+        </div>
+        <div id="pSueldoFijoBox" style="display:none">
+          <div class="grid g2" style="margin-bottom:10px">
+            <div><label>Sueldo fijo mensual ($)</label><input id="pSueldoFijoMonto" type="number" min="0" step="100"></div>
+          </div>
+          <div class="totrow"><span>Sueldo fijo (prorraqueado)</span><b class="num" id="pSueldoFijoTotal">$0.00</b></div>
+        </div>
       </div>
 
       <div class="card">
