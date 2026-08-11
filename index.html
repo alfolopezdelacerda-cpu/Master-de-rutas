@@ -2325,6 +2325,25 @@ $('pModo').addEventListener('change',()=>{ delete $('pSemanasN').dataset.manual;
 $('pApoyoAuth').addEventListener('change',calcularPrenomina);
 $('pApoyoMonto').addEventListener('input',calcularPrenomina);
 
+/* Toggle de "Pago fijo" - cambia el esquema de pre-nómina */
+function alCambiarTipoPago(){
+  const esF = $('pTipoPagoFijo').checked;
+  $('pSueldoNormalBox').style.display = esF? 'none' : '';
+  $('pSueldoFijoBox').style.display = esF? '' : 'none';
+  ['pTipoU','pTipoServ','pObjKm','pPagoKmX'].forEach(id=>{ $(id).style.opacity = esF? '0.4' : '1'; $(id).disabled = esF; });
+  $('pRendObj').style.opacity = esF? '0.4' : '1';
+  $('pRendObj').disabled = esF;
+  ['pApoyoMonto','pApoyoAuth'].forEach(id=>{ $(id).style.opacity = esF? '0.4' : '1'; $(id).disabled = esF; });
+  if(esF && !$('pSueldoFijoMonto').dataset.loaded){
+    const sueldo = DB.CONFIG && DB.CONFIG.SUELDO_FIJO? nf(DB.CONFIG.SUELDO_FIJO) : 0;
+    if(sueldo>0) $('pSueldoFijoMonto').value = sueldo;
+    $('pSueldoFijoMonto').dataset.loaded = '1';
+  }
+  calcularPrenomina();
+}
+$('pTipoPagoFijo').addEventListener('change',alCambiarTipoPago);
+$('pSueldoFijoMonto').addEventListener('input',calcularPrenomina);
+
 $('btnPdfNom').addEventListener('click',()=>{
   const c = ultimoCalculoNom;
   if(!c){ toast('Selecciona un operador.', true); return; }
