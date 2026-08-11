@@ -99,7 +99,10 @@ var HOJAS = {
                 'MOTIVO_CANCELACION','CANCELADA_POR','AUTORIZADA_POR','ROL_AUTORIZA'],
 
   /* Bitácora de auditoría: quién hizo qué y cuándo. Solo la escribe el script. */
-  BITACORA: ['ID','FECHA_HORA','USUARIO','NOMBRE','ROL','ACCION','HOJA','REGISTRO','DETALLE']
+  BITACORA: ['ID','FECHA_HORA','USUARIO','NOMBRE','ROL','ACCION','HOJA','REGISTRO','DETALLE'],
+
+  /* Tabla de pagos por km según origen/destino y tipo de unidad */
+  PAGO_X_KM: ['ORIGEN','DESTINO','KMS_RED','VJS_MES','KMS_MES','FULL','SENCILLO','RABON','TON_3_5','TON_1_5','KG_600']
 };
 
 var HOJA_CANCELADAS = 'SOLICITUDES_CANCELADAS';
