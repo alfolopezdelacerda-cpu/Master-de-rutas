@@ -2472,7 +2472,55 @@ function abrirLiq(id){
   $('lqAutorizaNota').value = '';
   calcOdometro();
   pintarCajaAclaracion(id, l);
+  pintarCajaSeguridadLiq(id, l);
   $('liqDetalle').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+/* Caja de validación de seguridad: solo administrador puede validar */
+function pintarCajaSeguridadLiq(id, l){
+  const esAdmin = usuarioActual && String(usuarioActual.ROL||'').toUpperCase()==='ADMIN';
+  const formDiv = $('lqSeguridadForm');
+  const noAdminDiv = $('lqSeguridadNoAdmin');
+  const estadoSpan = $('lqSeguridadEstado');
+
+  // Si ya existe liquidación con seguridad validada
+  if(l && l.SEGURIDAD_ESTADO){
+    if(l.SEGURIDAD_ESTADO==='VALIDADO'){
+      formDiv.style.opacity = '1';
+      formDiv.style.pointerEvents = 'auto';
+      estadoSpan.textContent = '✔ Validado';
+      estadoSpan.style.background = 'var(--ok)';
+      $('lqSegIncidencias').checked = String(l.SEGURIDAD_INCIDENCIAS||'').toUpperCase()==='SI';
+      $('lqSegTiempo').checked = String(l.SEGURIDAD_TIEMPO||'').toUpperCase()==='SI';
+      $('lqSegComentarios').value = l.SEGURIDAD_COMENTARIOS||'';
+      $('lqSegComentariosBox').style.display = $('lqSegTiempo').checked? 'none' : '';
+      formDiv.querySelector('input,textarea').forEach(el=>el.disabled=true);
+    } else {
+      formDiv.style.opacity = esAdmin? '1' : '0.5';
+      formDiv.style.pointerEvents = esAdmin? 'auto' : 'none';
+      estadoSpan.textContent = 'Pendiente de validación';
+      estadoSpan.style.background = 'var(--bad)';
+      $('lqSegIncidencias').checked = String(l.SEGURIDAD_INCIDENCIAS||'').toUpperCase()==='SI';
+      $('lqSegTiempo').checked = String(l.SEGURIDAD_TIEMPO||'').toUpperCase()==='SI';
+      $('lqSegComentarios').value = l.SEGURIDAD_COMENTARIOS||'';
+    }
+  } else {
+    // Nueva liquidación
+    formDiv.style.opacity = esAdmin? '1' : '0.5';
+    formDiv.style.pointerEvents = esAdmin? 'auto' : 'none';
+    estadoSpan.textContent = 'Pendiente de validación';
+    estadoSpan.style.background = 'var(--bad)';
+    $('lqSegIncidencias').checked = false;
+    $('lqSegTiempo').checked = true;
+    $('lqSegComentarios').value = '';
+  }
+
+  noAdminDiv.style.display = esAdmin? 'none' : '';
+
+  // Mostrar caja de comentarios solo si NO llegó a tiempo
+  $('lqSegTiempo').addEventListener('change', ()=>{
+    $('lqSegComentariosBox').style.display = $('lqSegTiempo').checked? 'none' : '';
+  });
 }
 
 /* Comprobación de los adelantos al operador (adelanto de nómina, pensión,
@@ -2619,6 +2667,7 @@ function armarLiquidacion(){
 
   const adelantos = armarAdelantosLiq(s);
   const descuentoAdelantos = adelantos.reduce((a,g)=>a+nf(g.DIFERENCIA),0);
+  const esAdmin = usuarioActual && String(usuarioActual.ROL||'').toUpperCase()==='ADMIN';
 
   return { s, odo, reg: {
     ID: s.ID, FOLIO: s.FOLIO, CARTAS_PORTE: s.CARTAS_PORTE,
@@ -2634,7 +2683,13 @@ function armarLiquidacion(){
     REVISAR_KM: odo.estado==='fuera'? 'SI' : 'NO',
     EVIDENCIA: 'SI',
     GASTOS_ADICIONALES_JSON: JSON.stringify(adelantos),
-    DESCUENTO_GASTOS_ADICIONALES: r2(descuentoAdelantos)
+    DESCUENTO_GASTOS_ADICIONALES: r2(descuentoAdelantos),
+    SEGURIDAD_ESTADO: esAdmin? 'VALIDADO' : 'PENDIENTE',
+    SEGURIDAD_INCIDENCIAS: $('lqSegIncidencias').checked? 'SI' : 'NO',
+    SEGURIDAD_TIEMPO: $('lqSegTiempo').checked? 'SI' : 'NO',
+    SEGURIDAD_COMENTARIOS: $('lqSegComentarios').value || '',
+    SEGURIDAD_VALIDADO_POR: esAdmin? nombreUsuario() : '',
+    SEGURIDAD_FECHA_VALIDACION: esAdmin? hoyISO() : ''
   }};
 }
 
