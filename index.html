@@ -123,6 +123,16 @@ td input[type=checkbox],th input[type=checkbox]{width:16px;height:16px;min-width
 .lock{max-width:380px;margin:40px auto;text-align:center}
 .lock .ico{font-size:42px;margin-bottom:10px}
 
+/* Interruptor (switch) */
+.switch{display:inline-flex;align-items:center;gap:10px;cursor:pointer;user-select:none;margin:0}
+.switch>input{position:absolute;opacity:0;width:0;height:0;margin:0}
+.switch .sw{position:relative;width:46px;height:26px;min-width:46px;border-radius:99px;background:var(--line);transition:background .18s;flex:none}
+.switch .sw::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.35);transition:transform .18s}
+.switch>input:checked+.sw{background:var(--accent)}
+.switch>input:checked+.sw::after{transform:translateX(20px)}
+.switch>input:disabled+.sw{opacity:.45;cursor:not-allowed}
+.switch .swtx{font-size:13px;font-weight:700;letter-spacing:.02em;color:var(--ink);text-transform:none}
+
 /* Login de acceso */
 #loginWrap{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px}
 #loginWrap .lbox{width:100%;max-width:390px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:28px}
@@ -540,8 +550,14 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 <!-- ============ PRE-NÓMINA ============ -->
 <section class="sec" id="sec-prenomina">
   <div class="card">
-    <h2>Pre-nómina de operadores</h2>
-    <div class="sub">Las semanas de nómina corren de <b>jueves a miércoles</b>. Marca las casillas de los periodos que quieras incluir.</div>
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+      <h2 style="margin:0">Pre-nómina de operadores</h2>
+      <label class="switch" title="Cambia al esquema de sueldo fijo: sin objetivo de kilómetros, sin objetivo de rendimiento y sin apoyo para viaje.">
+        <input type="checkbox" id="pTipoPagoFijo"><span class="sw"></span>
+        <span class="swtx">Pago de nómina fija</span>
+      </label>
+    </div>
+    <div class="sub" style="margin-top:6px">Las semanas de nómina corren de <b>jueves a miércoles</b>. Marca las casillas de los periodos que quieras incluir.</div>
     <div class="grid g3" style="margin-bottom:14px">
       <div><label>Operador</label><select id="pOperador"></select></div>
       <div><label>Año</label><select id="pAnio"></select></div>
@@ -562,26 +578,14 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 
   <div class="grid g2" style="align-items:start">
     <div>
-      <div class="card" style="position:relative">
-        <div style="position:absolute;top:14px;right:14px;display:flex;align-items:center;gap:8px">
-          <label style="display:flex;gap:8px;align-items:center;font-size:13px;text-transform:none;letter-spacing:0;font-weight:600;margin:0;color:var(--ink2)">
-            <input type="checkbox" id="pTipoPagoFijo"> Pago fijo
-          </label>
+      <div class="card">
+        <h3 id="pSueldoTit">Sueldo</h3>
+        <div class="sub" id="pSueldoNota" style="display:none;margin-bottom:10px">Esquema de <b>nómina fija</b>: el sueldo semanal se toma de Administración → Pre-nómina. No aplican objetivo de kilómetros, objetivo de rendimiento ni apoyo para viaje.</div>
+        <div class="grid g3" style="margin-bottom:10px">
+          <div><label>Semanas consideradas</label><input id="pSemanasN" type="number" min="1" step="1" value="1"></div>
+          <div><label>% bono cumplimiento</label><input id="pBonoPct" type="number" min="0" max="100" step="1"></div>
         </div>
-        <h3>Sueldo</h3>
-        <div id="pSueldoNormalBox">
-          <div class="grid g3" style="margin-bottom:10px">
-            <div><label>Semanas consideradas</label><input id="pSemanasN" type="number" min="1" step="1" value="1"></div>
-            <div><label>% bono cumplimiento</label><input id="pBonoPct" type="number" min="0" max="100" step="1"></div>
-          </div>
-          <div class="totrow"><span>Sueldo bruto (semanal × semanas)</span><b class="num" id="pNominal">$0.00</b></div>
-        </div>
-        <div id="pSueldoFijoBox" style="display:none">
-          <div class="grid g2" style="margin-bottom:10px">
-            <div><label>Sueldo fijo mensual ($)</label><input id="pSueldoFijoMonto" type="number" min="0" step="100"></div>
-          </div>
-          <div class="totrow"><span>Sueldo fijo (prorraqueado)</span><b class="num" id="pSueldoFijoTotal">$0.00</b></div>
-        </div>
+        <div class="totrow"><span id="pNominalTit">Sueldo bruto (semanal × semanas)</span><b class="num" id="pNominal">$0.00</b></div>
       </div>
 
       <div class="card">
@@ -591,10 +595,11 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
           <label style="display:flex;gap:10px;align-items:center;font-size:14px;text-transform:none;letter-spacing:0"><input type="checkbox" id="ob2" style="width:auto"> Evidencia en tiempo</label>
           <label style="display:flex;gap:10px;align-items:center;font-size:14px;text-transform:none;letter-spacing:0"><input type="checkbox" id="ob3" style="width:auto"> Sin incidencias en ruta</label>
         </div>
+        <div class="mini" id="pObjSegNota" style="margin-bottom:8px;color:var(--ink2)"></div>
         <div class="totrow"><span>Bono por cumplimiento (sobre neto)</span><b class="num pos" id="pBono">$0.00</b></div>
       </div>
 
-      <div class="card">
+      <div class="card" id="pCardObjKm">
         <h3>Objetivo de kilómetros</h3>
         <div class="grid g4" style="margin-bottom:10px">
           <div><label>Tipo de unidad</label><select id="pTipoU"></select></div>
@@ -610,7 +615,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <div class="totrow"><span>Pago por km extra</span><b class="num pos" id="pPagoKm">$0.00</b></div>
       </div>
 
-      <div class="card">
+      <div class="card" id="pCardApoyo">
         <h3>Apoyo para viaje</h3>
         <div class="sub">Se paga completo con <b>60%</b> o más del objetivo de KM; al <b>50%</b> entre 30% y 59%; al <b>20%</b> por debajo de 30%. Sin viajes en el periodo, no se paga.</div>
         <div class="grid g2" style="margin-bottom:10px">
@@ -627,7 +632,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <div class="totrow"><span>Apoyo para viaje</span><b class="num pos" id="pApoyo">$0.00</b></div>
       </div>
 
-      <div class="card">
+      <div class="card" id="pCardRend">
         <h3>Objetivo de rendimiento</h3>
         <div class="grid g3" style="margin-bottom:10px">
           <div><label>Rendimiento objetivo (km/l)</label><input id="pRendObj" type="number" min="0" step="0.1"></div>
@@ -944,12 +949,12 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
   <table class="prTable" style="margin-top:6px">
     <tr><td class="prLbl">SUELDO BRUTO</td><td id="pnBruto"></td></tr>
     <tr><td class="prLbl">BONO POR CUMPLIMIENTO</td><td id="pnBono"></td></tr>
-    <tr><td class="prLbl">KM EXTRA (SOBRE OBJETIVO <span id="pnObjKm"></span>)</td><td id="pnKmX"></td></tr>
-    <tr><td class="prLbl">PAGO POR KM EXTRA</td><td id="pnPagoKm"></td></tr>
-    <tr><td class="prLbl">RENDIMIENTO OBJETIVO / REAL</td><td id="pnRend"></td></tr>
-    <tr><td class="prLbl">LITROS AHORRADOS</td><td id="pnLA"></td></tr>
-    <tr><td class="prLbl">PAGO POR RENDIMIENTO EFICIENTE</td><td id="pnPagoRend"></td></tr>
-    <tr><td class="prLbl">APOYO PARA VIAJE</td><td id="pnApoyo"></td></tr>
+    <tr class="prVar"><td class="prLbl">KM EXTRA (SOBRE OBJETIVO <span id="pnObjKm"></span>)</td><td id="pnKmX"></td></tr>
+    <tr class="prVar"><td class="prLbl">PAGO POR KM EXTRA</td><td id="pnPagoKm"></td></tr>
+    <tr class="prVar"><td class="prLbl">RENDIMIENTO OBJETIVO / REAL</td><td id="pnRend"></td></tr>
+    <tr class="prVar"><td class="prLbl">LITROS AHORRADOS</td><td id="pnLA"></td></tr>
+    <tr class="prVar"><td class="prLbl">PAGO POR RENDIMIENTO EFICIENTE</td><td id="pnPagoRend"></td></tr>
+    <tr class="prVar"><td class="prLbl">APOYO PARA VIAJE</td><td id="pnApoyo"></td></tr>
     <tr><td class="prLbl">DESCUENTO POR ADELANTOS AL OPERADOR</td><td id="pnDescuento"></td></tr>
     <tr><td class="prLbl" style="font-size:13px">TOTAL A PAGAR AL OPERADOR</td><td id="pnTotal" style="font-weight:bold;font-size:13px"></td></tr>
   </table>
@@ -2199,11 +2204,34 @@ function aplicarPermisosPrenomina(){
   $('pAvisoSoloAdmin').style.display = admin? 'none' : '';
 }
 
+/* "Llegada en tiempo" y "Sin incidencias en ruta" salen de lo que Seguridad
+   validó al liquidar cada viaje del periodo: se cumplen solo si TODOS los
+   viajes liquidados llegaron a tiempo / no tuvieron incidencias. Por eso no
+   se capturan a mano. "Evidencia en tiempo" sí sigue siendo manual. */
+function aplicarObjetivosDeSeguridad(serviciosLiq){
+  const validados = serviciosLiq.map(s=>liqDe(s.ID)).filter(l=>l && String(l.SEGURIDAD_ESTADO||'').toUpperCase()==='VALIDADO');
+  const hay = validados.length>0;
+  const enTiempo = hay && validados.every(l=>String(l.SEGURIDAD_TIEMPO||'').toUpperCase()==='SI');
+  const sinInc   = hay && validados.every(l=>String(l.SEGURIDAD_INCIDENCIAS||'').toUpperCase()!=='SI');
+
+  const nota = hay
+    ? 'Lo determina la validación de Seguridad de los viajes liquidados del periodo.'
+    : 'Sin viajes con validación de Seguridad en el periodo.';
+  [['ob1',enTiempo],['ob3',sinInc]].forEach(([id,val])=>{
+    const el = $(id);
+    el.checked = val;
+    el.disabled = true;
+    el.title = nota;
+  });
+  $('pObjSegNota').textContent = nota;
+}
+
 function calcularPrenomina(){
   aplicarPermisosPrenomina();
   $('pSemBox').style.display = $('pModo').value==='semana' ? '' : 'none';
   $('pMesBox').style.display = $('pModo').value==='mes' ? '' : 'none';
   const {op, servicios, serviciosLiq, etiqueta, semanasAuto} = serviciosPeriodo();
+  aplicarObjetivosDeSeguridad(serviciosLiq);
   if(!$('pSemanasN').dataset.manual) $('pSemanasN').value = semanasAuto;
   const semanas = Math.max(1, parseInt($('pSemanasN').value)||1);
   // Tipo de unidad predominante → objetivos por default (de todos los servicios)
@@ -2222,7 +2250,9 @@ function calcularPrenomina(){
 
   if($('pApoyoMonto').value==='') $('pApoyoMonto').value = cfgNum('APOYO_VIAJE',1500);
 
-  const esModoFijo = $('pTipoPagoFijo').checked;
+  // Esquema de pago: nómina fija (sueldo del parámetro de Administración, sin
+  // objetivo de km, sin objetivo de rendimiento y sin apoyo) o el normal.
+  const esModoFijo = pagoFijoActivo();
   const sueldoSemanal = esModoFijo? cfgNum('SUELDO_FIJO_SEMANAL',0) : (op? nf(op.PAGO_NOMINAL_SEMANAL):0);
   const bruto = sueldoSemanal * semanas;
 
@@ -2240,23 +2270,25 @@ function calcularPrenomina(){
   const nPend = servicios.length - serviciosLiq.length;
   const nObs = [$('ob1'),$('ob2'),$('ob3')].filter(c=>c.checked).length;
   const bono = bruto*(nf($('pBonoPct').value)/100)/3*nObs;
-  const objTot = nf($('pObjKm').value)*semanas;
+  const objTot = esModoFijo? 0 : nf($('pObjKm').value)*semanas;
   const kmX = Math.max(0, km-objTot);
-  const pagoKm = kmX*nf($('pPagoKmX').value);
+  const pagoKm = esModoFijo? 0 : kmX*nf($('pPagoKmX').value);
   const cumpleKm = km >= objTot;
   const cumplePct = objTot>0? (km/objTot*100) : 0;
 
   const rObj = nf($('pRendObj').value), rReal = nf($('pRendReal').value);
   const lObj = rObj>0? km/rObj:0;
   const lReal = rReal>0? km/rReal:lObj;
-  const ahorro = cumpleKm? Math.max(0, lObj-lReal) : 0;
-  const pagoRend = ahorro*nf($('pBonoLitro').value);
+  const ahorro = (!esModoFijo && cumpleKm)? Math.max(0, lObj-lReal) : 0;
+  const pagoRend = esModoFijo? 0 : ahorro*nf($('pBonoLitro').value);
 
   // Rendimiento informativo: KM odómetro / combustible asignado
   const combAsignado = serviciosLiq.reduce((a,s)=>a+nf(s.COMBUSTIBLE_ASIGNADO||0),0);
   const rendInfomativo = combAsignado>0? kmOdo/combAsignado : 0;
 
-  const apoyo = calcularApoyo(serviciosLiq.length, cumplePct);
+  const apoyo = esModoFijo
+    ? { monto:0, pct:0, autorizado:false, nota:'' }
+    : calcularApoyo(serviciosLiq.length, cumplePct);
 
   // Descuentos por adelantos al operador (adelanto de nómina, pensión,
   // hotel…) comprobados al liquidar cada viaje del periodo.
@@ -2312,8 +2344,9 @@ function calcularPrenomina(){
 
   ultimoCalculoNom = op? {
     op, etiqueta, servicios:serviciosLiq, semanas, bruto, bono, km,
-    kmRuta, kmOdo, fuente, cumplePct,
-    objKmSemanal:nf($('pObjKm').value), objTot, kmX, pagoKm, rObj, rReal, ahorro, pagoRend,
+    kmRuta, kmOdo, fuente, cumplePct, esModoFijo,
+    objKmSemanal: esModoFijo? 0 : nf($('pObjKm').value), objTot, kmX, pagoKm,
+    rObj: esModoFijo? 0 : rObj, rReal: esModoFijo? 0 : rReal, ahorro, pagoRend,
     apoyo: apoyo.monto, apoyoPct: apoyo.pct, apoyoAutorizado: apoyo.autorizado,
     descuentoGastos, descItems,
     total, tipo, servicio
@@ -2334,49 +2367,21 @@ $('pModo').addEventListener('change',()=>{ delete $('pSemanasN').dataset.manual;
 $('pApoyoAuth').addEventListener('change',calcularPrenomina);
 $('pApoyoMonto').addEventListener('input',calcularPrenomina);
 
-/* Toggle de "Pago fijo" - cambia el esquema de pre-nómina */
+/* Interruptor "Pago de nómina fija": es OTRO esquema de pago. Con él prendido
+   el sueldo sale del parámetro fijo de Administración y desaparecen —no se
+   grisean— el objetivo de kilómetros, el objetivo de rendimiento y el apoyo
+   para viaje. Quedan el sueldo, el bono por cumplimiento y los descuentos. */
+function pagoFijoActivo(){ return $('pTipoPagoFijo').checked; }
+
 function alCambiarTipoPago(){
-  const esF = $('pTipoPagoFijo').checked;
-  $('pSueldoNormalBox').style.display = esF? 'none' : '';
-  $('pSueldoFijoBox').style.display = esF? '' : 'none';
-  ['pTipoU','pTipoServ','pObjKm','pPagoKmX'].forEach(id=>{ $(id).style.opacity = esF? '0.4' : '1'; $(id).disabled = esF; });
-  $('pRendObj').style.opacity = esF? '0.4' : '1';
-  $('pRendObj').disabled = esF;
-  ['pApoyoMonto','pApoyoAuth'].forEach(id=>{ $(id).style.opacity = esF? '0.4' : '1'; $(id).disabled = esF; });
-  if(esF && !$('pSueldoFijoMonto').dataset.loaded){
-    const sueldo = DB.CONFIG && DB.CONFIG.SUELDO_FIJO? nf(DB.CONFIG.SUELDO_FIJO) : 0;
-    if(sueldo>0) $('pSueldoFijoMonto').value = sueldo;
-    $('pSueldoFijoMonto').dataset.loaded = '1';
-  }
+  const esF = pagoFijoActivo();
+  ['pCardObjKm','pCardApoyo','pCardRend'].forEach(id=>{ $(id).style.display = esF? 'none' : ''; });
+  $('pSueldoNota').style.display = esF? '' : 'none';
+  $('pSueldoTit').textContent = esF? 'Sueldo (nómina fija)' : 'Sueldo';
+  $('pNominalTit').textContent = esF? 'Sueldo fijo (semanal × semanas)' : 'Sueldo bruto (semanal × semanas)';
   calcularPrenomina();
 }
 $('pTipoPagoFijo').addEventListener('change',alCambiarTipoPago);
-$('pSueldoFijoMonto').addEventListener('input',calcularPrenomina);
-
-/* Llenar automáticamente objetivos de seguridad desde liquidación */
-function llenarObjetivosDesdeSeguridad(){
-  const {servicios, serviciosLiq} = serviciosPeriodo();
-  // Verificar si TODOS los servicios liquidados llegaron a tiempo
-  const todosTiempo = serviciosLiq.every(s=>{
-    const l = liqDe(s.ID);
-    return l && String(l.SEGURIDAD_TIEMPO||'').toUpperCase()==='SI';
-  });
-  // Verificar si TODOS los servicios liquidados no tuvieron incidencias
-  const todosActos = serviciosLiq.every(s=>{
-    const l = liqDe(s.ID);
-    return l && String(l.SEGURIDAD_INCIDENCIAS||'').toUpperCase()==='NO';
-  });
-
-  $('ob1').checked = todosTiempo && serviciosLiq.length>0;  // Llegada en tiempo
-  $('ob3').checked = todosActos && serviciosLiq.length>0;   // Sin incidencias en ruta
-  // ob2 (Evidencia) sigue manual - no se llena automáticamente
-}
-
-$('pOperador').addEventListener('change',()=>{
-  ['pSemanasN','pTipoU','pTipoServ','pObjKm','pRendObj','pBonoLitro'].forEach(id=>delete $(id).dataset.manual);
-  $('pRendReal').value='';
-  llenarObjetivosDesdeSeguridad();
-});
 
 $('btnPdfNom').addEventListener('click',()=>{
   const c = ultimoCalculoNom;
@@ -2395,6 +2400,8 @@ $('btnPdfNom').addEventListener('click',()=>{
   $('pnLA').textContent=num(c.ahorro,1);
   $('pnPagoRend').textContent=money(c.pagoRend);
   $('pnApoyo').textContent=money(c.apoyo)+' ('+c.apoyoPct+'%'+(c.apoyoAutorizado?', autorizado':'')+')';
+  // Nómina fija: los renglones de km, rendimiento y apoyo no aplican
+  document.querySelectorAll('.prVar').forEach(tr=>{ tr.style.display = c.esModoFijo? 'none' : ''; });
   $('pnDescuento').textContent = c.descuentoGastos? ((c.descuentoGastos>=0?'−':'+')+money(Math.abs(c.descuentoGastos))) : '$0.00';
   $('pnTotal').textContent=money(c.total);
   document.body.classList.add('print-nom');
@@ -2409,6 +2416,8 @@ $('btnRegNom').addEventListener('click', async ()=>{
   const reg = {
     ID: c.op.ID+'|'+modo+'|'+c.etiqueta.replace(/\s/g,''),
     OPERADOR: c.op.NOMBRE, MODO: modo.toUpperCase(), PERIODO: c.etiqueta, SEMANAS: c.semanas,
+    TIPO_PAGO: c.esModoFijo? 'FIJA' : 'VARIABLE',
+    SUELDO_FIJO: c.esModoFijo? r2(c.bruto) : 0,
     SUELDO_BRUTO: r2(c.bruto), IMPUESTO_PCT: 0, IMPUESTOS: 0, SUELDO_NETO: r2(c.bruto),
     BONO_CUMPLIMIENTO: r2(c.bono), KM: r2(c.km), OBJETIVO_KM: r2(c.objTot), KM_EXTRA: r2(c.kmX),
     PAGO_KM_EXTRA: r2(c.pagoKm), REND_OBJETIVO: c.rObj, REND_REAL: c.rReal,
@@ -2542,52 +2551,33 @@ function abrirLiq(id){
   $('liqDetalle').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
-/* Caja de validación de seguridad: solo administrador puede validar */
+/* Caja de validación de seguridad: solo el administrador puede validar */
 function pintarCajaSeguridadLiq(id, l){
-  const esAdmin = usuarioActual && String(usuarioActual.ROL||'').toUpperCase()==='ADMIN';
+  const admin = esAdmin();
   const formDiv = $('lqSeguridadForm');
-  const noAdminDiv = $('lqSeguridadNoAdmin');
   const estadoSpan = $('lqSeguridadEstado');
+  const validado = !!(l && String(l.SEGURIDAD_ESTADO||'').toUpperCase()==='VALIDADO');
 
-  // Si ya existe liquidación con seguridad validada
-  if(l && l.SEGURIDAD_ESTADO){
-    if(l.SEGURIDAD_ESTADO==='VALIDADO'){
-      formDiv.style.opacity = '1';
-      formDiv.style.pointerEvents = 'auto';
-      estadoSpan.textContent = '✔ Validado';
-      estadoSpan.style.background = 'var(--ok)';
-      $('lqSegIncidencias').checked = String(l.SEGURIDAD_INCIDENCIAS||'').toUpperCase()==='SI';
-      $('lqSegTiempo').checked = String(l.SEGURIDAD_TIEMPO||'').toUpperCase()==='SI';
-      $('lqSegComentarios').value = l.SEGURIDAD_COMENTARIOS||'';
-      $('lqSegComentariosBox').style.display = $('lqSegTiempo').checked? 'none' : '';
-      formDiv.querySelector('input,textarea').forEach(el=>el.disabled=true);
-    } else {
-      formDiv.style.opacity = esAdmin? '1' : '0.5';
-      formDiv.style.pointerEvents = esAdmin? 'auto' : 'none';
-      estadoSpan.textContent = 'Pendiente de validación';
-      estadoSpan.style.background = 'var(--bad)';
-      $('lqSegIncidencias').checked = String(l.SEGURIDAD_INCIDENCIAS||'').toUpperCase()==='SI';
-      $('lqSegTiempo').checked = String(l.SEGURIDAD_TIEMPO||'').toUpperCase()==='SI';
-      $('lqSegComentarios').value = l.SEGURIDAD_COMENTARIOS||'';
-    }
-  } else {
-    // Nueva liquidación
-    formDiv.style.opacity = esAdmin? '1' : '0.5';
-    formDiv.style.pointerEvents = esAdmin? 'auto' : 'none';
-    estadoSpan.textContent = 'Pendiente de validación';
-    estadoSpan.style.background = 'var(--bad)';
-    $('lqSegIncidencias').checked = false;
-    $('lqSegTiempo').checked = true;
-    $('lqSegComentarios').value = '';
-  }
+  $('lqSegIncidencias').checked = !!(l && String(l.SEGURIDAD_INCIDENCIAS||'').toUpperCase()==='SI');
+  $('lqSegTiempo').checked = l? String(l.SEGURIDAD_TIEMPO||'').toUpperCase()!=='NO' : true;
+  $('lqSegComentarios').value = (l && l.SEGURIDAD_COMENTARIOS) || '';
 
-  noAdminDiv.style.display = esAdmin? 'none' : '';
+  estadoSpan.textContent = validado? '✔ Validado' : 'Pendiente de validación';
+  estadoSpan.style.background = validado? 'var(--ok)' : 'var(--bad)';
 
-  // Mostrar caja de comentarios solo si NO llegó a tiempo
-  $('lqSegTiempo').addEventListener('change', ()=>{
-    $('lqSegComentariosBox').style.display = $('lqSegTiempo').checked? 'none' : '';
-  });
+  // Solo el administrador captura. Los demás la ven en gris, de solo lectura.
+  formDiv.style.opacity = admin? '1' : '0.5';
+  formDiv.style.pointerEvents = admin? 'auto' : 'none';
+  formDiv.querySelectorAll('input,textarea').forEach(el=>{ el.disabled = !admin; });
+  $('lqSeguridadNoAdmin').style.display = admin? 'none' : '';
+
+  sincronizarComentariosSeguridad();
 }
+/* La caja de comentarios solo aplica cuando NO llegó a tiempo */
+function sincronizarComentariosSeguridad(){
+  $('lqSegComentariosBox').style.display = $('lqSegTiempo').checked? 'none' : '';
+}
+$('lqSegTiempo').addEventListener('change', sincronizarComentariosSeguridad);
 
 /* Comprobación de los adelantos al operador (adelanto de nómina, pensión,
    hotel…) capturados en la solicitud. La diferencia entre lo asignado y lo
@@ -2733,9 +2723,26 @@ function armarLiquidacion(){
 
   const adelantos = armarAdelantosLiq(s);
   const descuentoAdelantos = adelantos.reduce((a,g)=>a+nf(g.DIFERENCIA),0);
-  const esAdmin = usuarioActual && String(usuarioActual.ROL||'').toUpperCase()==='ADMIN';
 
-  return { s, odo, reg: {
+  /* Seguridad: solo el administrador valida. Cualquier otro rol conserva lo
+     que Seguridad ya haya dejado registrado (o lo deja pendiente). */
+  const lPrev = liqDe(s.ID);
+  const yaValidado = !!(lPrev && String(lPrev.SEGURIDAD_ESTADO||'').toUpperCase()==='VALIDADO');
+  const validaAhora = esAdmin();
+  const seguridad = validaAhora
+    ? { ESTADO:'VALIDADO',
+        INCIDENCIAS: $('lqSegIncidencias').checked? 'SI' : 'NO',
+        TIEMPO: $('lqSegTiempo').checked? 'SI' : 'NO',
+        COMENTARIOS: $('lqSegTiempo').checked? '' : ($('lqSegComentarios').value||'').trim(),
+        POR: nombreUsuario(), FECHA: hoyISO() }
+    : { ESTADO: yaValidado? 'VALIDADO' : 'PENDIENTE',
+        INCIDENCIAS: (lPrev && lPrev.SEGURIDAD_INCIDENCIAS) || '',
+        TIEMPO: (lPrev && lPrev.SEGURIDAD_TIEMPO) || '',
+        COMENTARIOS: (lPrev && lPrev.SEGURIDAD_COMENTARIOS) || '',
+        POR: (lPrev && lPrev.SEGURIDAD_VALIDADO_POR) || '',
+        FECHA: (lPrev && lPrev.SEGURIDAD_FECHA_VALIDACION) || '' };
+
+  return { s, odo, seguridad, reg: {
     ID: s.ID, FOLIO: s.FOLIO, CARTAS_PORTE: s.CARTAS_PORTE,
     FECHA_CARGA: s.FECHA_SERVICIO, FECHA_FINALIZADO: $('lqFechaFin').value,
     RUTA: s.RUTA, CLIENTE: clienteDeSol(s), OPERADOR: s.OPERADOR,
@@ -2750,13 +2757,23 @@ function armarLiquidacion(){
     EVIDENCIA: 'SI',
     GASTOS_ADICIONALES_JSON: JSON.stringify(adelantos),
     DESCUENTO_GASTOS_ADICIONALES: r2(descuentoAdelantos),
-    SEGURIDAD_ESTADO: esAdmin? 'VALIDADO' : 'PENDIENTE',
-    SEGURIDAD_INCIDENCIAS: $('lqSegIncidencias').checked? 'SI' : 'NO',
-    SEGURIDAD_TIEMPO: $('lqSegTiempo').checked? 'SI' : 'NO',
-    SEGURIDAD_COMENTARIOS: $('lqSegComentarios').value || '',
-    SEGURIDAD_VALIDADO_POR: esAdmin? nombreUsuario() : '',
-    SEGURIDAD_FECHA_VALIDACION: esAdmin? hoyISO() : ''
+    SEGURIDAD_ESTADO: seguridad.ESTADO,
+    SEGURIDAD_INCIDENCIAS: seguridad.INCIDENCIAS,
+    SEGURIDAD_TIEMPO: seguridad.TIEMPO,
+    SEGURIDAD_COMENTARIOS: seguridad.COMENTARIOS,
+    SEGURIDAD_VALIDADO_POR: seguridad.POR,
+    SEGURIDAD_FECHA_VALIDACION: seguridad.FECHA
   }};
+}
+
+/* El proceso de liquidación no se cierra mientras Seguridad no valide.
+   Validar es exclusivo del administrador. */
+function seguridadValidada(reg){
+  if(String(reg.SEGURIDAD_ESTADO||'').toUpperCase()==='VALIDADO') return true;
+  modal('Falta la validación de Seguridad',
+    'Este viaje tiene la validación de Seguridad <b>pendiente</b>, así que no se puede cerrar la liquidación.<br><br>'+
+    'Un <b>administrador</b> debe entrar con su usuario, capturar si el operador tuvo incidencias en ruta y si llegó a tiempo, y liquidar desde ahí.', '🔒');
+  return false;
 }
 
 /* Liquidar: solo dentro de la tolerancia y si no está en aclaración */
@@ -2774,6 +2791,7 @@ $('btnLiquidar').addEventListener('click', async ()=>{
       `Este viaje no se puede liquidar: envíalo a <b>aclaración</b> con el botón de abajo.`, '⚑');
     return;
   }
+  if(!seguridadValidada(reg)) return;
 
   reg.ESTADO = 'LIQUIDADO';
   reg.FECHA_LIQUIDACION = hoyISO();
@@ -2813,6 +2831,7 @@ $('btnAutorizar').addEventListener('click', async ()=>{
 
   const nota = ($('lqAutorizaNota').value||'').trim();
   if(!nota){ toast('Escribe la nota de autorización.', true); $('lqAutorizaNota').focus(); return; }
+  if(!seguridadValidada(reg)) return;
   if(!confirm('¿Autorizar el viaje '+s.FOLIO+' y cambiar su estatus a LIQUIDADO?')) return;
 
   const previo = liqDe(s.ID) || {};
