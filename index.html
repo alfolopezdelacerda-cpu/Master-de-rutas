@@ -634,6 +634,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
           <div><label>Rendimiento real (km/l)</label><input id="pRendReal" type="number" min="0" step="0.1" placeholder="0"></div>
           <div><label>$ por litro ahorrado</label><input id="pBonoLitro" type="number" min="0" step="0.5"></div>
         </div>
+        <div class="totrow mini" style="color:var(--ink2)"><span>Rendimiento real informativo (odómetro ÷ combustible)</span><b class="num" id="pRendRealInfo">—</b></div>
         <div class="totrow"><span>Litros ahorrados</span><b class="num" id="pLAhorro">0</b></div>
         <div class="totrow"><span>Pago por rendimiento eficiente</span><b class="num pos" id="pPagoRend">$0.00</b></div>
       </div>
@@ -723,6 +724,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       </div>
       <h3 style="margin-top:18px">Pre-nómina</h3>
       <div class="grid g4">
+        <div><label>Sueldo fijo semanal (modo fijo, $)</label><input id="cfgSueldoFijo" type="number" step="100"></div>
         <div><label>% bono cumplimiento</label><input id="cfgBonoPct" type="number" step="1"></div>
         <div><label>Pago por km extra ($)</label><input id="cfgKmX" type="number" step="0.1"></div>
         <div><label>Apoyo para viaje ($)</label><input id="cfgApoyo" type="number" step="50"></div>
