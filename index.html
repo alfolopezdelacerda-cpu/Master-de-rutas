@@ -3076,13 +3076,15 @@ function usuariosActivos(){
 }
 function buscarUsuario(user, pass){
   const u = String(user||'').trim().toLowerCase();
-  const p = String(pass||'');
+  const p = String(pass||'').trim();
   if(!DB.USUARIOS.length){
     return (u==='admin' && p==='admin')? USUARIO_INICIAL : null;
   }
-  return usuariosActivos().find(x=>
-    String(x.USUARIO||'').trim().toLowerCase()===u && String(x.PASSWORD??'')===p
-  ) || null;
+  return usuariosActivos().find(x=>{
+    const userOk = String(x.USUARIO||'').trim().toLowerCase()===u;
+    const passOk = String(x.PASSWORD||'')===p && p;  // contraseña debe coincidir y no estar vacía
+    return userOk && passOk;
+  }) || null;
 }
 function pistaLogin(){
   $('logHint').innerHTML = DB.USUARIOS.length
@@ -3127,9 +3129,12 @@ $('btnLogout').addEventListener('click',()=>{ if(confirm('¿Cerrar sesión?')) c
 function restaurarSesion(){
   let id=null; try{ id = sessionStorage.getItem('adl_user'); }catch(e){}
   if(!id) return false;
-  const u = id==='bootstrap'
-    ? (DB.USUARIOS.length? null : USUARIO_INICIAL)
-    : usuariosActivos().find(x=>String(x.ID)===String(id));
+  let u = null;
+  if(id==='bootstrap'){
+    u = DB.USUARIOS.length? null : USUARIO_INICIAL;
+  } else {
+    u = DB.USUARIOS.find(x=>String(x.ID)===String(id) && String(x.ACTIVO||'SI').toUpperCase()!=='NO');
+  }
   if(!u) return false;
   abrirSesion(u, false);
   return true;
