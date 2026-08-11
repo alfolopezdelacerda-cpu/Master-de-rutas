@@ -46,7 +46,7 @@ nueva (o actualizar la existente) para que la URL `/exec` sirva la versión nuev
 `configurarHojas()` las crea solo, pero conviene saber qué espera cada una.
 Además de las que ya usabas (`UNIDADES`, `OPERADORES`, `EJECUTIVOS`,
 `REMOLQUES`, `CLIENTES`, `RUTAS`, `SOLICITUDES`, `NOMINAS`, `LIQUIDACION`,
-`CONFIG`), la app lee y escribe dos hojas nuevas:
+`CONFIG`), la app lee y escribe estas hojas:
 
 ### Hoja `CASETAS`
 
@@ -122,6 +122,20 @@ falla la solicitud original no se pierde. Se consulta en
 deshabilitado para que no haya forma de saltarse el paso. Una solicitud cuyo
 gasto **ya fue dispersado** no se puede cancelar (ver más abajo).
 
+### Hoja `PAGO_X_KM`
+
+| ORIGEN | DESTINO | KMS_RED | VJS_MES | KMS_MES | FULL | SENCILLO | RABON | TON_3_5 | TON_1_5 | KG_600 |
+|---|---|---|---|---|---|---|---|---|---|---|
+
+Tarifario que da un **monto de pago** a partir de los **kilómetros** del viaje
+y del **tipo de unidad** que lo hizo. Lo usa el esquema de **nómina fija** de
+la Pre-Nómina (ver "Pago por KM" más abajo). Se captura o se importa por CSV
+desde **Administración → Pago x KM**.
+
+`KMS_RED` es la columna con la que se busca; `VJS_MES` y `KMS_MES` son
+informativas. Las seis columnas de tipo de unidad corresponden a `FULL`,
+`SENCILLO`, `RABÓN`, `3.5 T`, `1.5 T` y `UTILITARIA` (esta última, `KG_600`).
+
 ### Hoja `BITACORA`
 
 | ID | FECHA_HORA | USUARIO | NOMBRE | ROL | ACCION | HOJA | REGISTRO | DETALLE |
@@ -144,8 +158,11 @@ la constante `BITACORA_MAX`.
 - `LIQUIDACION`: `ODOMETRO_INICIAL`, `ODOMETRO_FINAL`, `KM_ODOMETRO`, `KM_RUTA`,
   `DIFERENCIA_KM`, `REVISAR_KM`, `LIQUIDADO_POR`, `MOTIVO_ACLARACION`,
   `ACLARACION_POR`, `ACLARACION_FECHA`, `AUTORIZADO_POR`, `FECHA_AUTORIZACION`,
-  `NOTA_AUTORIZACION`, `GASTOS_ADICIONALES_JSON`, `DESCUENTO_GASTOS_ADICIONALES`
-- `NOMINAS`: `DESCUENTO_GASTOS`
+  `NOTA_AUTORIZACION`, `GASTOS_ADICIONALES_JSON`, `DESCUENTO_GASTOS_ADICIONALES`,
+  `SEGURIDAD_ESTADO`, `SEGURIDAD_INCIDENCIAS`, `SEGURIDAD_TIEMPO`,
+  `SEGURIDAD_COMENTARIOS`, `SEGURIDAD_VALIDADO_POR`, `SEGURIDAD_FECHA_VALIDACION`
+- `NOMINAS`: `DESCUENTO_GASTOS`, `TIPO_PAGO`, `SUELDO_FIJO`, `PAGO_SERVICIOS`,
+  `DIFERENCIA_SERVICIOS`, `OBJ_LLEGADA_TIEMPO`, `OBJ_SIN_INCIDENCIAS`
 - `SOLICITUDES_CANCELADAS`: `ESTADO_CANCELACION`
 - `USUARIOS`: `PESTANAS`
 
@@ -219,8 +236,8 @@ ahí por otro medio:
 |---|---|---|
 | **AC** | Odómetro inicial (KM inicial) | Liquidación |
 | **AD** | Odómetro final (KM final) | Liquidación |
-| **AF** | Combustible asignado | Solicitud |
-| **AG** | Combustible $ (real) | Liquidación |
+| **AF** | Combustible $ (real) | Liquidación |
+| **AG** | Combustible asignado | Solicitud |
 | **AI** | Casetas (real) | Liquidación |
 | **AJ** | Pensión | Liquidación |
 | **AK** | Viáticos | Liquidación |
@@ -232,13 +249,17 @@ Todas van por **posición de columna**, no por nombre de encabezado, así que
 funcionan sin importar cómo se titulen ahí. Si en la sábana cambian de lugar,
 se ajusta en `SABANA_COLUMNAS_LIQUIDACION` del Apps Script.
 
-**Cómo se ubica el renglón:** la columna de CP es la **N**, por posición fija
-(constante `SABANA_COL_CP`) — no importa cómo esté titulada esa columna en la
-sábana. Ahí se busca la primera carta porte de la solicitud (`CARTAS_PORTE`
-puede traer varias, separadas por coma — se usa la primera). Si una solicitud
-no trae carta porte, se cae a ubicar el renglón por `FOLIO` como respaldo. Si
-el renglón no existe, se crea uno nuevo sembrando **solo** la celda de CP (o
-folio) — no se copia nada más al crearlo.
+Las columnas **F**, **K** y **AB** nunca se tocan, ni para escribir ni para
+buscar.
+
+**Cómo se ubica el renglón:** únicamente por la **carta porte**, en la columna
+**N** por posición fija (constante `SABANA_COL_CP`) — no importa cómo esté
+titulada esa columna en la sábana. Si `CARTAS_PORTE` trae varias (por ejemplo
+`401 402`), se busca **la primera**. No hay respaldo por folio: la búsqueda es
+solo por CP, para no leer ni escribir en ninguna otra columna.
+
+Si esa carta porte **no existe** en la sábana, no se crea ningún renglón: la
+operación falla con el aviso **«No se encontró la CP en Sábana»**.
 
 Un fallo al escribir en la sábana no tumba la liquidación que lo originó: esa
 queda guardada igual en el Sheet, y la app **muestra un aviso en pantalla**
@@ -248,8 +269,28 @@ explicando qué pasó.
 sábana** dentro del Google Sheet. Sin modificar nada, te dice si el ID está
 configurado, si la sábana se puede abrir, qué hojas tiene, si encontró
 `Transportadora`, qué encabezado hay hoy en cada una de las columnas fijas, y
-si existe una columna de CP (o folio, como respaldo) con la que ubicar el
-renglón del viaje.
+qué hay en la columna de CP con la que se ubica el renglón del viaje.
+
+## Validación de Seguridad en Liquidación
+
+Al liquidar, la tarjeta **Validación de Seguridad** arranca en gris con el
+estatus **Pendiente de validación**. Solo un usuario con rol **Administrador**
+puede capturarla; los demás roles la ven en gris, de solo lectura, y no la
+pueden modificar.
+
+Se registran dos cosas:
+
+- **¿Tuvo incidencias en ruta?**
+- **¿Llegó a tiempo?** — si se destilda, aparece una caja de **comentarios**
+  para explicar el retraso.
+
+**Mientras no esté validada, el proceso de liquidación no se cierra**: ni el
+botón *Liquidar viaje* ni *Autorizar y liquidar* la dejan pasar; sale un aviso
+de que un administrador debe validarla. Al validar se firma con el nombre y la
+fecha (`SEGURIDAD_VALIDADO_POR`, `SEGURIDAD_FECHA_VALIDACION`).
+
+Lo que Seguridad registre aquí es lo que llena solo los **objetivos de
+cumplimiento** de la Pre-Nómina.
 
 ## Objetivo semanal de KM
 
@@ -261,12 +302,63 @@ tipos de unidad tienen un objetivo único y el selector queda deshabilitado.
 
 ## Pre-Nómina
 
+### Dos esquemas de pago
+
+Arriba a la derecha de Pre-Nómina hay un interruptor **«Pago de nómina fija»**
+que cambia el esquema completo:
+
+| | Variable (apagado) | Fija (encendido) |
+|---|---|---|
+| Sueldo | semanal del operador (`OPERADORES.PAGO_NOMINAL_SEMANAL`) | `SUELDO_FIJO_SEMANAL` de Administración |
+| Objetivo de kilómetros | sí | **no aparece** |
+| Objetivo de rendimiento | sí | **no aparece** |
+| Apoyo para viaje | sí | **no aparece** |
+| Pago por KM | no | sí |
+| Objetivos de cumplimiento | sí | sí |
+| Descuentos por adelantos | sí | sí |
+
+El esquema usado queda guardado en la nómina (`TIPO_PAGO`: `FIJA` o
+`VARIABLE`) y el PDF imprime solo los renglones que aplican.
+
 ### Sueldo
 
 El sueldo se paga en **bruto** (semanal × semanas del periodo): no hay
 descuento ni impuesto sobre el sueldo. Si necesitas restarle algo al
 operador, es a través de los **descuentos por adelantos** (ver más abajo), no
 de un porcentaje fijo sobre el sueldo.
+
+### Pago por KM (solo en nómina fija)
+
+Cada viaje **liquidado** del periodo se cotiza en la hoja `PAGO_X_KM` con sus
+**km proyectados** (`SOLICITUDES.KM`) y su **tipo de unidad**:
+
+1. Se busca en la columna `KMS_RED` el renglón cuyos km alcancen los del
+   viaje. Si no coinciden exactos, se toma **el siguiente número hacia
+   arriba** (500 km cubre un viaje de 400).
+2. El monto sale de la columna del tipo de unidad del viaje: `FULL`,
+   `SENCILLO`, `RABON`, `TON_3_5`, `TON_1_5` o `KG_600` (utilitaria).
+
+Con el **total de servicios** así calculado:
+
+- **No rebasa el sueldo fijo** → se paga **solo el sueldo**, sin bono.
+- **Lo rebasa** → se paga el **sueldo + la diferencia + el bono por
+  cumplimiento**.
+
+La tarjeta lista viaje por viaje qué km de la tabla se usaron y con cuánto se
+cotizó, para poder auditarlo. Se guarda en la nómina como `PAGO_SERVICIOS` y
+`DIFERENCIA_SERVICIOS`.
+
+Si los km de un viaje superan al renglón más alto de la tabla, se cotiza con
+ese renglón y la fila se marca **«tope de la tabla»**. Si la tabla está vacía,
+la tarjeta lo avisa en rojo en vez de pagar cero en silencio.
+
+### Objetivos de cumplimiento
+
+**Llegada en tiempo** y **Sin incidencias en ruta** no se capturan a mano: se
+derivan de la **validación de Seguridad** de los viajes liquidados del periodo
+(ver "Validación de Seguridad" más abajo). Se marcan solo si **todos** los
+viajes validados del periodo llegaron a tiempo / no tuvieron incidencias.
+**Evidencia en tiempo** sigue siendo manual.
 
 ### Apoyo para viaje
 

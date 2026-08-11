@@ -644,6 +644,19 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <div class="totrow"><span>Pago por rendimiento eficiente</span><b class="num pos" id="pPagoRend">$0.00</b></div>
       </div>
 
+      <div class="card" id="pCardPagoKm" style="display:none">
+        <h3>Pago por KM</h3>
+        <div class="sub" style="margin-bottom:10px">Cada viaje liquidado del periodo se cotiza en la tabla <b>Pago x KM</b> con sus <b>km proyectados</b> y su <b>tipo de unidad</b>. Si los km no están exactos en la tabla, se toma el siguiente renglón hacia arriba.</div>
+        <div class="twrap"><table>
+          <thead><tr><th>Folio</th><th>Ruta</th><th>Unidad</th><th class="right">KM proy.</th><th class="right">KM tabla</th><th class="right">Pago</th></tr></thead>
+          <tbody id="tbodyPagoKm"></tbody>
+        </table></div>
+        <div class="totrow" style="margin-top:8px"><span>Total de servicios</span><b class="num" id="pPagoKmTotal">$0.00</b></div>
+        <div class="totrow"><span>Sueldo fijo del periodo</span><b class="num" id="pPagoKmSueldo">$0.00</b></div>
+        <div class="totrow"><span id="pPagoKmDifTit">Diferencia a pagar</span><b class="num pos" id="pPagoKmDif">$0.00</b></div>
+        <div class="mini" id="pPagoKmNota" style="margin-top:6px"></div>
+      </div>
+
       <div class="card" id="pDescuentosBox" style="display:none">
         <h3>Descuentos por adelantos al operador</h3>
         <div class="sub" style="margin-bottom:10px">Diferencia entre lo adelantado (nómina, pensión, hotel…) y lo comprobado en cada viaje liquidado del periodo. Positivo se descuenta; negativo (comprobó de más) se abona.</div>
@@ -781,6 +794,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <button class="tab atab" data-adm="CLIENTES">Clientes</button>
         <button class="tab atab" data-adm="RUTAS">Rutas</button>
         <button class="tab atab" data-adm="SOLICITUDES">Solicitudes</button>
+        <button class="tab atab" data-adm="PAGO_X_KM">Pago x KM</button>
         <button class="tab atab" data-adm="NOMINAS">Nóminas</button>
         <button class="tab atab" data-adm="LIQUIDACION">Liquidación</button>
         <button class="tab atab" data-adm="CANCELADAS">Canceladas</button>
@@ -955,6 +969,8 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <tr class="prVar"><td class="prLbl">LITROS AHORRADOS</td><td id="pnLA"></td></tr>
     <tr class="prVar"><td class="prLbl">PAGO POR RENDIMIENTO EFICIENTE</td><td id="pnPagoRend"></td></tr>
     <tr class="prVar"><td class="prLbl">APOYO PARA VIAJE</td><td id="pnApoyo"></td></tr>
+    <tr class="prFija"><td class="prLbl">SERVICIOS DEL PERIODO (PAGO X KM)</td><td id="pnServicios"></td></tr>
+    <tr class="prFija"><td class="prLbl">DIFERENCIA SOBRE EL SUELDO FIJO</td><td id="pnDifServicios"></td></tr>
     <tr><td class="prLbl">DESCUENTO POR ADELANTOS AL OPERADOR</td><td id="pnDescuento"></td></tr>
     <tr><td class="prLbl" style="font-size:13px">TOTAL A PAGAR AL OPERADOR</td><td id="pnTotal" style="font-weight:bold;font-size:13px"></td></tr>
   </table>
@@ -994,7 +1010,7 @@ const CAMPOS_CASETA = ['COSTO_2E','COSTO_5E','COSTO_9E'];
    Se aplica en ambos sentidos: fuera de ±15 km el viaje entra a aclaración. */
 const TOLERANCIA_KM = 15;
 
-const DB = { UNIDADES:[], OPERADORES:[], EJECUTIVOS:[], REMOLQUES:[], CLIENTES:[], RUTAS:[], SOLICITUDES:[], NOMINAS:[], LIQUIDACION:[], CASETAS:[], USUARIOS:[], BITACORA:[], SOLICITUDES_CANCELADAS:[], CONFIG:{} };
+const DB = { UNIDADES:[], OPERADORES:[], EJECUTIVOS:[], REMOLQUES:[], CLIENTES:[], RUTAS:[], SOLICITUDES:[], NOMINAS:[], LIQUIDACION:[], CASETAS:[], USUARIOS:[], BITACORA:[], SOLICITUDES_CANCELADAS:[], PAGO_X_KM:[], CONFIG:{} };
 
 const $  = id => document.getElementById(id);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
@@ -1074,7 +1090,7 @@ function bitacora(accion, detalle){
 }
 
 function aplicarDatos(data){
-  ['UNIDADES','OPERADORES','EJECUTIVOS','REMOLQUES','CLIENTES','RUTAS','SOLICITUDES','NOMINAS','LIQUIDACION','CASETAS','USUARIOS','BITACORA','SOLICITUDES_CANCELADAS'].forEach(k=>{ DB[k] = data[k]||[]; });
+  ['UNIDADES','OPERADORES','EJECUTIVOS','REMOLQUES','CLIENTES','RUTAS','SOLICITUDES','NOMINAS','LIQUIDACION','CASETAS','USUARIOS','BITACORA','SOLICITUDES_CANCELADAS','PAGO_X_KM'].forEach(k=>{ DB[k] = data[k]||[]; });
   DB.CONFIG = data.CONFIG||{};
   refrescarTodo();
 }
@@ -2204,6 +2220,67 @@ function aplicarPermisosPrenomina(){
   $('pAvisoSoloAdmin').style.display = admin? 'none' : '';
 }
 
+/* ---------- Tabla "Pago x KM" ----------
+   Da un monto a partir de los kilómetros del viaje y del tipo de unidad que lo
+   hizo. Se busca el renglón por sus KMS_RED: si los km no están exactos, se
+   toma el siguiente renglón hacia arriba (el KMS_RED más chico que ya alcanza
+   los km del viaje). Si los km superan a todos los renglones de la tabla, se
+   cotiza con el renglón más alto que exista y se marca en pantalla. */
+const COL_PAGO_X_KM = {
+  'FULL':'FULL', 'SENCILLO':'SENCILLO', 'RABÓN':'RABON', 'RABON':'RABON',
+  '3.5 T':'TON_3_5', '1.5 T':'TON_1_5', 'UTILITARIA':'KG_600'
+};
+function tarifaPagoXKm(km, tipoUnidad){
+  const col = COL_PAGO_X_KM[String(tipoUnidad||'').trim().toUpperCase()];
+  if(!col) return { monto:0, kmTabla:null, motivo:'Tipo de unidad sin columna en la tabla' };
+  const filas = DB.PAGO_X_KM
+    .map(r=>({ km:nf(r.KMS_RED), monto:nf(r[col]) }))
+    .filter(r=>r.km>0)
+    .sort((a,b)=>a.km-b.km);
+  if(!filas.length) return { monto:0, kmTabla:null, motivo:'La tabla Pago x KM está vacía' };
+
+  const exacta = filas.find(r=>r.km>=km);          // el siguiente número hacia arriba
+  const fila = exacta || filas[filas.length-1];    // sin renglón que alcance: el más alto
+  return { monto: fila.monto, kmTabla: fila.km, tope: !exacta };
+}
+/* Cotiza cada viaje liquidado del periodo con sus km proyectados */
+function pagoPorKmDelPeriodo(serviciosLiq){
+  return serviciosLiq.map(s=>{
+    const km = nf(s.KM);
+    const t = tarifaPagoXKm(km, s.TIPO_UNIDAD);
+    return { folio:s.FOLIO, ruta:s.RUTA, unidad:s.TIPO_UNIDAD||'—', km, ...t };
+  });
+}
+
+/* Tarjeta de Pago por KM: solo existe en el esquema de nómina fija */
+function pintarPagoPorKm(esModoFijo, items, totalServicios, sueldo, diferencia, rebasa){
+  $('pCardPagoKm').style.display = esModoFijo? '' : 'none';
+  if(!esModoFijo) return;
+
+  const tb = $('tbodyPagoKm'); tb.innerHTML='';
+  items.forEach(i=>{
+    const tr=document.createElement('tr');
+    const kmTabla = i.kmTabla==null
+      ? `<span style="color:var(--bad)">${esc(i.motivo||'sin tarifa')}</span>`
+      : num(i.kmTabla,0) + (i.tope? ' <span class="mini" style="color:var(--bad)">(tope de la tabla)</span>' : '');
+    tr.innerHTML=`<td>${esc(i.folio)}</td><td>${esc(i.ruta)}</td><td>${esc(i.unidad)}</td>
+      <td class="right num">${num(i.km,1)}</td><td class="right num">${kmTabla}</td>
+      <td class="right num">${money(i.monto)}</td>`;
+    tb.appendChild(tr);
+  });
+  if(!items.length) tb.innerHTML='<tr><td colspan="6" class="mini">Sin viajes liquidados en el periodo.</td></tr>';
+
+  $('pPagoKmTotal').textContent = money(totalServicios);
+  $('pPagoKmSueldo').textContent = money(sueldo);
+  $('pPagoKmDifTit').textContent = rebasa? 'Diferencia a pagar (servicios − sueldo)' : 'Diferencia a pagar';
+  $('pPagoKmDif').textContent = money(diferencia);
+  $('pPagoKmNota').innerHTML = !DB.PAGO_X_KM.length
+    ? '<span style="color:var(--bad)">La tabla <b>Pago x KM</b> está vacía: cárgala en Administración → Pago x KM.</span>'
+    : rebasa
+      ? 'Los servicios rebasan el sueldo fijo: se paga el sueldo + la diferencia + el bono por cumplimiento.'
+      : 'Los servicios no rebasan el sueldo fijo: se paga únicamente el sueldo, sin bono.';
+}
+
 /* "Llegada en tiempo" y "Sin incidencias en ruta" salen de lo que Seguridad
    validó al liquidar cada viaje del periodo: se cumplen solo si TODOS los
    viajes liquidados llegaron a tiempo / no tuvieron incidencias. Por eso no
@@ -2301,7 +2378,21 @@ function calcularPrenomina(){
     gastos.forEach(g=>descItems.push({ folio:s.FOLIO, concepto:g.CONCEPTO, asignado:nf(g.ASIGNADO), real:nf(g.REAL), diferencia:nf(g.DIFERENCIA) }));
   });
   const descuentoGastos = descItems.reduce((a,d)=>a+d.diferencia,0);
-  const total = bruto+bono+pagoKm+pagoRend+apoyo.monto-descuentoGastos;
+
+  /* Nómina fija: los viajes del periodo se cotizan con la tabla Pago x KM.
+     Si ese total NO rebasa el sueldo fijo, se paga únicamente el sueldo. Si lo
+     rebasa, se paga el sueldo + la diferencia + el bono por cumplimiento. */
+  const itemsPagoKm = esModoFijo? pagoPorKmDelPeriodo(serviciosLiq) : [];
+  const totalServicios = itemsPagoKm.reduce((a,i)=>a+i.monto,0);
+  const difServicios = esModoFijo? Math.max(0, totalServicios-bruto) : 0;
+  const rebasa = difServicios > 0;
+  const bonoPagado = esModoFijo? (rebasa? bono : 0) : bono;
+
+  const total = esModoFijo
+    ? bruto + difServicios + bonoPagado - descuentoGastos
+    : bruto + bono + pagoKm + pagoRend + apoyo.monto - descuentoGastos;
+
+  pintarPagoPorKm(esModoFijo, itemsPagoKm, totalServicios, bruto, difServicios, rebasa);
 
   $('pDescuentosBox').style.display = descItems.length? '' : 'none';
   const tbD=$('tbodyDescuentos'); tbD.innerHTML='';
@@ -2315,7 +2406,7 @@ function calcularPrenomina(){
   $('pDescuentoTotal').style.color = descuentoGastos>0? 'var(--bad)' : descuentoGastos<0? 'var(--ok)' : '';
 
   $('pNominal').textContent=money(bruto);
-  $('pBono').textContent=money(bono);
+  $('pBono').textContent=money(bonoPagado) + ((esModoFijo && !rebasa && bono>0)? ' — no aplica: los servicios no rebasan el sueldo fijo' : '');
   $('pKmRuta').textContent=num(kmRuta,1);
   $('pKm').textContent=num(km,1) + (nPend>0? ` (${nPend} viaje(s) sin liquidar no cuentan)`:'');
   $('pObjTot').textContent=num(objTot);
@@ -2343,8 +2434,9 @@ function calcularPrenomina(){
   if(!servicios.length) tb.innerHTML='<tr><td colspan="5" class="mini">Sin servicios en el periodo seleccionado.</td></tr>';
 
   ultimoCalculoNom = op? {
-    op, etiqueta, servicios:serviciosLiq, semanas, bruto, bono, km,
+    op, etiqueta, servicios:serviciosLiq, semanas, bruto, bono: bonoPagado, km,
     kmRuta, kmOdo, fuente, cumplePct, esModoFijo,
+    itemsPagoKm, totalServicios, difServicios,
     objKmSemanal: esModoFijo? 0 : nf($('pObjKm').value), objTot, kmX, pagoKm,
     rObj: esModoFijo? 0 : rObj, rReal: esModoFijo? 0 : rReal, ahorro, pagoRend,
     apoyo: apoyo.monto, apoyoPct: apoyo.pct, apoyoAutorizado: apoyo.autorizado,
@@ -2400,8 +2492,11 @@ $('btnPdfNom').addEventListener('click',()=>{
   $('pnLA').textContent=num(c.ahorro,1);
   $('pnPagoRend').textContent=money(c.pagoRend);
   $('pnApoyo').textContent=money(c.apoyo)+' ('+c.apoyoPct+'%'+(c.apoyoAutorizado?', autorizado':'')+')';
-  // Nómina fija: los renglones de km, rendimiento y apoyo no aplican
+  $('pnServicios').textContent=money(c.totalServicios||0);
+  $('pnDifServicios').textContent=money(c.difServicios||0);
+  // Cada esquema imprime solo los renglones que le aplican
   document.querySelectorAll('.prVar').forEach(tr=>{ tr.style.display = c.esModoFijo? 'none' : ''; });
+  document.querySelectorAll('.prFija').forEach(tr=>{ tr.style.display = c.esModoFijo? '' : 'none'; });
   $('pnDescuento').textContent = c.descuentoGastos? ((c.descuentoGastos>=0?'−':'+')+money(Math.abs(c.descuentoGastos))) : '$0.00';
   $('pnTotal').textContent=money(c.total);
   document.body.classList.add('print-nom');
@@ -2418,6 +2513,8 @@ $('btnRegNom').addEventListener('click', async ()=>{
     OPERADOR: c.op.NOMBRE, MODO: modo.toUpperCase(), PERIODO: c.etiqueta, SEMANAS: c.semanas,
     TIPO_PAGO: c.esModoFijo? 'FIJA' : 'VARIABLE',
     SUELDO_FIJO: c.esModoFijo? r2(c.bruto) : 0,
+    PAGO_SERVICIOS: r2(c.totalServicios||0),
+    DIFERENCIA_SERVICIOS: r2(c.difServicios||0),
     SUELDO_BRUTO: r2(c.bruto), IMPUESTO_PCT: 0, IMPUESTOS: 0, SUELDO_NETO: r2(c.bruto),
     BONO_CUMPLIMIENTO: r2(c.bono), KM: r2(c.km), OBJETIVO_KM: r2(c.objTot), KM_EXTRA: r2(c.kmX),
     PAGO_KM_EXTRA: r2(c.pagoKm), REND_OBJETIVO: c.rObj, REND_REAL: c.rReal,
@@ -2969,6 +3066,13 @@ const ADMIN = {
   CLIENTES:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
   RUTAS:{ soloLectura:true, cols:[{k:'RUTA'},{k:'CLIENTE'},{k:'TIPO_SERVICIO'},{k:'TOTAL_KM'},{k:'COSTO_CASETAS'}] },
   SOLICITUDES:{ soloLectura:true, sinBorrarMasivo:true, cols:[{k:'FOLIO'},{k:'FECHA_SERVICIO'},{k:'RUTA'},{k:'OPERADOR'},{k:'TOTAL'}] },
+  /* Tarifario por kilómetros y tipo de unidad para el esquema de nómina fija.
+     Se carga con "Importar CSV" desde el archivo de Excel. */
+  PAGO_X_KM:{ cols:[
+      {k:'ORIGEN'},{k:'DESTINO'},{k:'KMS_RED',tipo:'number'},{k:'VJS_MES',tipo:'number'},{k:'KMS_MES',tipo:'number'},
+      {k:'FULL',tipo:'number'},{k:'SENCILLO',tipo:'number'},{k:'RABON',tipo:'number'},
+      {k:'TON_3_5',tipo:'number'},{k:'TON_1_5',tipo:'number'},{k:'KG_600',tipo:'number'}],
+    csv:'ORIGEN, DESTINO, KMS_RED, VJS_MES, KMS_MES, FULL, SENCILLO, RABON, TON_3_5, TON_1_5, KG_600' },
   NOMINAS:{ soloLectura:true, cols:[{k:'OPERADOR'},{k:'PERIODO'},{k:'KM'},{k:'TOTAL'},{k:'FECHA_REGISTRO'}] },
   LIQUIDACION:{ soloLectura:true, cols:[{k:'FOLIO'},{k:'CLIENTE'},{k:'ESTADO'},{k:'COMB_REAL'},{k:'CASETAS_REAL'},{k:'FECHA_LIQUIDACION'}] },
   CANCELADAS:{ soloLectura:true, sinBorrar:true, invertido:true, hoja:'SOLICITUDES_CANCELADAS',
