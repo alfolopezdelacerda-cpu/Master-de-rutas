@@ -2222,7 +2222,9 @@ function calcularPrenomina(){
 
   if($('pApoyoMonto').value==='') $('pApoyoMonto').value = cfgNum('APOYO_VIAJE',1500);
 
-  const bruto = (op? nf(op.PAGO_NOMINAL_SEMANAL):0) * semanas;
+  const esModoFijo = $('pTipoPagoFijo').checked;
+  const sueldoSemanal = esModoFijo? cfgNum('SUELDO_FIJO_SEMANAL',0) : (op? nf(op.PAGO_NOMINAL_SEMANAL):0);
+  const bruto = sueldoSemanal * semanas;
 
   // Solo los servicios LIQUIDADOS cuentan para KM y pago. El objetivo de KM
   // solo considera lo registrado por odómetro; lo proyectado en ruta es
@@ -2249,6 +2251,10 @@ function calcularPrenomina(){
   const lReal = rReal>0? km/rReal:lObj;
   const ahorro = cumpleKm? Math.max(0, lObj-lReal) : 0;
   const pagoRend = ahorro*nf($('pBonoLitro').value);
+
+  // Rendimiento informativo: KM odómetro / combustible asignado
+  const combAsignado = serviciosLiq.reduce((a,s)=>a+nf(s.COMBUSTIBLE_ASIGNADO||0),0);
+  const rendInfomativo = combAsignado>0? kmOdo/combAsignado : 0;
 
   const apoyo = calcularApoyo(serviciosLiq.length, cumplePct);
 
@@ -2289,6 +2295,7 @@ function calcularPrenomina(){
   $('pApoyoNota').innerHTML = apoyo.nota;
   $('pLAhorro').textContent=num(ahorro,1) + ((!cumpleKm && rReal>0)? ' (no aplica)':'');
   $('pPagoRend').textContent=money(pagoRend) + ((!cumpleKm && rReal>0)? ' — no cumple obj. KM':'');
+  $('pRendRealInfo').textContent = rendInfomativo>0? num(rendInfomativo,2)+' km/l' : '—';
   $('pTotal').textContent=money(total);
   $('pServTag').textContent=servicios.length + (nPend>0? ` (${serviciosLiq.length} liq.)` : '');
 
@@ -2345,6 +2352,31 @@ function alCambiarTipoPago(){
 }
 $('pTipoPagoFijo').addEventListener('change',alCambiarTipoPago);
 $('pSueldoFijoMonto').addEventListener('input',calcularPrenomina);
+
+/* Llenar automáticamente objetivos de seguridad desde liquidación */
+function llenarObjetivosDesdeSeguridad(){
+  const {servicios, serviciosLiq} = serviciosPeriodo();
+  // Verificar si TODOS los servicios liquidados llegaron a tiempo
+  const todosTiempo = serviciosLiq.every(s=>{
+    const l = liqDe(s.ID);
+    return l && String(l.SEGURIDAD_TIEMPO||'').toUpperCase()==='SI';
+  });
+  // Verificar si TODOS los servicios liquidados no tuvieron incidencias
+  const todosActos = serviciosLiq.every(s=>{
+    const l = liqDe(s.ID);
+    return l && String(l.SEGURIDAD_INCIDENCIAS||'').toUpperCase()==='NO';
+  });
+
+  $('ob1').checked = todosTiempo && serviciosLiq.length>0;  // Llegada en tiempo
+  $('ob3').checked = todosActos && serviciosLiq.length>0;   // Sin incidencias en ruta
+  // ob2 (Evidencia) sigue manual - no se llena automáticamente
+}
+
+$('pOperador').addEventListener('change',()=>{
+  ['pSemanasN','pTipoU','pTipoServ','pObjKm','pRendObj','pBonoLitro'].forEach(id=>delete $(id).dataset.manual);
+  $('pRendReal').value='';
+  llenarObjetivosDesdeSeguridad();
+});
 
 $('btnPdfNom').addEventListener('click',()=>{
   const c = ultimoCalculoNom;
@@ -2975,6 +3007,7 @@ function aplicarPermisos(){
 const CFG_MAP = [
   ['PRECIO_DIESEL','cfgDiesel',26.31],['PRECIO_GASOLINA','cfgGasolina',23.46],['PRECIO_GAS','cfgGas',12.5],
   ['PRECIO_UREA','cfgUrea',20],['UREA_PCT','cfgUreaPct',5],['FOLIO_INICIAL','cfgFolio',2050],
+  ['SUELDO_FIJO_SEMANAL','cfgSueldoFijo',0],
   ['BONO_PCT','cfgBonoPct',30],['PAGO_KM_EXTRA','cfgKmX',2],
   ['APOYO_VIAJE','cfgApoyo',1500],
   ['BONO_LITRO_DIESEL','cfgBLD',16],['BONO_LITRO_GASOLINA','cfgBLG',12],
