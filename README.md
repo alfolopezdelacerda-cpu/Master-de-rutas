@@ -154,7 +154,9 @@ la constante `BITACORA_MAX`.
 
 - `RUTAS`: `OPTIMIZADA_FULL`, `COSTO_CASETAS_2E`, `COSTO_CASETAS_5E`, `COSTO_CASETAS_9E`
 - `SOLICITUDES`: `TARIFA_CASETAS`, `DISPERSION`, `DISPERSADO_POR`, `FECHA_DISPERSION`,
-  `GASTOS_ADICIONALES_JSON`
+  `GASTOS_ADICIONALES_JSON`, `DISP_COMBUSTIBLE`, `DISP_CASETAS`,
+  `DISP_GASTOS_ADICIONALES_JSON`, `DISP_TOTAL`
+- `OPERADORES`: `SUELDO_FIJO_SEMANAL`
 - `LIQUIDACION`: `ODOMETRO_INICIAL`, `ODOMETRO_FINAL`, `KM_ODOMETRO`, `KM_RUTA`,
   `DIFERENCIA_KM`, `REVISAR_KM`, `LIQUIDADO_POR`, `MOTIVO_ACLARACION`,
   `ACLARACION_POR`, `ACLARACION_FECHA`, `AUTORIZADO_POR`, `FECHA_AUTORIZACION`,
@@ -165,6 +167,27 @@ la constante `BITACORA_MAX`.
   `DIFERENCIA_SERVICIOS`, `OBJ_LLEGADA_TIEMPO`, `OBJ_SIN_INCIDENCIAS`
 - `SOLICITUDES_CANCELADAS`: `ESTADO_CANCELACION`
 - `USUARIOS`: `PESTANAS`
+
+## Qué viaja en cada guardado
+
+Guardar cualquier cosa devuelve los datos actualizados para refrescar la
+pantalla, pero **no todas las hojas**: `BITACORA` y `SOLICITUDES_CANCELADAS`
+crecen sin tope y solo se ven en Administración, así que quedan fuera de esa
+respuesta. Con una bitácora de 8 000 renglones eso son ~1.7 MB que antes se
+descargaban en **cada** guardado.
+
+Esas dos hojas se traen aparte:
+
+- En la **carga inicial** y al pulsar **Actualizar** (que sí traen todo).
+- Al **abrir su pestaña** en Administración, si aún no están en memoria.
+
+Como la respuesta de guardado es parcial, la app **fusiona** en vez de
+reemplazar: lo que no venga en la respuesta se conserva. En la práctica esto
+significa que la bitácora que ves es la del último *Actualizar*, no la del
+segundo exacto.
+
+Del mismo lado del navegador, al guardar solo se **repinta la sección que
+estás viendo**; las demás se dibujan al entrar a su pestaña.
 
 ## Cómo funciona el costo de casetas
 
@@ -307,9 +330,14 @@ tipos de unidad tienen un objetivo único y el selector queda deshabilitado.
 Arriba a la derecha de Pre-Nómina hay un interruptor **«Pago de nómina fija»**
 que cambia el esquema completo:
 
+Cada operador tiene **dos sueldos semanales** en Administración → Operadores,
+uno por esquema: **Pago x objetivo** (`PAGO_NOMINAL_SEMANAL`) y **Pago fijo**
+(`SUELDO_FIJO_SEMANAL`). Si un operador no tiene capturado su pago fijo, se usa
+el *Pago fijo semanal por defecto* de Administración → Pre-nómina.
+
 | | Variable (apagado) | Fija (encendido) |
 |---|---|---|
-| Sueldo | semanal del operador (`OPERADORES.PAGO_NOMINAL_SEMANAL`) | `SUELDO_FIJO_SEMANAL` de Administración |
+| Sueldo | Pago x objetivo del operador | Pago fijo del operador |
 | Objetivo de kilómetros | sí | **no aparece** |
 | Objetivo de rendimiento | sí | **no aparece** |
 | Apoyo para viaje | sí | **no aparece** |
@@ -429,13 +457,29 @@ solicitudes y su estado (Pendiente / Dispersado). Al abrir una:
 
 - **Gris, "Dispersar"** — todavía no se confirma. Es **exclusivo del rol
   auditor**: nadie más puede activarlo, ni siquiera el administrador. Antes de
-  mandar la confirmación se muestra un resumen de los montos solicitados para
-  revisarlos.
+  mandar la confirmación se muestra un resumen de los montos para revisarlos.
 - **Verde, "✔ Dispersado"** — ya se confirmó. Muestra quién y cuándo.
 
 Solo un **administrador** puede revertir una dispersión ya confirmada (por si
 se marcó por error) — pero no puede confirmarla él mismo; esa parte es
 exclusiva del auditor.
+
+### Montos dispersados
+
+Lo que Operaciones pidió y lo que el auditor realmente dispersa son dos cosas
+distintas, y la pantalla las muestra por separado. En **Montos dispersados**
+—que solo el **auditor** captura, y solo mientras la dispersión siga
+pendiente— van:
+
+- **Combustible** y **Casetas**
+- Un renglón por cada **pago adicional** de la solicitud (adelanto de nómina,
+  pensión, hotel…), si los hay
+
+Vienen precargados con lo solicitado, así que en el caso normal basta con
+confirmar. Si se ajusta alguno, la pantalla muestra el **total dispersado** y
+en cuánto **difiere** de lo solicitado. Queda guardado en la solicitud
+(`DISP_COMBUSTIBLE`, `DISP_CASETAS`, `DISP_GASTOS_ADICIONALES_JSON`,
+`DISP_TOTAL`) y, una vez confirmada la dispersión, pasa a solo lectura.
 
 ### Candado sobre la Solicitud de Gasto
 

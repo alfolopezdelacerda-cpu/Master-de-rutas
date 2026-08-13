@@ -24,7 +24,10 @@
 var HOJAS = {
   UNIDADES: ['ID','ECONOMICO','PLACAS','TIPO_UNIDAD','MODELO','ANIO','COMBUSTIBLE','RENDIMIENTO','UREA'],
 
-  OPERADORES: ['ID','NOMBRE','PAGO_NOMINAL_SEMANAL','ACTIVO'],
+  /* Dos sueldos semanales, uno por esquema de pre-nómina:
+     PAGO_NOMINAL_SEMANAL  → esquema de pago por objetivo (el de siempre)
+     SUELDO_FIJO_SEMANAL   → esquema de nómina fija */
+  OPERADORES: ['ID','NOMBRE','PAGO_NOMINAL_SEMANAL','SUELDO_FIJO_SEMANAL','ACTIVO'],
 
   EJECUTIVOS: ['ID','NOMBRE'],
 
@@ -56,6 +59,10 @@ var HOJAS = {
                 'COMBUSTIBLE','RENDIMIENTO','LITROS_COMBUSTIBLE','LITROS_UREA','DEPOSITO_UREA',
                 'PENSION','COMIDA','COSTO_CASETAS','TARIFA_CASETAS','COMBUSTIBLE_ASIGNADO','EJECUTIVO','TOTAL',
                 'GASTOS_ADICIONALES_JSON',
+                /* Lo que el auditor captura como realmente dispersado al
+                   operador al confirmar la dispersión. Puede diferir de lo
+                   que pidió operaciones. */
+                'DISP_COMBUSTIBLE','DISP_CASETAS','DISP_GASTOS_ADICIONALES_JSON','DISP_TOTAL',
                 'DISPERSION','DISPERSADO_POR','FECHA_DISPERSION'],
 
   NOMINAS: ['ID','OPERADOR','MODO','PERIODO','SEMANAS','TIPO_PAGO','SUELDO_BRUTO','SUELDO_FIJO','IMPUESTO_PCT','IMPUESTOS',
@@ -164,7 +171,7 @@ function doGet() {
     // Barrido completo de IDs faltantes: solo aquí, en la carga/actualización
     // (no en cada doPost), para no pagar ese costo en cada registro guardado.
     asignarIdsFaltantes();
-    return json({ ok: true, data: leerTodo() });
+    return json({ ok: true, data: leerTodo(true) });
   } catch (err) {
     return json({ ok: false, error: String(err && err.message || err) });
   }
@@ -199,6 +206,14 @@ function doPost(e) {
       return json({ ok: true, logged: true });
     }
 
+    // Lectura de una sola hoja, sin escribir nada. La usa Administración para
+    // traer las hojas de archivo (bitácora, canceladas) solo cuando se abren.
+    if (p.action === 'leerHoja') {
+      var una = {};
+      una[p.sheet] = leerHoja(p.sheet);
+      return json({ ok: true, data: una, parcial: true });
+    }
+
     // Las filas capturadas a mano en el Sheet pueden venir sin ID. Antes se
     // barrían TODAS las hojas en cada doPost; ahora solo las que esta acción
     // va a tocar (el barrido completo ocurre en doGet, al cargar/actualizar).
@@ -224,7 +239,7 @@ function doPost(e) {
 
     registrarAccion(p);
 
-    var respuesta = { ok: true, data: leerTodo() };
+    var respuesta = { ok: true, data: leerTodo(false), parcial: true };
     if (avisoSabana) { respuesta.aviso = avisoSabana; avisoSabana = ''; }
     return json(respuesta);
 
@@ -376,9 +391,24 @@ function leerConfig() {
   return cfg;
 }
 
-function leerTodo() {
+/* Hojas de archivo: crecen sin tope y solo se consultan en Administración.
+   No se devuelven al guardar (ver leerTodo) porque arrastrarlas en cada POST
+   era el grueso del tiempo de respuesta: la bitácora sola puede traer 10 000
+   renglones. Se piden aparte con la acción 'leerHoja'. */
+var HOJAS_ARCHIVO = [HOJA_BITACORA, HOJA_CANCELADAS];
+
+/**
+ * Lee las hojas que la app necesita.
+ * @param {boolean} completo  true en doGet (carga inicial y "Actualizar"):
+ *   trae todo. false al guardar: omite las hojas de archivo, que el front
+ *   conserva de la carga anterior.
+ */
+function leerTodo(completo) {
   var data = {};
-  HOJAS_DATOS.forEach(function (n) { data[n] = leerHoja(n); });
+  HOJAS_DATOS.forEach(function (n) {
+    if (!completo && HOJAS_ARCHIVO.indexOf(n) >= 0) return;
+    data[n] = leerHoja(n);
+  });
   data.CONFIG = leerConfig();
   return data;
 }
@@ -425,17 +455,35 @@ function bulkUpsert(nombre, records) {
   var heads = encabezados(hoja);
   var nuevos = [];
 
+  /* Antes se buscaba cada registro con buscarFilaPorId(), que relee toda la
+     columna de IDs: importar 500 renglones costaba 500 lecturas completas y
+     500 escrituras sueltas. Ahora la hoja se lee UNA vez, se arman todos los
+     cambios en memoria y se escriben de golpe. */
+  var colId = heads.indexOf('ID');
+  var nFilas = Math.max(hoja.getLastRow() - 1, 0);
+  var datos = nFilas ? hoja.getRange(2, 1, nFilas, heads.length).getValues() : [];
+
+  var filaDe = {};
+  if (colId >= 0) {
+    datos.forEach(function (fila, i) {
+      var id = String(fila[colId]).trim();
+      if (id && filaDe[id] === undefined) filaDe[id] = i;
+    });
+  }
+
+  var hayCambios = false;
   records.forEach(function (r) {
-    var fila = buscarFilaPorId(hoja, heads, r.ID);
-    if (fila > 0) {
-      var actuales = hoja.getRange(fila, 1, 1, heads.length).getValues()[0];
-      var valores = heads.map(function (h, i) { return r.hasOwnProperty(h) ? r[h] : actuales[i]; });
-      hoja.getRange(fila, 1, 1, heads.length).setValues([valores]);
+    var i = (r.ID === undefined || r.ID === null || r.ID === '') ? undefined : filaDe[String(r.ID)];
+    if (i !== undefined) {
+      var actuales = datos[i];
+      datos[i] = heads.map(function (h, j) { return r.hasOwnProperty(h) ? r[h] : actuales[j]; });
+      hayCambios = true;
     } else {
       nuevos.push(heads.map(function (h) { return r.hasOwnProperty(h) ? r[h] : ''; }));
     }
   });
 
+  if (hayCambios) hoja.getRange(2, 1, datos.length, heads.length).setValues(datos);
   if (nuevos.length) {
     hoja.getRange(hoja.getLastRow() + 1, 1, nuevos.length, heads.length).setValues(nuevos);
   }
@@ -678,6 +726,13 @@ function asignarIdsFaltantes(soloHojas) {
 
     var rango = hoja.getRange(2, colId + 1, hoja.getLastRow() - 1, 1);
     var ids = rango.getValues();
+
+    /* Caso normal: no falta ningún ID. Se sale sin leer el resto de la hoja
+       —ese segundo barrido, de todas las columnas, se pagaba en cada
+       guardado aunque no hubiera nada que asignar. */
+    var faltaAlguno = ids.some(function (f) { return String(f[0]).trim() === ''; });
+    if (!faltaAlguno) return;
+
     var datos = hoja.getRange(2, 1, hoja.getLastRow() - 1, heads.length).getValues();
     var cambios = false;
 

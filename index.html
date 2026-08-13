@@ -399,6 +399,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       <div><label>Ruta</label><input id="dRuta" readonly></div>
       <div><label>Operador</label><input id="dOperador" readonly></div>
     </div>
+    <div class="sub" style="margin-bottom:8px">Lo que pidió operaciones</div>
     <div class="grid g3" style="margin-bottom:12px">
       <div><label>Combustible asignado ($)</label><input id="dComb" readonly class="num"></div>
       <div><label>Casetas ($)</label><input id="dCasetas" readonly class="num"></div>
@@ -407,6 +408,23 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       <div><label>Depósito de urea ($)</label><input id="dUrea" readonly class="num"></div>
       <div><label>Total ($)</label><input id="dTotal" readonly class="num"></div>
     </div>
+
+    <!-- Lo que el auditor dispersa realmente al operador -->
+    <div id="dispMontosBox" style="background:var(--surface2);border:1px dashed var(--road);border-radius:10px;padding:14px;margin-bottom:12px">
+      <h3 style="margin-bottom:4px">Montos dispersados</h3>
+      <div class="sub" id="dispMontosNota" style="margin-bottom:10px">Captura lo que realmente se le dispersa al operador. Vienen precargados con lo solicitado; ajústalos si difieren.</div>
+      <div class="grid g3" style="margin-bottom:10px">
+        <div><label>Combustible ($)</label><input id="dxComb" type="number" step="0.01" min="0" class="num"></div>
+        <div><label>Casetas ($)</label><input id="dxCasetas" type="number" step="0.01" min="0" class="num"></div>
+      </div>
+      <div id="dxGastosBox" style="display:none">
+        <label>Pagos adicionales</label>
+        <div id="dxGastosWrap"></div>
+      </div>
+      <div class="totrow" style="margin-top:8px"><span>Total dispersado</span><b class="num" id="dxTotal">$0.00</b></div>
+      <div class="mini" id="dxDif" style="margin-top:6px"></div>
+    </div>
+
     <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap">
       <button class="btn btn-s" id="btnDispersarSol" style="background:var(--chip);color:var(--ink2)">Dispersar</button>
       <button class="btn btn-s" id="btnDispCerrar">Cerrar</button>
@@ -580,7 +598,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <div>
       <div class="card">
         <h3 id="pSueldoTit">Sueldo</h3>
-        <div class="sub" id="pSueldoNota" style="display:none;margin-bottom:10px">Esquema de <b>nómina fija</b>: el sueldo semanal se toma de Administración → Pre-nómina. No aplican objetivo de kilómetros, objetivo de rendimiento ni apoyo para viaje.</div>
+        <div class="sub" id="pSueldoNota" style="display:none;margin-bottom:10px">Esquema de <b>nómina fija</b>: el sueldo semanal es el <b>Pago fijo</b> del operador (Administración → Operadores). No aplican objetivo de kilómetros, objetivo de rendimiento ni apoyo para viaje.</div>
         <div class="grid g3" style="margin-bottom:10px">
           <div><label>Semanas consideradas</label><input id="pSemanasN" type="number" min="1" step="1" value="1"></div>
           <div><label>% bono cumplimiento</label><input id="pBonoPct" type="number" min="0" max="100" step="1"></div>
@@ -742,7 +760,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       </div>
       <h3 style="margin-top:18px">Pre-nómina</h3>
       <div class="grid g4">
-        <div><label>Sueldo fijo semanal (modo fijo, $)</label><input id="cfgSueldoFijo" type="number" step="100"></div>
+        <div><label>Pago fijo semanal por defecto ($)</label><input id="cfgSueldoFijo" type="number" step="100" title="Se usa solo cuando el operador no tiene capturado su propio Pago fijo en Administración → Operadores"></div>
         <div><label>% bono cumplimiento</label><input id="cfgBonoPct" type="number" step="1"></div>
         <div><label>Pago por km extra ($)</label><input id="cfgKmX" type="number" step="0.1"></div>
         <div><label>Apoyo para viaje ($)</label><input id="cfgApoyo" type="number" step="50"></div>
@@ -1089,10 +1107,29 @@ function bitacora(accion, detalle){
   }catch(e){ /* silencioso a propósito */ }
 }
 
-function aplicarDatos(data){
-  ['UNIDADES','OPERADORES','EJECUTIVOS','REMOLQUES','CLIENTES','RUTAS','SOLICITUDES','NOMINAS','LIQUIDACION','CASETAS','USUARIOS','BITACORA','SOLICITUDES_CANCELADAS','PAGO_X_KM'].forEach(k=>{ DB[k] = data[k]||[]; });
-  DB.CONFIG = data.CONFIG||{};
-  refrescarTodo();
+const HOJAS_APP = ['UNIDADES','OPERADORES','EJECUTIVOS','REMOLQUES','CLIENTES','RUTAS','SOLICITUDES',
+  'NOMINAS','LIQUIDACION','CASETAS','USUARIOS','BITACORA','SOLICITUDES_CANCELADAS','PAGO_X_KM'];
+const hojasPedidas = new Set();
+
+/* Al guardar, el backend ya no devuelve las hojas de archivo (bitácora y
+   canceladas): son las que más pesan y solo se ven en Administración. Por eso
+   aquí se FUSIONA — lo que no venga en la respuesta se conserva tal cual. */
+function aplicarDatos(data, pintar){
+  HOJAS_APP.forEach(k=>{ if(data[k]!==undefined){ DB[k] = data[k]||[]; hojasPedidas.add(k); } });
+  if(data.CONFIG!==undefined) DB.CONFIG = data.CONFIG||{};
+  if(pintar!==false) refrescarTodo();
+}
+
+/* Trae una sola hoja, bajo demanda. La usa Administración al abrir la
+   bitácora o las canceladas, que no viajan en cada guardado. */
+async function cargarHojaSiHaceFalta(hoja){
+  if(hojasPedidas.has(hoja)) return;
+  hojasPedidas.add(hoja);
+  try{
+    const r = await fetch(WEBHOOK, { method:'POST', body: JSON.stringify({ action:'leerHoja', sheet:hoja, usuario: ctxUsuario() }) });
+    const j = await r.json();
+    if(j.ok && j.data){ aplicarDatos(j.data, false); pintarAdmin(); }
+  }catch(e){ hojasPedidas.delete(hoja); }
 }
 
 /* ---------- Modal de aviso ---------- */
@@ -1190,6 +1227,8 @@ document.querySelectorAll('.tab[data-sec]').forEach(b=>b.addEventListener('click
   if(b.dataset.sec==='prenomina') pintarPrenomina();
   if(b.dataset.sec==='liquidacion') pintarLiquidacion();
   if(b.dataset.sec==='dispersiones') pintarTablaDispersiones();
+  if(b.dataset.sec==='rutas') pintarListaRutas();
+  if(b.dataset.sec==='solicitud') pintarListaSol();
 }));
 $('themeBtn').addEventListener('click',()=>{
   const html=document.documentElement;
@@ -1894,9 +1933,76 @@ function abrirDispersion(id){
   $('dComida').value = money(nf(s.COMIDA));
   $('dUrea').value = money(nf(s.DEPOSITO_UREA));
   $('dTotal').value = money(nf(s.TOTAL));
+  pintarMontosDispersados(s);
   pintarBotonDispersar(id, s);
   $('dispDetalle').scrollIntoView({behavior:'smooth',block:'start'});
 }
+
+/* Montos que el auditor dispersa realmente. Se precargan con lo solicitado y
+   solo él los puede capturar, mientras la dispersión siga pendiente. */
+function pintarMontosDispersados(s){
+  const disp = dispersadoSol(s.ID);
+  const editable = puedeDispersar() && !disp;
+
+  const val = (campoDisp, campoSol) => {
+    const v = s[campoDisp];
+    return (v===undefined || v==='' || v===null)? nf(s[campoSol]) : nf(v);
+  };
+  $('dxComb').value = val('DISP_COMBUSTIBLE','COMBUSTIBLE_ASIGNADO');
+  $('dxCasetas').value = val('DISP_CASETAS','COSTO_CASETAS');
+
+  // Pagos adicionales capturados en la solicitud (adelanto de nómina, hotel…)
+  let solicitados=[];
+  try{ solicitados = JSON.parse(s.GASTOS_ADICIONALES_JSON||'[]'); }catch(e){ solicitados=[]; }
+  if(!Array.isArray(solicitados)) solicitados=[];
+  let dispersados=[];
+  try{ dispersados = JSON.parse(s.DISP_GASTOS_ADICIONALES_JSON||'[]'); }catch(e){ dispersados=[]; }
+  if(!Array.isArray(dispersados)) dispersados=[];
+
+  $('dxGastosBox').style.display = solicitados.length? '' : 'none';
+  const w = $('dxGastosWrap'); w.innerHTML='';
+  solicitados.forEach((g,i)=>{
+    const previo = dispersados[i];
+    const monto = previo && previo.MONTO!==undefined? nf(previo.MONTO) : nf(g.MONTO);
+    const d=document.createElement('div');
+    d.className='grid g3'; d.style.marginBottom='8px';
+    d.innerHTML=`
+      <div><label>Concepto</label><input readonly value="${esc(g.CONCEPTO)}"></div>
+      <div><label>Solicitado ($)</label><input readonly class="num" value="${money(nf(g.MONTO))}"></div>
+      <div><label>Dispersado ($)</label><input type="number" step="0.01" min="0" class="num" value="${monto}" data-dxg="${i}"></div>`;
+    w.appendChild(d);
+  });
+
+  ['dxComb','dxCasetas'].forEach(id=>{ $(id).disabled = !editable; });
+  w.querySelectorAll('[data-dxg]').forEach(el=>{ el.disabled = !editable; });
+  $('dispMontosNota').textContent = disp
+    ? 'Son los montos que quedaron registrados al confirmar la dispersión.'
+    : editable
+      ? 'Captura lo que realmente se le dispersa al operador. Vienen precargados con lo solicitado; ajústalos si difieren.'
+      : 'Solo un usuario auditor puede capturar los montos dispersados.';
+
+  calcularTotalDispersado(s);
+}
+/* Total dispersado y su diferencia contra lo que pidió operaciones */
+function calcularTotalDispersado(s){
+  const sol = s || DB.SOLICITUDES.find(x=>String(x.ID)===String(dispEditando));
+  const gastos = [...$('dxGastosWrap').querySelectorAll('[data-dxg]')].reduce((a,el)=>a+nf(el.value),0);
+  const total = nf($('dxComb').value) + nf($('dxCasetas').value) + gastos;
+  $('dxTotal').textContent = money(total);
+
+  if(!sol){ $('dxDif').textContent=''; return; }
+  let solGastos=[];
+  try{ solGastos = JSON.parse(sol.GASTOS_ADICIONALES_JSON||'[]'); }catch(e){ solGastos=[]; }
+  const pedido = nf(sol.COMBUSTIBLE_ASIGNADO) + nf(sol.COSTO_CASETAS) +
+    (Array.isArray(solGastos)? solGastos.reduce((a,g)=>a+nf(g.MONTO),0) : 0);
+  const dif = total - pedido;
+  $('dxDif').innerHTML = Math.abs(dif)<0.005
+    ? 'Coincide con lo solicitado.'
+    : `<span style="color:var(--bad)">Difiere de lo solicitado (${money(pedido)}) en ${dif>0?'+':'−'}${money(Math.abs(dif))}.</span>`;
+  return total;
+}
+['dxComb','dxCasetas'].forEach(id=>$(id).addEventListener('input',()=>calcularTotalDispersado()));
+$('dxGastosWrap').addEventListener('input', e=>{ if(e.target.dataset.dxg!==undefined) calcularTotalDispersado(); });
 $('btnDispCerrar').addEventListener('click',()=>{ $('dispDetalle').style.display='none'; dispEditando=null; });
 
 /* Gris "Dispersar" mientras está pendiente —exclusivo del auditor—; verde
@@ -1931,26 +2037,44 @@ $('btnDispersarSol').addEventListener('click', async ()=>{
     const reg = Object.assign({}, s, { DISPERSION:'NO', DISPERSADO_POR:'', FECHA_DISPERSION:'' });
     if(await apiEnviar({action:'upsert', sheet:'SOLICITUDES', record:reg})){
       toast('Dispersión revertida a pendiente');
-      pintarBotonDispersar(dispEditando, DB.SOLICITUDES.find(x=>String(x.ID)===String(dispEditando)));
+      abrirDispersion(dispEditando);
       pintarTablaDispersiones();
     }
     return;
   }
 
   if(!puedeDispersar()) return;
+  if($('dxComb').value==='' || $('dxCasetas').value===''){
+    toast('Captura los montos dispersados de combustible y casetas.', true); $('dxComb').focus(); return;
+  }
+
+  // Lo que el auditor captura como realmente dispersado
+  let solGastos=[];
+  try{ solGastos = JSON.parse(s.GASTOS_ADICIONALES_JSON||'[]'); }catch(e){ solGastos=[]; }
+  if(!Array.isArray(solGastos)) solGastos=[];
+  const w = $('dxGastosWrap');
+  const gastosDisp = solGastos.map((g,i)=>{
+    const el = w.querySelector(`[data-dxg="${i}"]`);
+    return { CONCEPTO: g.CONCEPTO, SOLICITADO: r2(nf(g.MONTO)), MONTO: r2(el? nf(el.value) : nf(g.MONTO)) };
+  });
+  const combDisp = r2(nf($('dxComb').value));
+  const casDisp  = r2(nf($('dxCasetas').value));
+  const totalDisp = r2(combDisp + casDisp + gastosDisp.reduce((a,g)=>a+g.MONTO,0));
+
   const resumen =
-    `Combustible asignado: ${money(nf(s.COMBUSTIBLE_ASIGNADO))}\n`+
-    `Casetas: ${money(nf(s.COSTO_CASETAS))}\n`+
-    `Pensión: ${money(nf(s.PENSION))}\n`+
-    `Comida: ${money(nf(s.COMIDA))}\n`+
-    `Depósito de urea: ${money(nf(s.DEPOSITO_UREA))}\n`+
-    `Total: ${money(nf(s.TOTAL))}`;
+    `Combustible: ${money(combDisp)}\n`+
+    `Casetas: ${money(casDisp)}\n`+
+    gastosDisp.map(g=>`${g.CONCEPTO}: ${money(g.MONTO)}`).join('\n')+(gastosDisp.length?'\n':'')+
+    `Total dispersado: ${money(totalDisp)}`;
   if(!confirm('Confirmar dispersión al operador '+s.OPERADOR+' — Folio '+s.FOLIO+'\n\n'+resumen+'\n\n¿Los montos son correctos?')) return;
 
-  const reg = Object.assign({}, s, { DISPERSION:'SI', DISPERSADO_POR: nombreUsuario(), FECHA_DISPERSION: hoyISO() });
+  const reg = Object.assign({}, s, {
+    DISP_COMBUSTIBLE: combDisp, DISP_CASETAS: casDisp,
+    DISP_GASTOS_ADICIONALES_JSON: JSON.stringify(gastosDisp), DISP_TOTAL: totalDisp,
+    DISPERSION:'SI', DISPERSADO_POR: nombreUsuario(), FECHA_DISPERSION: hoyISO() });
   if(await apiEnviar({action:'upsert', sheet:'SOLICITUDES', record:reg})){
     toast('Dispersión confirmada para el folio '+s.FOLIO);
-    pintarBotonDispersar(dispEditando, DB.SOLICITUDES.find(x=>String(x.ID)===String(dispEditando)));
+    abrirDispersion(dispEditando);
     pintarTablaDispersiones();
   }
 });
@@ -2330,7 +2454,7 @@ function calcularPrenomina(){
   // Esquema de pago: nómina fija (sueldo del parámetro de Administración, sin
   // objetivo de km, sin objetivo de rendimiento y sin apoyo) o el normal.
   const esModoFijo = pagoFijoActivo();
-  const sueldoSemanal = esModoFijo? cfgNum('SUELDO_FIJO_SEMANAL',0) : (op? nf(op.PAGO_NOMINAL_SEMANAL):0);
+  const sueldoSemanal = esModoFijo? sueldoFijoDe(op) : (op? nf(op.PAGO_NOMINAL_SEMANAL):0);
   const bruto = sueldoSemanal * semanas;
 
   // Solo los servicios LIQUIDADOS cuentan para KM y pago. El objetivo de KM
@@ -2464,6 +2588,14 @@ $('pApoyoMonto').addEventListener('input',calcularPrenomina);
    grisean— el objetivo de kilómetros, el objetivo de rendimiento y el apoyo
    para viaje. Quedan el sueldo, el bono por cumplimiento y los descuentos. */
 function pagoFijoActivo(){ return $('pTipoPagoFijo').checked; }
+
+/* Sueldo del esquema de nómina fija: el del propio operador (Administración →
+   Operadores). Si ese operador no lo tiene capturado, se cae al parámetro
+   general de Administración → Pre-nómina, para no dejar la nómina en cero. */
+function sueldoFijoDe(op){
+  const propio = op? nf(op.SUELDO_FIJO_SEMANAL) : 0;
+  return propio>0? propio : cfgNum('SUELDO_FIJO_SEMANAL',0);
+}
 
 function alCambiarTipoPago(){
   const esF = pagoFijoActivo();
@@ -3058,8 +3190,12 @@ const ADMIN = {
       {k:'USUARIO',raw:true},{k:'NOMBRE'},{k:'PASSWORD',raw:true},
       {k:'ROL',opts:['OPERATIVO','SUP','AUDITOR','ADMIN']},{k:'ACTIVO',opts:['SI','NO']},
       {k:'PESTANAS',tipo:'permisos'}] },
-  OPERADORES:{ cols:[{k:'NOMBRE'},{k:'PAGO_NOMINAL_SEMANAL',tipo:'number'},{k:'ACTIVO',opts:['SI','NO']}],
-    csv:'NOMBRE, PAGO_NOMINAL_SEMANAL, ACTIVO' },
+  /* Un sueldo semanal por esquema de pre-nómina */
+  OPERADORES:{ cols:[{k:'NOMBRE'},
+      {k:'PAGO_NOMINAL_SEMANAL',t:'Pago x objetivo (semanal)',tipo:'number'},
+      {k:'SUELDO_FIJO_SEMANAL',t:'Pago fijo (semanal)',tipo:'number'},
+      {k:'ACTIVO',opts:['SI','NO']}],
+    csv:'NOMBRE, PAGO_NOMINAL_SEMANAL, SUELDO_FIJO_SEMANAL, ACTIVO' },
   EJECUTIVOS:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
   REMOLQUES:{ cols:[{k:'ECONOMICO'},{k:'PLACAS'},{k:'TIPO',opts:['REMOLQUE','PORTACONTENEDOR','DOLLY']}],
     csv:'ECONOMICO, PLACAS, TIPO' },
@@ -3158,6 +3294,9 @@ $('btnReconectar').addEventListener('click',()=>{ WEBHOOK=$('cfgUrl').value.trim
 document.querySelectorAll('.atab').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('.atab').forEach(x=>x.classList.remove('active'));
   b.classList.add('active'); admHoja=b.dataset.adm; pintarAdmin();
+  // Las hojas de archivo no viajan en cada guardado: se piden al abrirlas
+  const def = ADMIN[admHoja];
+  cargarHojaSiHaceFalta(def.hoja || admHoja);
 }));
 
 /* Panel de permisos: qué pestañas puede ver cada usuario, con selección
@@ -3217,7 +3356,7 @@ function pintarAdmin(){
   $('btnDelSel').style.display = sinMasivo? 'none':'';
   $('btnDelAll').style.display = sinMasivo? 'none':'';
   $('admHead').innerHTML='<tr>'+(def.sinBorrar?'':'<th><input type="checkbox" id="admSelAll"></th>')
-    +def.cols.map(c=>`<th>${c.k.replace(/_/g,' ')}</th>`).join('')+(def.sinBorrar?'':'<th></th>')+'</tr>';
+    +def.cols.map(c=>`<th>${esc(c.t || c.k.replace(/_/g,' '))}</th>`).join('')+(def.sinBorrar?'':'<th></th>')+'</tr>';
   const tb=$('admBody'); tb.innerHTML='';
   const hojaDatos = def.hoja || admHoja;
   let filas = DB[hojaDatos]||[];
@@ -3414,11 +3553,14 @@ function refrescarTodo(){
   const nombres=new Set(DB.CLIENTES.map(c=>c.NOMBRE).filter(Boolean));
   DB.RUTAS.forEach(r=>{ if(r.CLIENTE) nombres.add(r.CLIENTE); });
   [...nombres].sort().forEach(c=>{const o=document.createElement('option');o.value=c;dl.appendChild(o);});
-  pintarListaRutas();
+  /* Solo se repinta la sección que se está viendo: las demás se pintan al
+     entrar a su pestaña. Antes se redibujaban TODAS las tablas en cada
+     guardado, aunque estuvieran ocultas. */
   pintarSelectsSolicitud();
   alCambiarUnidad(); alCambiarRuta();
-  pintarListaSol();
   pintarResumenDispersion();
+  if(document.querySelector('#sec-rutas.active')) pintarListaRutas();
+  if(document.querySelector('#sec-solicitud.active')) pintarListaSol();
   if(document.querySelector('#sec-prenomina.active')) pintarPrenomina(); else pintarNominas();
   if(document.querySelector('#sec-liquidacion.active')) pintarLiquidacion();
   if(document.querySelector('#sec-dispersiones.active')) pintarTablaDispersiones();
