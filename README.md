@@ -170,24 +170,29 @@ la constante `BITACORA_MAX`.
 
 ## Qué viaja en cada guardado
 
-Guardar cualquier cosa devuelve los datos actualizados para refrescar la
-pantalla, pero **no todas las hojas**: `BITACORA` y `SOLICITUDES_CANCELADAS`
-crecen sin tope y solo se ven en Administración, así que quedan fuera de esa
-respuesta. Con una bitácora de 8 000 renglones eso son ~1.7 MB que antes se
-descargaban en **cada** guardado.
+Después de cada guardado queda **todo actualizado**, pero no todo viaja por el
+mismo camino.
 
-Esas dos hojas se traen aparte:
+La respuesta del guardado trae los datos de trabajo y refresca la pantalla al
+instante. Lo que **no** incluye son las dos hojas de archivo, `BITACORA` y
+`SOLICITUDES_CANCELADAS`: crecen sin tope y solo se ven en Administración, y
+con una bitácora de 8 000 renglones son ~1.7 MB que el Apps Script tendría que
+leer, serializar y mandar en **cada** guardado.
 
-- En la **carga inicial** y al pulsar **Actualizar** (que sí traen todo).
-- Al **abrir su pestaña** en Administración, si aún no están en memoria.
+Esas dos se refrescan **en segundo plano**, con una petición aparte que sale
+justo después de que el guardado respondió. El resultado es el mismo —quedan
+al día tras cada guardado— pero sin hacerte esperar por ellas. Si se
+encadenan varios guardados seguidos, los refrescos se **coalescen** en uno
+solo en vez de apilarse.
 
-Como la respuesta de guardado es parcial, la app **fusiona** en vez de
-reemplazar: lo que no venga en la respuesta se conserva. En la práctica esto
-significa que la bitácora que ves es la del último *Actualizar*, no la del
-segundo exacto.
+También se traen completas en la **carga inicial** y al pulsar **Actualizar**,
+y bajo demanda al abrir su pestaña si aún no están en memoria.
 
-Del mismo lado del navegador, al guardar solo se **repinta la sección que
-estás viendo**; las demás se dibujan al entrar a su pestaña.
+Como la respuesta del guardado es parcial, la app **fusiona** en vez de
+reemplazar: lo que no venga en ella se conserva.
+
+Del lado del navegador, al guardar solo se **repinta la sección que estás
+viendo**; las demás se dibujan al entrar a su pestaña.
 
 ## Cómo funciona el costo de casetas
 

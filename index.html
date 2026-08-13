@@ -1087,6 +1087,9 @@ async function apiEnviar(payload){
     const j = await r.json();
     if(!j.ok) throw new Error(j.error||'Error');
     aplicarDatos(j.data);
+    // La respuesta del guardado no trae las hojas de archivo: se piden aparte
+    // para que después de guardar quede todo al día (ver refrescarArchivo).
+    if(j.parcial) refrescarArchivo();
     setConn(true,'Conectado al Sheet');
     // El backend avisa si algo falló al copiar a la sábana
     if(j.aviso) modal('Aviso de la sábana', esc(j.aviso), '📄');
@@ -1120,16 +1123,39 @@ function aplicarDatos(data, pintar){
   if(pintar!==false) refrescarTodo();
 }
 
-/* Trae una sola hoja, bajo demanda. La usa Administración al abrir la
-   bitácora o las canceladas, que no viajan en cada guardado. */
+/* Hojas de archivo: bitácora y canceladas. Crecen sin tope, así que no viajan
+   en la respuesta del guardado; se piden con esta lectura aparte. */
+const HOJAS_ARCHIVO = ['BITACORA','SOLICITUDES_CANCELADAS'];
+
+async function traerHojas(hojas){
+  const r = await fetch(WEBHOOK, { method:'POST', body: JSON.stringify({ action:'leerHoja', sheets:hojas, usuario: ctxUsuario() }) });
+  const j = await r.json();
+  if(!j.ok || !j.data) throw new Error(j.error||'Error');
+  aplicarDatos(j.data, false);
+  if(adminOk) pintarAdmin();
+}
+
+/* Trae una hoja bajo demanda, si aún no está en memoria. La usa Administración
+   al abrir una pestaña de archivo. */
 async function cargarHojaSiHaceFalta(hoja){
   if(hojasPedidas.has(hoja)) return;
   hojasPedidas.add(hoja);
-  try{
-    const r = await fetch(WEBHOOK, { method:'POST', body: JSON.stringify({ action:'leerHoja', sheet:hoja, usuario: ctxUsuario() }) });
-    const j = await r.json();
-    if(j.ok && j.data){ aplicarDatos(j.data, false); pintarAdmin(); }
-  }catch(e){ hojasPedidas.delete(hoja); }
+  try{ await traerHojas([hoja]); }
+  catch(e){ hojasPedidas.delete(hoja); }
+}
+
+/* Después de cada guardado se refrescan también las hojas de archivo, para que
+   quede todo al día. Va EN SEGUNDO PLANO a propósito: el guardado ya respondió
+   y no se le hace esperar a la bitácora, que puede pesar megabytes. Si llegan
+   varios guardados seguidos se coalescen en un solo refresco. */
+let archivoEnCurso = false, archivoPendiente = false;
+async function refrescarArchivo(){
+  if(archivoEnCurso){ archivoPendiente = true; return; }
+  archivoEnCurso = true;
+  try{ await traerHojas(HOJAS_ARCHIVO); }
+  catch(e){ /* el guardado ya quedó; no se molesta al usuario por el archivo */ }
+  archivoEnCurso = false;
+  if(archivoPendiente){ archivoPendiente = false; refrescarArchivo(); }
 }
 
 /* ---------- Modal de aviso ---------- */

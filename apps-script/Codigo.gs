@@ -206,12 +206,14 @@ function doPost(e) {
       return json({ ok: true, logged: true });
     }
 
-    // Lectura de una sola hoja, sin escribir nada. La usa Administración para
-    // traer las hojas de archivo (bitácora, canceladas) solo cuando se abren.
+    // Lectura de hojas sueltas, sin escribir nada. Con ella la app trae las
+    // hojas de archivo (bitácora, canceladas) aparte del guardado.
+    // Acepta 'sheet' (una) o 'sheets' (varias).
     if (p.action === 'leerHoja') {
-      var una = {};
-      una[p.sheet] = leerHoja(p.sheet);
-      return json({ ok: true, data: una, parcial: true });
+      var pedidas = p.sheets && p.sheets.length ? p.sheets : [p.sheet];
+      var sueltas = {};
+      pedidas.forEach(function (n) { if (n) sueltas[n] = leerHoja(n); });
+      return json({ ok: true, data: sueltas, parcial: true });
     }
 
     // Las filas capturadas a mano en el Sheet pueden venir sin ID. Antes se
