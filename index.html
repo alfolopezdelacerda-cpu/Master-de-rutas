@@ -34,7 +34,7 @@ label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;lett
 .num{font-variant-numeric:tabular-nums}
 
 header{background:var(--primary);color:var(--primary-ink);position:sticky;top:0;z-index:50;box-shadow:var(--shadow)}
-.hbar{display:flex;align-items:center;gap:12px;padding:12px 22px;max-width:1320px;margin:0 auto}
+.hbar{display:flex;align-items:center;gap:12px;padding:12px 22px;margin:0 auto}
 .logo{display:flex;align-items:baseline;gap:9px}
 .logo .adl{font-family:'Barlow Condensed';font-weight:700;font-size:26px;background:var(--accent);color:var(--accent-ink);padding:1px 9px;border-radius:6px}
 .logo .tt{font-family:'Barlow Condensed';font-weight:600;font-size:22px;letter-spacing:.06em;text-transform:uppercase}
@@ -45,11 +45,11 @@ header{background:var(--primary);color:var(--primary-ink);position:sticky;top:0;
 .hbtn{background:rgba(255,255,255,.12);border:none;color:var(--primary-ink);border-radius:8px;padding:7px 11px;font-size:14px;font-weight:600}
 .roadline{height:5px;background:repeating-linear-gradient(90deg,var(--accent) 0 26px,transparent 26px 44px),var(--primary)}
 nav{background:var(--surface);border-bottom:1px solid var(--line)}
-.tabs{display:flex;gap:4px;max-width:1320px;margin:0 auto;padding:0 16px;overflow-x:auto}
+.tabs{display:flex;gap:4px;margin:0 auto;padding:0 16px;overflow-x:auto}
 .tab{font-family:'Barlow Condensed';font-size:17px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;background:none;border:none;color:var(--ink2);padding:13px 15px;border-bottom:3px solid transparent;white-space:nowrap}
 .tab.active{color:var(--ink);border-bottom-color:var(--accent)}
 
-main{max-width:1320px;margin:0 auto;padding:22px 16px 70px}
+main{margin:0 auto;padding:22px 22px 70px}
 .sec{display:none}.sec.active{display:block}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow);margin-bottom:18px}
 .card h2{font-size:22px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
@@ -57,7 +57,13 @@ main{max-width:1320px;margin:0 auto;padding:22px 16px 70px}
 .card .sub{font-size:13px;color:var(--ink2);margin-bottom:16px}
 .grid{display:grid;gap:14px}
 .g2{grid-template-columns:repeat(2,1fr)}.g3{grid-template-columns:repeat(3,1fr)}.g4{grid-template-columns:repeat(4,1fr)}
-@media(max-width:860px){.g3,.g4{grid-template-columns:repeat(2,1fr)}}
+.g5{grid-template-columns:repeat(5,1fr)}
+@media(max-width:1200px){.g5{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:860px){.g3,.g4,.g5{grid-template-columns:repeat(2,1fr)}}
+/* Par de casillas excluyentes (RF/SECO, OW/RT) */
+.opcpar{display:flex;gap:14px;align-items:center;padding:8px 0}
+.opcpar label{display:flex;gap:7px;align-items:center;margin:0;font-size:13px;text-transform:none;letter-spacing:0;font-weight:600;color:var(--ink);cursor:pointer}
+.opcpar input{width:16px;height:16px;min-width:16px;margin:0;cursor:pointer}
 @media(max-width:560px){.g2,.g3,.g4{grid-template-columns:1fr}}
 .btn{border:none;border-radius:9px;padding:11px 18px;font-weight:700;font-size:14px;letter-spacing:.02em}
 .btn-p{background:var(--accent);color:var(--accent-ink)}
@@ -73,6 +79,7 @@ main{max-width:1320px;margin:0 auto;padding:22px 16px 70px}
 .mini{font-size:12px;color:var(--ink2)}
 .tag{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:99px;background:var(--chip);color:var(--ink2);text-transform:uppercase;letter-spacing:.05em}
 .tag.ok{background:var(--ok);color:#fff}
+.tag.bad{background:var(--bad);color:#fff}
 .right{text-align:right}
 
 .tramo{display:grid;grid-template-columns:26px 1.2fr 1.2fr 170px 110px 34px;gap:10px;align-items:end;padding:12px 0;position:relative}
@@ -207,6 +214,10 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 
 <nav><div class="tabs">
   <button class="tab active" data-sec="rutas">Rutas</button>
+  <button class="tab" data-sec="nuevoservicio">Nuevo Servicio</button>
+  <button class="tab" data-sec="asignacion">Asignación de Unidad</button>
+  <button class="tab" data-sec="tdc">TDC</button>
+  <button class="tab" data-sec="fwd">FWD</button>
   <button class="tab" data-sec="solicitud">Solicitud de Gasto</button>
   <button class="tab" data-sec="dispersiones">Dispersiones</button>
   <button class="tab" data-sec="liquidacion">Liquidación</button>
@@ -271,6 +282,135 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr><th>Ruta</th><th>Cliente</th><th>Servicio</th><th>Viaje</th><th>Unidad</th><th class="right">KM</th><th class="right">Casetas $</th><th></th></tr></thead>
       <tbody id="tbodyRutas"></tbody>
     </table></div>
+  </div>
+</section>
+
+<!-- ============ NUEVO SERVICIO ============ -->
+<section class="sec" id="sec-nuevoservicio">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+      <div>
+        <h2>Nuevo servicio</h2>
+        <div class="sub" style="margin:0">Alta del servicio. El interruptor define la modalidad y a qué sábana pertenece.</div>
+      </div>
+      <label class="switch" title="Apagado: TDC (hoja Transportadora). Encendido: FWD (hoja Reexpedidora).">
+        <span class="swtx" id="nsTdcTxt">TDC</span>
+        <input type="checkbox" id="nsModalidad"><span class="sw"></span>
+        <span class="swtx" id="nsFwdTxt">FWD</span>
+      </label>
+    </div>
+    <div class="mini" id="nsSabana" style="margin-top:10px;color:var(--ink2);border-left:3px solid var(--accent);padding-left:10px"></div>
+  </div>
+
+  <div class="card">
+    <h3>Fechas y control</h3>
+    <div class="grid g5" style="margin-bottom:14px">
+      <div><label>Fecha de solicitud</label><input id="nsFechaSol" readonly title="Se pone sola con la fecha y hora del alta"></div>
+      <div><label>Fecha de aceptación</label><input id="nsFechaAcep" type="date"></div>
+      <div><label>Cita de carga</label><input id="nsCitaCarga" type="datetime-local"></div>
+      <div><label>Semana</label><input id="nsSemana" readonly title="Se calcula sola con la cita de carga"></div>
+      <div><label>Mes</label><input id="nsMes" readonly title="Se calcula solo con la cita de carga"></div>
+      <div><label>Cita de entrega</label><input id="nsCitaEntrega" type="datetime-local"></div>
+      <div><label>Ejecutivo</label><input id="nsEjecutivo" readonly title="Es el usuario con la sesión abierta"></div>
+      <div><label>Estatus</label><select id="nsEstatus"><option>ASIGNADO</option><option>CANCELADO</option></select></div>
+    </div>
+
+    <h3>Negocio</h3>
+    <div class="grid g5" style="margin-bottom:14px">
+      <div><label>Tipo de negocio</label><select id="nsTipoNegocio"></select></div>
+      <div><label>Aduana / puerto</label><select id="nsAduana"></select></div>
+      <div><label>Cliente</label><select id="nsCliente"></select></div>
+      <div>
+        <label>RF / Seco</label>
+        <div class="opcpar">
+          <label><input type="checkbox" id="nsRF" data-par="rfseco" value="RF"> RF</label>
+          <label><input type="checkbox" id="nsSeco" data-par="rfseco" value="SECO"> Seco</label>
+        </div>
+      </div>
+      <div>
+        <label>OW / RT</label>
+        <div class="opcpar">
+          <label><input type="checkbox" id="nsOW" data-par="owrt" value="OW"> OW</label>
+          <label><input type="checkbox" id="nsRT" data-par="owrt" value="RT"> RT</label>
+        </div>
+      </div>
+    </div>
+
+    <h3>Servicio y carga</h3>
+    <div class="grid g5" style="margin-bottom:14px">
+      <div><label>Servicio</label><input id="nsServicio"></div>
+      <div><label>CP</label><input id="nsCP"></div>
+      <div><label>Contenedores</label><input id="nsContenedores"></div>
+      <div><label>Tipo de mercancía</label><input id="nsMercancia"></div>
+      <div><label>Booking</label><input id="nsBooking"></div>
+      <div><label>PO</label><input id="nsPO"></div>
+    </div>
+
+    <h3>Origen y destino</h3>
+    <div class="grid g5" style="margin-bottom:14px">
+      <div><label>Estado de origen</label><select id="nsEstadoOrigen"></select></div>
+      <div><label>Punto de carga</label><input id="nsPuntoCarga"></div>
+      <div><label>Ciudad destino</label><select id="nsCiudadDestino"></select></div>
+      <div><label>Punto de descarga</label><input id="nsPuntoDescarga"></div>
+    </div>
+
+    <h3>Transporte</h3>
+    <div class="grid g5" style="margin-bottom:14px">
+      <div>
+        <label>Línea transportista</label>
+        <input id="nsLineaFija" readonly value="ADL" title="En TDC la línea siempre es ADL">
+        <select id="nsLineaSel" style="display:none"></select>
+      </div>
+      <div><label>Tipo de unidad</label><select id="nsTipoUnidad"></select></div>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
+      <button class="btn btn-p" id="btnGuardarServicio">💾 Guardar servicio</button>
+      <button class="btn btn-s" id="btnNuevoServicio">＋ Nuevo</button>
+      <span class="mini" id="nsEditando" style="align-self:center"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>Servicios capturados</h3>
+    <div class="grid g3" style="margin-bottom:12px">
+      <div style="grid-column:1/3"><label>Buscar</label><input id="nsBusca" placeholder="🔍 Servicio, CP, cliente, booking, contenedor…"></div>
+      <div><label>Modalidad</label><select id="nsFiltro"><option value="todos">Todas</option><option value="TDC">TDC</option><option value="FWD">FWD</option></select></div>
+    </div>
+    <div class="twrap" style="max-height:440px;overflow-y:auto"><table>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
+        <th>Modalidad</th><th>Servicio</th><th>CP</th><th>Cliente</th><th>Cita de carga</th><th>Sem.</th>
+        <th>Origen</th><th>Destino</th><th>Unidad</th><th>Estatus</th><th></th>
+      </tr></thead>
+      <tbody id="tbodyServicios"></tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============ ASIGNACIÓN DE UNIDAD ============ -->
+<section class="sec" id="sec-asignacion">
+  <div class="card">
+    <h2>Asignación de unidad</h2>
+    <div class="sub">Pendiente de definir.</div>
+    <div class="mini">Esta pestaña ya está en el menú, lista para construirse. Dime qué debe llevar y la armamos.</div>
+  </div>
+</section>
+
+<!-- ============ TDC ============ -->
+<section class="sec" id="sec-tdc">
+  <div class="card">
+    <h2>TDC</h2>
+    <div class="sub">Pendiente de definir.</div>
+    <div class="mini">Los servicios que se capturan como <b>TDC</b> en Nuevo Servicio son los que van a la hoja <b>Transportadora</b> de la sábana. El vínculo con la sábana todavía no se hace.</div>
+  </div>
+</section>
+
+<!-- ============ FWD ============ -->
+<section class="sec" id="sec-fwd">
+  <div class="card">
+    <h2>FWD</h2>
+    <div class="sub">Pendiente de definir.</div>
+    <div class="mini">Los servicios que se capturan como <b>FWD</b> en Nuevo Servicio son los que van a la hoja <b>Reexpedidora</b> de la sábana. El vínculo con la sábana todavía no se hace.</div>
   </div>
 </section>
 
@@ -810,7 +950,13 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <button class="tab atab" data-adm="EJECUTIVOS">Ejecutivos</button>
         <button class="tab atab" data-adm="REMOLQUES">Remolques</button>
         <button class="tab atab" data-adm="CLIENTES">Clientes</button>
+        <button class="tab atab" data-adm="PROVEEDORES">Proveedores</button>
+        <button class="tab atab" data-adm="TIPO_NEGOCIO">Tipo de negocio</button>
+        <button class="tab atab" data-adm="ADUANAS">Aduanas / puertos</button>
+        <button class="tab atab" data-adm="ESTADOS">Estados</button>
+        <button class="tab atab" data-adm="CIUDADES">Ciudades</button>
         <button class="tab atab" data-adm="RUTAS">Rutas</button>
+        <button class="tab atab" data-adm="SERVICIOS">Servicios</button>
         <button class="tab atab" data-adm="SOLICITUDES">Solicitudes</button>
         <button class="tab atab" data-adm="PAGO_X_KM">Pago x KM</button>
         <button class="tab atab" data-adm="NOMINAS">Nóminas</button>
@@ -1028,7 +1174,8 @@ const CAMPOS_CASETA = ['COSTO_2E','COSTO_5E','COSTO_9E'];
    Se aplica en ambos sentidos: fuera de ±15 km el viaje entra a aclaración. */
 const TOLERANCIA_KM = 15;
 
-const DB = { UNIDADES:[], OPERADORES:[], EJECUTIVOS:[], REMOLQUES:[], CLIENTES:[], RUTAS:[], SOLICITUDES:[], NOMINAS:[], LIQUIDACION:[], CASETAS:[], USUARIOS:[], BITACORA:[], SOLICITUDES_CANCELADAS:[], PAGO_X_KM:[], CONFIG:{} };
+const DB = { UNIDADES:[], OPERADORES:[], EJECUTIVOS:[], REMOLQUES:[], CLIENTES:[], RUTAS:[], SOLICITUDES:[], NOMINAS:[], LIQUIDACION:[], CASETAS:[], USUARIOS:[], BITACORA:[], SOLICITUDES_CANCELADAS:[], PAGO_X_KM:[],
+  SERVICIOS:[], TIPO_NEGOCIO:[], ADUANAS:[], ESTADOS:[], CIUDADES:[], PROVEEDORES:[], CONFIG:{} };
 
 const $  = id => document.getElementById(id);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
@@ -1111,7 +1258,8 @@ function bitacora(accion, detalle){
 }
 
 const HOJAS_APP = ['UNIDADES','OPERADORES','EJECUTIVOS','REMOLQUES','CLIENTES','RUTAS','SOLICITUDES',
-  'NOMINAS','LIQUIDACION','CASETAS','USUARIOS','BITACORA','SOLICITUDES_CANCELADAS','PAGO_X_KM'];
+  'NOMINAS','LIQUIDACION','CASETAS','USUARIOS','BITACORA','SOLICITUDES_CANCELADAS','PAGO_X_KM',
+  'SERVICIOS','TIPO_NEGOCIO','ADUANAS','ESTADOS','CIUDADES','PROVEEDORES'];
 const hojasPedidas = new Set();
 
 /* Al guardar, el backend ya no devuelve las hojas de archivo (bitácora y
@@ -1255,6 +1403,7 @@ document.querySelectorAll('.tab[data-sec]').forEach(b=>b.addEventListener('click
   if(b.dataset.sec==='dispersiones') pintarTablaDispersiones();
   if(b.dataset.sec==='rutas') pintarListaRutas();
   if(b.dataset.sec==='solicitud') pintarListaSol();
+  if(b.dataset.sec==='nuevoservicio') pintarServicios();
 }));
 $('themeBtn').addEventListener('click',()=>{
   const html=document.documentElement;
@@ -1487,6 +1636,215 @@ function editarRuta(id){
   pintarTramos(); pintarCasetas(); calcularRuta();
   window.scrollTo({top:0,behavior:'smooth'});
 }
+
+/* =====================================================
+   NUEVO SERVICIO
+   Alta del servicio con su modalidad. TDC pertenece a la hoja
+   Transportadora de la sábana y FWD a la hoja Reexpedidora; aquí solo se
+   registra a cuál va — el vínculo con la sábana todavía NO está hecho.
+===================================================== */
+const TIPOS_UNIDAD_SERVICIO = ['FULL','SENCILLO','RABÓN','3.5','1.5'];
+let servicioEditando = null;
+
+function modalidadServicio(){ return $('nsModalidad').checked? 'FWD' : 'TDC'; }
+function sabanaDeModalidad(m){ return m==='FWD'? 'Reexpedidora' : 'Transportadora'; }
+
+/* Fecha y hora legibles para el sello de creación */
+function ahoraTexto(){
+  const d = new Date(), p = n=>String(n).padStart(2,'0');
+  return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+
+/* Semana y mes salen SOLOS de la cita de carga */
+function alCambiarCitaCarga(){
+  const v = $('nsCitaCarga').value;
+  if(!v){ $('nsSemana').value=''; $('nsMes').value=''; return; }
+  const iso = v.slice(0,10);
+  const w = semanaNomina(iso);
+  $('nsSemana').value = 'Semana '+w.week+' ('+w.year+')';
+  $('nsMes').value = nombreMes(iso.slice(0,7));
+}
+
+/* La línea transportista es ADL en TDC; en FWD se elige del catálogo de
+   proveedores. */
+function alCambiarModalidadServicio(){
+  const m = modalidadServicio();
+  const esFwd = m==='FWD';
+  $('nsTdcTxt').style.opacity = esFwd? '.45' : '1';
+  $('nsFwdTxt').style.opacity = esFwd? '1' : '.45';
+  $('nsLineaFija').style.display = esFwd? 'none' : '';
+  $('nsLineaSel').style.display  = esFwd? '' : 'none';
+  $('nsSabana').innerHTML = `Modalidad <b>${m}</b> → se guarda en la hoja <b>${esc(sabanaDeModalidad(m))}</b> de la sábana. `+
+    `<span style="color:var(--ink2)">(el vínculo con la sábana todavía no está hecho)</span>`;
+}
+
+/* Par de casillas excluyentes: marcar una desmarca la otra */
+document.querySelectorAll('[data-par]').forEach(el=>el.addEventListener('change',()=>{
+  if(!el.checked) return;
+  document.querySelectorAll(`[data-par="${el.dataset.par}"]`).forEach(o=>{ if(o!==el) o.checked=false; });
+}));
+function valorPar(par){
+  const m = [...document.querySelectorAll(`[data-par="${par}"]`)].find(o=>o.checked);
+  return m? m.value : '';
+}
+function marcarPar(par, valor){
+  document.querySelectorAll(`[data-par="${par}"]`).forEach(o=>{ o.checked = o.value===String(valor||'').toUpperCase(); });
+}
+
+function pintarSelectsServicio(){
+  const porNombre = arr => [...arr].sort((a,b)=>String(a.NOMBRE||'').localeCompare(String(b.NOMBRE||'')));
+  llenarSelect('nsTipoNegocio',   porNombre(DB.TIPO_NEGOCIO), x=>x.NOMBRE);
+  llenarSelect('nsAduana',        porNombre(DB.ADUANAS),      x=>x.NOMBRE);
+  llenarSelect('nsCliente',       porNombre(DB.CLIENTES),     x=>x.NOMBRE);
+  llenarSelect('nsEstadoOrigen',  porNombre(DB.ESTADOS),      x=>x.NOMBRE);
+  llenarSelect('nsCiudadDestino', porNombre(DB.CIUDADES),     x=>x.NOMBRE);
+  llenarSelect('nsLineaSel',      porNombre(DB.PROVEEDORES),  x=>x.NOMBRE);
+  const su = $('nsTipoUnidad');
+  if(!su.options.length){
+    const o0=document.createElement('option'); o0.value=''; o0.textContent='— Selecciona —'; su.appendChild(o0);
+    TIPOS_UNIDAD_SERVICIO.forEach(t=>{ const o=document.createElement('option'); o.textContent=t; su.appendChild(o); });
+  }
+}
+
+/* Los catálogos se guardan por nombre, no por ID: la sábana necesita el
+   texto y así el registro no depende de que el catálogo no cambie. */
+function nombreDeSelect(sel, catalogo){
+  const id = $(sel).value;
+  if(!id) return '';
+  const x = DB[catalogo].find(c=>String(c.ID)===String(id));
+  return x? (x.NOMBRE||'') : '';
+}
+function seleccionarPorNombre(sel, catalogo, nombre){
+  const x = DB[catalogo].find(c=>String(c.NOMBRE||'').trim().toUpperCase()===String(nombre||'').trim().toUpperCase());
+  $(sel).value = x? x.ID : '';
+}
+
+function limpiarServicio(){
+  servicioEditando = null;
+  $('nsEditando').textContent = '';
+  $('nsFechaSol').value = ahoraTexto();
+  ['nsFechaAcep','nsCitaCarga','nsCitaEntrega','nsServicio','nsCP','nsContenedores',
+   'nsMercancia','nsBooking','nsPO','nsPuntoCarga','nsPuntoDescarga'].forEach(id=>$(id).value='');
+  ['nsTipoNegocio','nsAduana','nsCliente','nsEstadoOrigen','nsCiudadDestino','nsLineaSel','nsTipoUnidad']
+    .forEach(id=>$(id).value='');
+  $('nsEstatus').value='ASIGNADO';
+  marcarPar('rfseco',''); marcarPar('owrt','');
+  $('nsModalidad').checked = false;
+  $('nsEjecutivo').value = nombreUsuario();
+  alCambiarModalidadServicio();
+  alCambiarCitaCarga();
+}
+
+function armarServicio(){
+  if(!$('nsCitaCarga').value){ toast('Captura la cita de carga.', true); $('nsCitaCarga').focus(); return null; }
+  if(!$('nsCliente').value){ toast('Selecciona el cliente.', true); $('nsCliente').focus(); return null; }
+  if(!$('nsServicio').value.trim()){ toast('Captura el servicio.', true); $('nsServicio').focus(); return null; }
+
+  const m = modalidadServicio();
+  const prev = servicioEditando? DB.SERVICIOS.find(x=>String(x.ID)===String(servicioEditando)) : null;
+
+  return {
+    ID: servicioEditando || ('SRV-'+Date.now()),
+    MODALIDAD: m, SABANA: sabanaDeModalidad(m),
+    // La fecha de solicitud se sella al crear y ya no se mueve al editar
+    FECHA_SOLICITUD: (prev && prev.FECHA_SOLICITUD) || $('nsFechaSol').value,
+    FECHA_ACEPTACION: $('nsFechaAcep').value,
+    CITA_CARGA: $('nsCitaCarga').value,
+    SEMANA: $('nsSemana').value, MES: $('nsMes').value,
+    EJECUTIVO: $('nsEjecutivo').value,
+    TIPO_NEGOCIO: nombreDeSelect('nsTipoNegocio','TIPO_NEGOCIO'),
+    ADUANA_PUERTO: nombreDeSelect('nsAduana','ADUANAS'),
+    RF_SECO: valorPar('rfseco'), OW_RT: valorPar('owrt'),
+    CLIENTE: nombreDeSelect('nsCliente','CLIENTES'),
+    CITA_ENTREGA: $('nsCitaEntrega').value,
+    ESTATUS: $('nsEstatus').value,
+    SERVICIO: $('nsServicio').value.trim(), CP: $('nsCP').value.trim(),
+    CONTENEDORES: $('nsContenedores').value.trim(),
+    TIPO_MERCANCIA: $('nsMercancia').value.trim(),
+    BOOKING: $('nsBooking').value.trim(), PO: $('nsPO').value.trim(),
+    ESTADO_ORIGEN: nombreDeSelect('nsEstadoOrigen','ESTADOS'),
+    PUNTO_CARGA: $('nsPuntoCarga').value.trim(),
+    CIUDAD_DESTINO: nombreDeSelect('nsCiudadDestino','CIUDADES'),
+    PUNTO_DESCARGA: $('nsPuntoDescarga').value.trim(),
+    LINEA_TRANSPORTISTA: m==='FWD'? nombreDeSelect('nsLineaSel','PROVEEDORES') : 'ADL',
+    TIPO_UNIDAD: $('nsTipoUnidad').value,
+    CREADO_POR: (prev && prev.CREADO_POR) || nombreUsuario(),
+    FECHA_REGISTRO: (prev && prev.FECHA_REGISTRO) || hoyISO()
+  };
+}
+
+$('btnGuardarServicio').addEventListener('click', async ()=>{
+  const reg = armarServicio(); if(!reg) return;
+  if(await apiEnviar({action:'upsert', sheet:'SERVICIOS', record:reg})){
+    toast('Servicio '+reg.SERVICIO+' guardado ('+reg.MODALIDAD+')');
+    limpiarServicio();
+  }
+});
+$('btnNuevoServicio').addEventListener('click', limpiarServicio);
+$('nsModalidad').addEventListener('change', alCambiarModalidadServicio);
+$('nsCitaCarga').addEventListener('change', alCambiarCitaCarga);
+$('nsCitaCarga').addEventListener('input', alCambiarCitaCarga);
+
+function abrirServicio(id){
+  const s = DB.SERVICIOS.find(x=>String(x.ID)===String(id)); if(!s) return;
+  servicioEditando = id;
+  $('nsEditando').innerHTML = 'Editando <b>'+esc(s.SERVICIO||s.ID)+'</b>';
+  $('nsModalidad').checked = String(s.MODALIDAD).toUpperCase()==='FWD';
+  alCambiarModalidadServicio();
+  $('nsFechaSol').value = s.FECHA_SOLICITUD||'';
+  $('nsFechaAcep').value = s.FECHA_ACEPTACION||'';
+  $('nsCitaCarga').value = s.CITA_CARGA||'';
+  alCambiarCitaCarga();
+  $('nsCitaEntrega').value = s.CITA_ENTREGA||'';
+  $('nsEjecutivo').value = s.EJECUTIVO||'';
+  $('nsEstatus').value = s.ESTATUS||'ASIGNADO';
+  seleccionarPorNombre('nsTipoNegocio','TIPO_NEGOCIO', s.TIPO_NEGOCIO);
+  seleccionarPorNombre('nsAduana','ADUANAS', s.ADUANA_PUERTO);
+  seleccionarPorNombre('nsCliente','CLIENTES', s.CLIENTE);
+  seleccionarPorNombre('nsEstadoOrigen','ESTADOS', s.ESTADO_ORIGEN);
+  seleccionarPorNombre('nsCiudadDestino','CIUDADES', s.CIUDAD_DESTINO);
+  seleccionarPorNombre('nsLineaSel','PROVEEDORES', s.LINEA_TRANSPORTISTA);
+  marcarPar('rfseco', s.RF_SECO); marcarPar('owrt', s.OW_RT);
+  $('nsServicio').value = s.SERVICIO||''; $('nsCP').value = s.CP||'';
+  $('nsContenedores').value = s.CONTENEDORES||''; $('nsMercancia').value = s.TIPO_MERCANCIA||'';
+  $('nsBooking').value = s.BOOKING||''; $('nsPO').value = s.PO||'';
+  $('nsPuntoCarga').value = s.PUNTO_CARGA||''; $('nsPuntoDescarga').value = s.PUNTO_DESCARGA||'';
+  $('nsTipoUnidad').value = s.TIPO_UNIDAD||'';
+  $('sec-nuevoservicio').scrollIntoView({behavior:'smooth',block:'start'});
+}
+
+function pintarServicios(){
+  pintarSelectsServicio();
+  if(!$('nsFechaSol').value) $('nsFechaSol').value = ahoraTexto();
+  if(!servicioEditando) $('nsEjecutivo').value = nombreUsuario();
+  alCambiarModalidadServicio();
+
+  const q = ($('nsBusca').value||'').trim().toUpperCase();
+  const filtro = $('nsFiltro').value;
+  const filas = DB.SERVICIOS.filter(s=>{
+    if(filtro!=='todos' && String(s.MODALIDAD).toUpperCase()!==filtro) return false;
+    if(!q) return true;
+    return [s.SERVICIO,s.CP,s.CLIENTE,s.BOOKING,s.CONTENEDORES,s.PO,s.CIUDAD_DESTINO,s.ESTADO_ORIGEN]
+      .some(v=>String(v||'').toUpperCase().includes(q));
+  });
+
+  const tb=$('tbodyServicios'); tb.innerHTML='';
+  [...filas].reverse().forEach(s=>{
+    const tr=document.createElement('tr');
+    const cancelado = String(s.ESTATUS).toUpperCase()==='CANCELADO';
+    if(cancelado) tr.style.opacity='0.55';
+    tr.innerHTML=`<td><span class="tag">${esc(s.MODALIDAD)}</span></td><td>${esc(s.SERVICIO)}</td><td>${esc(s.CP)}</td>
+      <td>${esc(s.CLIENTE)}</td><td>${esc(String(s.CITA_CARGA||'').replace('T',' '))}</td><td>${esc(s.SEMANA)}</td>
+      <td>${esc(s.ESTADO_ORIGEN)}</td><td>${esc(s.CIUDAD_DESTINO)}</td><td>${esc(s.TIPO_UNIDAD)}</td>
+      <td>${cancelado? '<span class="tag bad">Cancelado</span>' : '<span class="tag ok">Asignado</span>'}</td>
+      <td><button class="btn btn-s btn-sm" data-sedserv="${s.ID}">Editar</button></td>`;
+    tb.appendChild(tr);
+  });
+  if(!filas.length) tb.innerHTML='<tr><td colspan="11" class="mini">Sin servicios capturados.</td></tr>';
+  tb.querySelectorAll('[data-sedserv]').forEach(b=>b.addEventListener('click',()=>abrirServicio(b.dataset.sedserv)));
+}
+$('nsBusca').addEventListener('input', pintarServicios);
+$('nsFiltro').addEventListener('change', pintarServicios);
 
 /* =====================================================
    SOLICITUD DE GASTO
@@ -3226,6 +3584,15 @@ const ADMIN = {
   REMOLQUES:{ cols:[{k:'ECONOMICO'},{k:'PLACAS'},{k:'TIPO',opts:['REMOLQUE','PORTACONTENEDOR','DOLLY']}],
     csv:'ECONOMICO, PLACAS, TIPO' },
   CLIENTES:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
+  /* Catálogos que alimentan el alta de Nuevo Servicio */
+  PROVEEDORES:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
+  TIPO_NEGOCIO:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
+  ADUANAS:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
+  ESTADOS:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
+  CIUDADES:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
+  SERVICIOS:{ soloLectura:true, invertido:true,
+    cols:[{k:'MODALIDAD'},{k:'SERVICIO'},{k:'CP'},{k:'CLIENTE'},{k:'CITA_CARGA'},
+          {k:'SEMANA'},{k:'CIUDAD_DESTINO'},{k:'TIPO_UNIDAD'},{k:'ESTATUS'}] },
   RUTAS:{ soloLectura:true, cols:[{k:'RUTA'},{k:'CLIENTE'},{k:'TIPO_SERVICIO'},{k:'TOTAL_KM'},{k:'COSTO_CASETAS'}] },
   SOLICITUDES:{ soloLectura:true, sinBorrarMasivo:true, cols:[{k:'FOLIO'},{k:'FECHA_SERVICIO'},{k:'RUTA'},{k:'OPERADOR'},{k:'TOTAL'}] },
   /* Tarifario por kilómetros y tipo de unidad para el esquema de nómina fija.
@@ -3252,7 +3619,8 @@ let adminOk=false;
    se usan las pestañas por defecto del rol. Administración queda aparte:
    siempre exclusiva del rol ADMIN, nunca se otorga por este panel. */
 const SECCIONES_INFO = {
-  rutas:'Rutas', solicitud:'Solicitud de Gasto', dispersiones:'Dispersiones',
+  rutas:'Rutas', nuevoservicio:'Nuevo Servicio', asignacion:'Asignación de Unidad',
+  tdc:'TDC', fwd:'FWD', solicitud:'Solicitud de Gasto', dispersiones:'Dispersiones',
   liquidacion:'Liquidación', prenomina:'Pre-Nómina', indicadores:'Indicadores'
 };
 const TODAS_LAS_SECCIONES = Object.keys(SECCIONES_INFO);
@@ -3587,6 +3955,7 @@ function refrescarTodo(){
   pintarResumenDispersion();
   if(document.querySelector('#sec-rutas.active')) pintarListaRutas();
   if(document.querySelector('#sec-solicitud.active')) pintarListaSol();
+  if(document.querySelector('#sec-nuevoservicio.active')) pintarServicios();
   if(document.querySelector('#sec-prenomina.active')) pintarPrenomina(); else pintarNominas();
   if(document.querySelector('#sec-liquidacion.active')) pintarLiquidacion();
   if(document.querySelector('#sec-dispersiones.active')) pintarTablaDispersiones();
@@ -3604,6 +3973,7 @@ let sesionRestaurada = false;
   tramos=[nuevoTramo()]; pintarTramos(); pintarCasetas();
   $('sFechaSol').value=fmtFecha(hoyISO()); $('sFechaServ').value=hoyISO(); $('sFechaServ').min=hoyISO();
   pintarCP();
+  limpiarServicio();
   document.querySelectorAll('.tab-admin').forEach(t=>t.style.display='none');
   $('logUser').focus();
   apiCargar();

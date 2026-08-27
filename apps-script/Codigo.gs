@@ -35,6 +35,23 @@ var HOJAS = {
 
   CLIENTES: ['ID','NOMBRE'],
 
+  /* Catálogos del alta de servicios (Nuevo Servicio) */
+  TIPO_NEGOCIO: ['ID','NOMBRE'],
+  ADUANAS: ['ID','NOMBRE'],
+  ESTADOS: ['ID','NOMBRE'],
+  CIUDADES: ['ID','NOMBRE'],
+  PROVEEDORES: ['ID','NOMBRE'],
+
+  /* Alta de servicios. MODALIDAD: TDC | FWD — define a qué hoja de la sábana
+     pertenece el servicio (TDC → Transportadora, FWD → Reexpedidora). Ese
+     vínculo con la sábana todavía NO está hecho: aquí solo se registra. */
+  SERVICIOS: ['ID','MODALIDAD','SABANA','FECHA_SOLICITUD','FECHA_ACEPTACION','CITA_CARGA',
+              'SEMANA','MES','EJECUTIVO','TIPO_NEGOCIO','ADUANA_PUERTO','RF_SECO','OW_RT',
+              'CLIENTE','CITA_ENTREGA','ESTATUS','SERVICIO','CP','CONTENEDORES',
+              'TIPO_MERCANCIA','BOOKING','PO','ESTADO_ORIGEN','PUNTO_CARGA',
+              'CIUDAD_DESTINO','PUNTO_DESCARGA','LINEA_TRANSPORTISTA','TIPO_UNIDAD',
+              'CREADO_POR','FECHA_REGISTRO'],
+
   /* Catálogo de casetas: un costo por categoría de ejes */
   CASETAS: ['ID','NOMBRE','CARRETERA','COSTO_2E','COSTO_5E','COSTO_9E'],
 
@@ -129,7 +146,8 @@ var HOJAS_DATOS = Object.keys(HOJAS);
 var COLUMNAS_TEXTO = {
   USUARIOS: ['USUARIO','PASSWORD'],
   SOLICITUDES: ['CARTAS_PORTE','FOLIO'],
-  LIQUIDACION: ['CARTAS_PORTE','FOLIO']
+  LIQUIDACION: ['CARTAS_PORTE','FOLIO'],
+  SERVICIOS: ['CP','SERVICIO','CONTENEDORES','BOOKING','PO']
 };
 
 var HOJA_CONFIG = 'CONFIG';

@@ -122,6 +122,27 @@ falla la solicitud original no se pierde. Se consulta en
 deshabilitado para que no haya forma de saltarse el paso. Una solicitud cuyo
 gasto **ya fue dispersado** no se puede cancelar (ver más abajo).
 
+### Hoja `SERVICIOS` y sus catálogos
+
+Alta de servicios de la pestaña **Nuevo Servicio**. `MODALIDAD` es `TDC` o
+`FWD` y `SABANA` guarda a qué hoja pertenece (`Transportadora` o
+`Reexpedidora`) — **ese vínculo con la sábana todavía no está hecho**: por
+ahora solo queda registrado en el propio renglón.
+
+Los campos de catálogo se guardan **por nombre, no por ID**, para que el
+renglón siga siendo legible aunque el catálogo cambie después.
+
+Cinco catálogos nuevos la alimentan, todos con la misma forma (`ID`,
+`NOMBRE`) y editables en Administración:
+
+| Hoja | Alimenta |
+|---|---|
+| `TIPO_NEGOCIO` | Tipo de negocio |
+| `ADUANAS` | Aduana / puerto |
+| `ESTADOS` | Estado de origen |
+| `CIUDADES` | Ciudad destino |
+| `PROVEEDORES` | Línea transportista (solo en FWD) |
+
 ### Hoja `PAGO_X_KM`
 
 | ORIGEN | DESTINO | KMS_RED | VJS_MES | KMS_MES | FULL | SENCILLO | RABON | TON_3_5 | TON_1_5 | KG_600 |
@@ -167,6 +188,41 @@ la constante `BITACORA_MAX`.
   `DIFERENCIA_SERVICIOS`, `OBJ_LLEGADA_TIEMPO`, `OBJ_SIN_INCIDENCIAS`
 - `SOLICITUDES_CANCELADAS`: `ESTADO_CANCELACION`
 - `USUARIOS`: `PESTANAS`
+
+## Nuevo Servicio
+
+Alta del servicio, en su propia pestaña. Arriba a la derecha, un interruptor
+**TDC / FWD** define la modalidad, y con ella a qué hoja de la sábana
+pertenece el servicio: TDC → **Transportadora**, FWD → **Reexpedidora**. La
+pantalla lo dice en todo momento. Ese **vínculo con la sábana todavía no está
+hecho**: hoy la modalidad y la hoja destino solo se guardan en el registro.
+
+El interruptor también cambia la **línea transportista**: en TDC es siempre
+`ADL`, fija y de solo lectura; en FWD se habilita el catálogo de
+**Proveedores**.
+
+Se llenan solos, sin capturarse a mano:
+
+| Campo | De dónde sale |
+|---|---|
+| Fecha de solicitud | Fecha y hora del alta. Al editar **no se mueve** |
+| Semana | Se calcula con la cita de carga |
+| Mes | Se calcula con la cita de carga |
+| Ejecutivo | El usuario con la sesión abierta |
+| Línea transportista | `ADL` cuando la modalidad es TDC |
+
+**RF/Seco** y **OW/RT** son pares de casillas excluyentes: marcar una
+desmarca la otra. **Estatus** es `ASIGNADO` o `CANCELADO`, y **Tipo de
+unidad** ofrece Full, Sencillo, Rabón, 3.5 y 1.5.
+
+Abajo, la tabla de **servicios capturados** se puede filtrar por modalidad y
+buscar por servicio, CP, cliente, booking, contenedor, PO, origen o destino.
+El botón *Editar* devuelve el servicio al formulario.
+
+### Pestañas pendientes
+
+**Asignación de Unidad**, **TDC** y **FWD** ya están en el menú, con su
+sección creada y vacía, a la espera de que se defina qué llevan.
 
 ## Qué viaja en cada guardado
 
