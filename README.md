@@ -132,6 +132,10 @@ ahora solo queda registrado en el propio renglón.
 Los campos de catálogo se guardan **por nombre, no por ID**, para que el
 renglón siga siendo legible aunque el catálogo cambie después.
 
+`ESTATUS` es `PENDIENTE POR DESPACHAR`, `ASIGNADO` o `CANCELADO`. Cuando se
+despacha, se llenan `ECONOMICO`, `PLACAS`, `OPERADOR`, `MEDIO_COMUNICACION`,
+`ASIGNADO_POR` y `FECHA_ASIGNACION`.
+
 Cinco catálogos nuevos la alimentan, todos con la misma forma (`ID`,
 `NOMBRE`) y editables en Administración:
 
@@ -177,7 +181,7 @@ la constante `BITACORA_MAX`.
 - `SOLICITUDES`: `TARIFA_CASETAS`, `DISPERSION`, `DISPERSADO_POR`, `FECHA_DISPERSION`,
   `GASTOS_ADICIONALES_JSON`, `DISP_COMBUSTIBLE`, `DISP_CASETAS`,
   `DISP_GASTOS_ADICIONALES_JSON`, `DISP_TOTAL`
-- `OPERADORES`: `SUELDO_FIJO_SEMANAL`
+- `OPERADORES`: `SUELDO_FIJO_SEMANAL`, `MEDIO_COMUNICACION`
 - `LIQUIDACION`: `ODOMETRO_INICIAL`, `ODOMETRO_FINAL`, `KM_ODOMETRO`, `KM_RUTA`,
   `DIFERENCIA_KM`, `REVISAR_KM`, `LIQUIDADO_POR`, `MOTIVO_ACLARACION`,
   `ACLARACION_POR`, `ACLARACION_FECHA`, `AUTORIZADO_POR`, `FECHA_AUTORIZACION`,
@@ -215,14 +219,46 @@ Se llenan solos, sin capturarse a mano:
 desmarca la otra. **Estatus** es `ASIGNADO` o `CANCELADO`, y **Tipo de
 unidad** ofrece Full, Sencillo, Rabón, 3.5 y 1.5.
 
-Abajo, la tabla de **servicios capturados** se puede filtrar por modalidad y
-buscar por servicio, CP, cliente, booking, contenedor, PO, origen o destino.
-El botón *Editar* devuelve el servicio al formulario.
+### Estatus y flujo de despacho
 
-### Pestañas pendientes
+Un servicio **TDC** nace con estatus **`PENDIENTE POR DESPACHAR`**: le falta
+unidad y operador. Un **FWD** nace **`ASIGNADO`**, porque lo mueve un tercero.
+En ambos casos se puede marcar **`CANCELADO`** a mano.
 
-**Asignación de Unidad**, **TDC** y **FWD** ya están en el menú, con su
-sección creada y vacía, a la espera de que se defina qué llevan.
+Los pendientes aparecen en **Solicitud de Gasto → Pendientes de despacho**.
+Ahí se les captura:
+
+| Campo | Cómo se llena |
+|---|---|
+| Económico | Catálogo de Unidades |
+| Placas | **Solo**, de la unidad elegida |
+| Operador | Catálogo de Operadores |
+| Medio de comunicación | **Solo**, del operador elegido (`OPERADORES.MEDIO_COMUNICACION`) |
+
+Al asignar, el servicio pasa a **`ASIGNADO`**, se firma con quién y cuándo
+(`ASIGNADO_POR`, `FECHA_ASIGNACION`) y desaparece de la lista de pendientes.
+
+### Prellenado por carta porte
+
+Ya asignado el servicio, al capturar su **carta porte** en la Solicitud de
+Gasto se prellenan solos el **económico**, las **placas**, el **tipo de
+unidad**, el **operador** y la **fecha de servicio** (de la cita de carga), y
+un aviso confirma de qué servicio se tomaron. Falta elegir la ruta, que no
+existe en el servicio.
+
+Si la carta porte pertenece a un servicio que sigue **pendiente de despacho**
+—o que está **cancelado**— no se prellena nada: sale un aviso explicando por
+qué.
+
+### TDC y FWD
+
+Cada modalidad tiene su pestaña con la lista de sus servicios, con búsqueda
+por servicio, CP, cliente, booking, contenedor, PO, origen, destino, operador
+o económico, y filtro por estatus. El botón *Editar* devuelve el servicio al
+formulario de Nuevo Servicio.
+
+**Asignación de Unidad** sigue pendiente de definir: hoy la asignación se hace
+desde Pendientes de despacho.
 
 ## Qué viaja en cada guardado
 

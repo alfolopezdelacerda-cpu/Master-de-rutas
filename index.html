@@ -213,8 +213,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 </header>
 
 <nav><div class="tabs">
-  <button class="tab active" data-sec="rutas">Rutas</button>
-  <button class="tab" data-sec="nuevoservicio">Nuevo Servicio</button>
+  <button class="tab active" data-sec="nuevoservicio">Nuevo Servicio</button>
   <button class="tab" data-sec="asignacion">Asignación de Unidad</button>
   <button class="tab" data-sec="tdc">TDC</button>
   <button class="tab" data-sec="fwd">FWD</button>
@@ -223,13 +222,14 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
   <button class="tab" data-sec="liquidacion">Liquidación</button>
   <button class="tab" data-sec="prenomina">Pre-Nómina</button>
   <button class="tab" data-sec="indicadores">Indicadores</button>
+  <button class="tab" data-sec="rutas">Rutas</button>
   <button class="tab tab-admin" data-sec="admin">Administración</button>
 </div></nav>
 
 <main>
 
 <!-- ============ RUTAS ============ -->
-<section class="sec active" id="sec-rutas">
+<section class="sec" id="sec-rutas">
   <div class="card">
     <h2 id="rutaFormTitulo">Nueva ruta</h2>
     <div class="sub">Captura los tramos del recorrido; el nombre de la ruta se arma solo. Las rutas que pegues directo en el Sheet aparecen aquí al presionar ⟳ Actualizar.</div>
@@ -286,7 +286,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 </section>
 
 <!-- ============ NUEVO SERVICIO ============ -->
-<section class="sec" id="sec-nuevoservicio">
+<section class="sec active" id="sec-nuevoservicio">
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
       <div>
@@ -312,7 +312,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       <div><label>Mes</label><input id="nsMes" readonly title="Se calcula solo con la cita de carga"></div>
       <div><label>Cita de entrega</label><input id="nsCitaEntrega" type="datetime-local"></div>
       <div><label>Ejecutivo</label><input id="nsEjecutivo" readonly title="Es el usuario con la sesión abierta"></div>
-      <div><label>Estatus</label><select id="nsEstatus"><option>ASIGNADO</option><option>CANCELADO</option></select></div>
+      <div><label>Estatus</label><select id="nsEstatus"><option>PENDIENTE POR DESPACHAR</option><option>ASIGNADO</option><option>CANCELADO</option></select></div>
     </div>
 
     <h3>Negocio</h3>
@@ -371,20 +371,6 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     </div>
   </div>
 
-  <div class="card">
-    <h3>Servicios capturados</h3>
-    <div class="grid g3" style="margin-bottom:12px">
-      <div style="grid-column:1/3"><label>Buscar</label><input id="nsBusca" placeholder="🔍 Servicio, CP, cliente, booking, contenedor…"></div>
-      <div><label>Modalidad</label><select id="nsFiltro"><option value="todos">Todas</option><option value="TDC">TDC</option><option value="FWD">FWD</option></select></div>
-    </div>
-    <div class="twrap" style="max-height:440px;overflow-y:auto"><table>
-      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
-        <th>Modalidad</th><th>Servicio</th><th>CP</th><th>Cliente</th><th>Cita de carga</th><th>Sem.</th>
-        <th>Origen</th><th>Destino</th><th>Unidad</th><th>Estatus</th><th></th>
-      </tr></thead>
-      <tbody id="tbodyServicios"></tbody>
-    </table></div>
-  </div>
 </section>
 
 <!-- ============ ASIGNACIÓN DE UNIDAD ============ -->
@@ -392,7 +378,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
   <div class="card">
     <h2>Asignación de unidad</h2>
     <div class="sub">Pendiente de definir.</div>
-    <div class="mini">Esta pestaña ya está en el menú, lista para construirse. Dime qué debe llevar y la armamos.</div>
+    <div class="mini">Por ahora la asignación de unidad y operador se hace en <b>Solicitud de Gasto → Pendientes de Despacho</b>.</div>
   </div>
 </section>
 
@@ -400,8 +386,18 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 <section class="sec" id="sec-tdc">
   <div class="card">
     <h2>TDC</h2>
-    <div class="sub">Pendiente de definir.</div>
-    <div class="mini">Los servicios que se capturan como <b>TDC</b> en Nuevo Servicio son los que van a la hoja <b>Transportadora</b> de la sábana. El vínculo con la sábana todavía no se hace.</div>
+    <div class="sub">Servicios capturados como <b>TDC</b>. Van a la hoja <b>Transportadora</b> de la sábana; el vínculo con la sábana todavía no se hace.</div>
+    <div class="grid g3" style="margin-bottom:12px">
+      <div style="grid-column:1/3"><label>Buscar</label><input id="tdcBusca" placeholder="🔍 Servicio, CP, cliente, booking, contenedor…"></div>
+      <div><label>Estatus</label><select id="tdcEstatus"><option value="todos">Todos</option><option>PENDIENTE POR DESPACHAR</option><option>ASIGNADO</option><option>CANCELADO</option></select></div>
+    </div>
+    <div class="twrap" style="max-height:520px;overflow-y:auto"><table>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
+        <th>Servicio</th><th>CP</th><th>Cliente</th><th>Cita de carga</th><th>Sem.</th>
+        <th>Origen</th><th>Destino</th><th>Unidad</th><th>Económico</th><th>Operador</th><th>Estatus</th><th></th>
+      </tr></thead>
+      <tbody id="tbodyTdc"></tbody>
+    </table></div>
   </div>
 </section>
 
@@ -409,8 +405,18 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 <section class="sec" id="sec-fwd">
   <div class="card">
     <h2>FWD</h2>
-    <div class="sub">Pendiente de definir.</div>
-    <div class="mini">Los servicios que se capturan como <b>FWD</b> en Nuevo Servicio son los que van a la hoja <b>Reexpedidora</b> de la sábana. El vínculo con la sábana todavía no se hace.</div>
+    <div class="sub">Servicios capturados como <b>FWD</b>. Van a la hoja <b>Reexpedidora</b> de la sábana; el vínculo con la sábana todavía no se hace.</div>
+    <div class="grid g3" style="margin-bottom:12px">
+      <div style="grid-column:1/3"><label>Buscar</label><input id="fwdBusca" placeholder="🔍 Servicio, CP, cliente, booking, contenedor…"></div>
+      <div><label>Estatus</label><select id="fwdEstatus"><option value="todos">Todos</option><option>ASIGNADO</option><option>CANCELADO</option></select></div>
+    </div>
+    <div class="twrap" style="max-height:520px;overflow-y:auto"><table>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
+        <th>Servicio</th><th>CP</th><th>Cliente</th><th>Cita de carga</th><th>Sem.</th>
+        <th>Origen</th><th>Destino</th><th>Unidad</th><th>Línea transportista</th><th>Estatus</th><th></th>
+      </tr></thead>
+      <tbody id="tbodyFwd"></tbody>
+    </table></div>
   </div>
 </section>
 
@@ -434,6 +440,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <label>Cartas porte (solo números)</label>
     <div id="cpWrap" class="grid g4" style="margin-bottom:10px"></div>
     <button class="btn btn-s btn-sm" id="btnAddCP">＋ Agregar CP</button>
+    <div class="mini" id="sAvisoServicio" style="display:none;margin-top:10px;border-left:3px solid var(--ok);padding-left:10px"></div>
 
     <hr class="sep">
     <h3>Datos de la unidad</h3>
@@ -510,11 +517,29 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
   </div>
 
   <div class="card">
-    <h2>Solicitudes recientes</h2>
-    <div class="sub">Haz clic en un renglón para abrirla y modificarla, mientras siga pendiente de dispersión.</div>
+    <h2>Pendientes de despacho</h2>
+    <div class="sub">Servicios <b>TDC</b> dados de alta que todavía no tienen unidad ni operador. Asígnalos aquí: al hacerlo pasan a <b>Asignado</b> y ya se les puede solicitar el gasto capturando su carta porte arriba.</div>
+
+    <div id="despDetalle" style="display:none;background:var(--surface2);border:1px dashed var(--road);border-radius:10px;padding:14px;margin-bottom:14px">
+      <h3 style="margin-bottom:4px">Asignar · <span id="despTit"></span></h3>
+      <div class="mini" id="despInfo" style="margin-bottom:12px"></div>
+      <div class="grid g4" style="margin-bottom:12px">
+        <div><label>Económico</label><select id="despEco"></select></div>
+        <div><label>Placas (automático)</label><input id="despPlacas" readonly></div>
+        <div><label>Operador</label><select id="despOperador"></select></div>
+        <div><label>Medio de comunicación (automático)</label><input id="despMedio" readonly></div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-p" id="btnAsignarDesp">✔ Asignar unidad y operador</button>
+        <button class="btn btn-s" id="btnDespCerrar">Cancelar</button>
+      </div>
+    </div>
+
     <div class="twrap" style="max-height:420px;overflow-y:auto"><table>
-      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr><th>Folio</th><th>Fecha serv.</th><th>Ruta</th><th>Operador</th><th>Económico</th><th class="right">KM</th><th class="right">Total</th><th>Dispersión</th><th></th></tr></thead>
-      <tbody id="tbodySol"></tbody>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
+        <th>Servicio</th><th>CP</th><th>Cliente</th><th>Cita de carga</th><th>Origen</th><th>Destino</th><th>Unidad</th><th>Estatus</th><th></th>
+      </tr></thead>
+      <tbody id="tbodyDespacho"></tbody>
     </table></div>
   </div>
 </section>
@@ -1402,8 +1427,10 @@ document.querySelectorAll('.tab[data-sec]').forEach(b=>b.addEventListener('click
   if(b.dataset.sec==='liquidacion') pintarLiquidacion();
   if(b.dataset.sec==='dispersiones') pintarTablaDispersiones();
   if(b.dataset.sec==='rutas') pintarListaRutas();
-  if(b.dataset.sec==='solicitud') pintarListaSol();
+  if(b.dataset.sec==='solicitud'){ pintarListaSol(); pintarDespacho(); }
   if(b.dataset.sec==='nuevoservicio') pintarServicios();
+  if(b.dataset.sec==='tdc') pintarTdc();
+  if(b.dataset.sec==='fwd') pintarFwd();
 }));
 $('themeBtn').addEventListener('click',()=>{
   const html=document.documentElement;
@@ -1646,8 +1673,12 @@ function editarRuta(id){
 const TIPOS_UNIDAD_SERVICIO = ['FULL','SENCILLO','RABÓN','3.5','1.5'];
 let servicioEditando = null;
 
+const EST_PENDIENTE = 'PENDIENTE POR DESPACHAR';
 function modalidadServicio(){ return $('nsModalidad').checked? 'FWD' : 'TDC'; }
 function sabanaDeModalidad(m){ return m==='FWD'? 'Reexpedidora' : 'Transportadora'; }
+/* Un servicio TDC nace pendiente por despachar: le falta unidad y operador.
+   Un FWD lo hace un tercero, así que nace asignado. */
+function estatusInicial(m){ return m==='TDC'? EST_PENDIENTE : 'ASIGNADO'; }
 
 /* Fecha y hora legibles para el sello de creación */
 function ahoraTexto(){
@@ -1676,6 +1707,8 @@ function alCambiarModalidadServicio(){
   $('nsLineaSel').style.display  = esFwd? '' : 'none';
   $('nsSabana').innerHTML = `Modalidad <b>${m}</b> → se guarda en la hoja <b>${esc(sabanaDeModalidad(m))}</b> de la sábana. `+
     `<span style="color:var(--ink2)">(el vínculo con la sábana todavía no está hecho)</span>`;
+  // En un alta nueva el estatus lo pone la modalidad; al editar se respeta
+  if(!servicioEditando && $('nsEstatus').value!=='CANCELADO') $('nsEstatus').value = estatusInicial(m);
 }
 
 /* Par de casillas excluyentes: marcar una desmarca la otra */
@@ -1727,7 +1760,7 @@ function limpiarServicio(){
    'nsMercancia','nsBooking','nsPO','nsPuntoCarga','nsPuntoDescarga'].forEach(id=>$(id).value='');
   ['nsTipoNegocio','nsAduana','nsCliente','nsEstadoOrigen','nsCiudadDestino','nsLineaSel','nsTipoUnidad']
     .forEach(id=>$(id).value='');
-  $('nsEstatus').value='ASIGNADO';
+  $('nsEstatus').value=EST_PENDIENTE;
   marcarPar('rfseco',''); marcarPar('owrt','');
   $('nsModalidad').checked = false;
   $('nsEjecutivo').value = nombreUsuario();
@@ -1768,6 +1801,14 @@ function armarServicio(){
     PUNTO_DESCARGA: $('nsPuntoDescarga').value.trim(),
     LINEA_TRANSPORTISTA: m==='FWD'? nombreDeSelect('nsLineaSel','PROVEEDORES') : 'ADL',
     TIPO_UNIDAD: $('nsTipoUnidad').value,
+    // El despacho se captura aparte (Solicitud de Gasto → Pendientes de
+    // despacho); aquí solo se conserva lo que ya se haya asignado.
+    ECONOMICO: (prev && prev.ECONOMICO) || '',
+    PLACAS: (prev && prev.PLACAS) || '',
+    OPERADOR: (prev && prev.OPERADOR) || '',
+    MEDIO_COMUNICACION: (prev && prev.MEDIO_COMUNICACION) || '',
+    ASIGNADO_POR: (prev && prev.ASIGNADO_POR) || '',
+    FECHA_ASIGNACION: (prev && prev.FECHA_ASIGNACION) || '',
     CREADO_POR: (prev && prev.CREADO_POR) || nombreUsuario(),
     FECHA_REGISTRO: (prev && prev.FECHA_REGISTRO) || hoyISO()
   };
@@ -1813,38 +1854,134 @@ function abrirServicio(id){
   $('sec-nuevoservicio').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
+/* El formulario de alta; la lista de lo capturado vive en TDC y FWD */
 function pintarServicios(){
   pintarSelectsServicio();
   if(!$('nsFechaSol').value) $('nsFechaSol').value = ahoraTexto();
   if(!servicioEditando) $('nsEjecutivo').value = nombreUsuario();
   alCambiarModalidadServicio();
+}
 
-  const q = ($('nsBusca').value||'').trim().toUpperCase();
-  const filtro = $('nsFiltro').value;
-  const filas = DB.SERVICIOS.filter(s=>{
-    if(filtro!=='todos' && String(s.MODALIDAD).toUpperCase()!==filtro) return false;
+function etiquetaEstatus(e){
+  const v = String(e||'').toUpperCase();
+  if(v==='CANCELADO') return '<span class="tag bad">Cancelado</span>';
+  if(v===EST_PENDIENTE) return '<span class="tag">Pendiente por despachar</span>';
+  return '<span class="tag ok">Asignado</span>';
+}
+function filtrarServicios(modalidad, texto, estatus){
+  const q = String(texto||'').trim().toUpperCase();
+  return DB.SERVICIOS.filter(s=>{
+    if(String(s.MODALIDAD).toUpperCase()!==modalidad) return false;
+    if(estatus && estatus!=='todos' && String(s.ESTATUS||'').toUpperCase()!==estatus) return false;
     if(!q) return true;
-    return [s.SERVICIO,s.CP,s.CLIENTE,s.BOOKING,s.CONTENEDORES,s.PO,s.CIUDAD_DESTINO,s.ESTADO_ORIGEN]
+    return [s.SERVICIO,s.CP,s.CLIENTE,s.BOOKING,s.CONTENEDORES,s.PO,s.CIUDAD_DESTINO,s.ESTADO_ORIGEN,s.OPERADOR,s.ECONOMICO]
       .some(v=>String(v||'').toUpperCase().includes(q));
   });
-
-  const tb=$('tbodyServicios'); tb.innerHTML='';
+}
+function pintarTablaServicios(tbody, filas, columnas, nCols){
+  const tb=$(tbody); tb.innerHTML='';
   [...filas].reverse().forEach(s=>{
     const tr=document.createElement('tr');
-    const cancelado = String(s.ESTATUS).toUpperCase()==='CANCELADO';
-    if(cancelado) tr.style.opacity='0.55';
-    tr.innerHTML=`<td><span class="tag">${esc(s.MODALIDAD)}</span></td><td>${esc(s.SERVICIO)}</td><td>${esc(s.CP)}</td>
-      <td>${esc(s.CLIENTE)}</td><td>${esc(String(s.CITA_CARGA||'').replace('T',' '))}</td><td>${esc(s.SEMANA)}</td>
-      <td>${esc(s.ESTADO_ORIGEN)}</td><td>${esc(s.CIUDAD_DESTINO)}</td><td>${esc(s.TIPO_UNIDAD)}</td>
-      <td>${cancelado? '<span class="tag bad">Cancelado</span>' : '<span class="tag ok">Asignado</span>'}</td>
-      <td><button class="btn btn-s btn-sm" data-sedserv="${s.ID}">Editar</button></td>`;
+    if(String(s.ESTATUS).toUpperCase()==='CANCELADO') tr.style.opacity='0.55';
+    tr.innerHTML = columnas(s) + `<td><button class="btn btn-s btn-sm" data-sedserv="${s.ID}">Editar</button></td>`;
     tb.appendChild(tr);
   });
-  if(!filas.length) tb.innerHTML='<tr><td colspan="11" class="mini">Sin servicios capturados.</td></tr>';
-  tb.querySelectorAll('[data-sedserv]').forEach(b=>b.addEventListener('click',()=>abrirServicio(b.dataset.sedserv)));
+  if(!filas.length) tb.innerHTML=`<tr><td colspan="${nCols}" class="mini">Sin servicios.</td></tr>`;
+  tb.querySelectorAll('[data-sedserv]').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelector('.tab[data-sec="nuevoservicio"]').click();
+    abrirServicio(b.dataset.sedserv);
+  }));
 }
-$('nsBusca').addEventListener('input', pintarServicios);
-$('nsFiltro').addEventListener('change', pintarServicios);
+const celdasComunes = s => `<td>${esc(s.SERVICIO)}</td><td>${esc(s.CP)}</td><td>${esc(s.CLIENTE)}</td>
+  <td>${esc(String(s.CITA_CARGA||'').replace('T',' '))}</td><td>${esc(s.SEMANA)}</td>
+  <td>${esc(s.ESTADO_ORIGEN)}</td><td>${esc(s.CIUDAD_DESTINO)}</td><td>${esc(s.TIPO_UNIDAD)}</td>`;
+
+function pintarTdc(){
+  pintarTablaServicios('tbodyTdc',
+    filtrarServicios('TDC', $('tdcBusca').value, $('tdcEstatus').value),
+    s => celdasComunes(s) + `<td>${esc(s.ECONOMICO)}</td><td>${esc(s.OPERADOR)}</td><td>${etiquetaEstatus(s.ESTATUS)}</td>`, 12);
+}
+function pintarFwd(){
+  pintarTablaServicios('tbodyFwd',
+    filtrarServicios('FWD', $('fwdBusca').value, $('fwdEstatus').value),
+    s => celdasComunes(s) + `<td>${esc(s.LINEA_TRANSPORTISTA)}</td><td>${etiquetaEstatus(s.ESTATUS)}</td>`, 11);
+}
+['tdcBusca','tdcEstatus'].forEach(id=>$(id).addEventListener('input', pintarTdc));
+$('tdcEstatus').addEventListener('change', pintarTdc);
+['fwdBusca','fwdEstatus'].forEach(id=>$(id).addEventListener('input', pintarFwd));
+$('fwdEstatus').addEventListener('change', pintarFwd);
+
+/* ---------- Pendientes de despacho (dentro de Solicitud de Gasto) ----------
+   Un servicio TDC nace sin unidad ni operador. Aquí se le asignan, y al
+   hacerlo pasa a ASIGNADO y ya se le puede pedir el gasto. */
+let despachoEditando = null;
+function serviciosPendientesDespacho(){
+  return DB.SERVICIOS.filter(s=>String(s.ESTATUS||'').toUpperCase()===EST_PENDIENTE);
+}
+function servicioPorCP(cp){
+  const v = String(cp||'').trim().toUpperCase();
+  if(!v) return null;
+  return DB.SERVICIOS.find(s=>String(s.CP||'').trim().toUpperCase()===v) || null;
+}
+
+function pintarDespacho(){
+  const pend = serviciosPendientesDespacho();
+  const tb=$('tbodyDespacho'); tb.innerHTML='';
+  pend.forEach(s=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${esc(s.SERVICIO)}</td><td>${esc(s.CP)}</td><td>${esc(s.CLIENTE)}</td>
+      <td>${esc(String(s.CITA_CARGA||'').replace('T',' '))}</td><td>${esc(s.ESTADO_ORIGEN)}</td>
+      <td>${esc(s.CIUDAD_DESTINO)}</td><td>${esc(s.TIPO_UNIDAD)}</td><td>${etiquetaEstatus(s.ESTATUS)}</td>
+      <td><button class="btn btn-p btn-sm" data-xdesp="${s.ID}">Asignar</button></td>`;
+    tb.appendChild(tr);
+  });
+  if(!pend.length) tb.innerHTML='<tr><td colspan="9" class="mini">Sin servicios pendientes de despacho.</td></tr>';
+  tb.querySelectorAll('[data-xdesp]').forEach(b=>b.addEventListener('click',()=>abrirDespacho(b.dataset.xdesp)));
+}
+
+function abrirDespacho(id){
+  const s = DB.SERVICIOS.find(x=>String(x.ID)===String(id)); if(!s) return;
+  despachoEditando = id;
+  $('despDetalle').style.display='';
+  $('despTit').textContent = s.SERVICIO || s.ID;
+  $('despInfo').innerHTML = `CP <b>${esc(s.CP)}</b> · Cliente <b>${esc(s.CLIENTE)}</b> · `+
+    `${esc(s.ESTADO_ORIGEN)} → ${esc(s.CIUDAD_DESTINO)} · Unidad solicitada: <b>${esc(s.TIPO_UNIDAD||'—')}</b>`;
+  llenarSelect('despEco', DB.UNIDADES, u=>`${u.ECONOMICO} · ${u.TIPO_UNIDAD}`);
+  llenarSelect('despOperador', DB.OPERADORES.filter(o=>String(o.ACTIVO).toUpperCase()!=='NO'), o=>o.NOMBRE);
+  $('despEco').value=''; $('despOperador').value='';
+  $('despPlacas').value=''; $('despMedio').value='';
+  $('despDetalle').scrollIntoView({behavior:'smooth',block:'center'});
+}
+/* Placas y medio de comunicación salen solos de los catálogos */
+$('despEco').addEventListener('change',()=>{
+  const u = DB.UNIDADES.find(x=>String(x.ID)===$('despEco').value);
+  $('despPlacas').value = u? (u.PLACAS||'') : '';
+});
+$('despOperador').addEventListener('change',()=>{
+  const o = DB.OPERADORES.find(x=>String(x.ID)===$('despOperador').value);
+  $('despMedio').value = o? (o.MEDIO_COMUNICACION||'') : '';
+});
+$('btnDespCerrar').addEventListener('click',()=>{ $('despDetalle').style.display='none'; despachoEditando=null; });
+
+$('btnAsignarDesp').addEventListener('click', async ()=>{
+  if(!despachoEditando) return;
+  const s = DB.SERVICIOS.find(x=>String(x.ID)===String(despachoEditando)); if(!s) return;
+  const u = DB.UNIDADES.find(x=>String(x.ID)===$('despEco').value);
+  const o = DB.OPERADORES.find(x=>String(x.ID)===$('despOperador').value);
+  if(!u){ toast('Selecciona el económico.', true); $('despEco').focus(); return; }
+  if(!o){ toast('Selecciona el operador.', true); $('despOperador').focus(); return; }
+
+  const reg = Object.assign({}, s, {
+    ECONOMICO: u.ECONOMICO, PLACAS: u.PLACAS||'',
+    OPERADOR: o.NOMBRE, MEDIO_COMUNICACION: o.MEDIO_COMUNICACION||'',
+    ESTATUS: 'ASIGNADO', ASIGNADO_POR: nombreUsuario(), FECHA_ASIGNACION: hoyISO()
+  });
+  if(await apiEnviar({action:'upsert', sheet:'SERVICIOS', record:reg})){
+    toast('Servicio '+(s.SERVICIO||'')+' asignado a '+o.NOMBRE);
+    $('despDetalle').style.display='none'; despachoEditando=null;
+    pintarDespacho();
+  }
+});
 
 /* =====================================================
    SOLICITUD DE GASTO
@@ -1907,13 +2044,54 @@ function pintarCP(){
       </div>`;
     w.appendChild(d);
   });
-  w.querySelectorAll('input').forEach(el=>el.addEventListener('input',()=>{
-    el.value = el.value.replace(/\D/g,'');
-    cartasPorte[+el.dataset.cpi]=el.value;
-  }));
+  w.querySelectorAll('input').forEach(el=>{
+    el.addEventListener('input',()=>{
+      el.value = el.value.replace(/\D/g,'');
+      cartasPorte[+el.dataset.cpi]=el.value;
+    });
+    // Al terminar de capturar la CP se busca su servicio y se prellena todo
+    el.addEventListener('change',()=>prellenarDesdeServicio(el.value));
+    el.addEventListener('blur',()=>prellenarDesdeServicio(el.value));
+  });
   w.querySelectorAll('[data-cpdel]').forEach(el=>el.addEventListener('click',()=>{ cartasPorte.splice(+el.dataset.cpdel,1); pintarCP(); }));
 }
 $('btnAddCP').addEventListener('click',()=>{ cartasPorte.push(''); pintarCP(); });
+
+/* Con la carta porte se ubica el servicio ya asignado y se prellena la
+   solicitud con lo que se capturó en el despacho, para no recapturarlo. */
+function prellenarDesdeServicio(cp){
+  const s = servicioPorCP(cp);
+  if(!s) return;
+  if(String(s.ESTATUS||'').toUpperCase()===EST_PENDIENTE){
+    avisoServicio(`La CP <b>${esc(s.CP)}</b> es del servicio <b>${esc(s.SERVICIO)}</b>, que sigue `+
+      `<b>pendiente de despacho</b>. Asígnale unidad y operador abajo antes de pedir el gasto.`, true);
+    return;
+  }
+  if(String(s.ESTATUS||'').toUpperCase()==='CANCELADO'){
+    avisoServicio(`La CP <b>${esc(s.CP)}</b> pertenece a un servicio <b>cancelado</b>.`, true);
+    return;
+  }
+
+  const u = DB.UNIDADES.find(x=>String(x.ECONOMICO||'').toUpperCase()===String(s.ECONOMICO||'').toUpperCase());
+  if(u){ $('sEco').value = u.ID; alCambiarUnidad(); }
+  const o = DB.OPERADORES.find(x=>String(x.NOMBRE||'').toUpperCase()===String(s.OPERADOR||'').toUpperCase());
+  if(o) $('sOperador').value = o.ID;
+  if(s.TIPO_UNIDAD) $('sTipoUnidad').value = s.TIPO_UNIDAD;
+  if(s.CITA_CARGA){
+    const f = String(s.CITA_CARGA).slice(0,10);
+    if(f >= $('sFechaServ').min) $('sFechaServ').value = f;
+  }
+  recalcularSolicitud();
+  avisoServicio(`Prellenado con el servicio <b>${esc(s.SERVICIO)}</b> · Cliente <b>${esc(s.CLIENTE)}</b> · `+
+    `${esc(s.ESTADO_ORIGEN)} → ${esc(s.CIUDAD_DESTINO)} · Unidad <b>${esc(s.ECONOMICO)}</b> · `+
+    `Operador <b>${esc(s.OPERADOR)}</b>. Falta elegir la ruta.`, false);
+}
+function avisoServicio(html, malo){
+  const el = $('sAvisoServicio');
+  el.innerHTML = html;
+  el.style.display = '';
+  el.style.borderLeftColor = malo? 'var(--bad)' : 'var(--ok)';
+}
 
 function llenarSelect(sel, arr, texto, vacio){
   const s=$(sel); const antes=s.value; s.innerHTML='';
@@ -2136,6 +2314,7 @@ $('btnNuevaSol').addEventListener('click', nuevaSolicitud);
 function nuevaSolicitud(){
   solEditando = null;
   aplicarCandadoSolicitud(false);
+  $('sAvisoServicio').style.display='none';
   cartasPorte=[''];
   gastosAdicionales=[]; pintarGastosAdicionales();
   ['sEco','sOperador','sRem1','sRem2','sDolly','sRuta','sEjecutivo','sTipoUnidad'].forEach(id=>$(id).value='');
@@ -2253,7 +2432,10 @@ $('btnPdfSol').addEventListener('click',()=>{
 });
 
 function pintarListaSol(){
-  const tb=$('tbodySol'); tb.innerHTML='';
+  // La tarjeta de solicitudes recientes se sustituyó por Pendientes de
+  // despacho; la función se conserva por si vuelve a montarse esa tabla.
+  const tb=$('tbodySol'); if(!tb) return;
+  tb.innerHTML='';
   [...DB.SOLICITUDES].reverse().slice(0,40).forEach(s=>{
     const tr=document.createElement('tr');
     tr.style.cursor='pointer';
@@ -3578,8 +3760,9 @@ const ADMIN = {
   OPERADORES:{ cols:[{k:'NOMBRE'},
       {k:'PAGO_NOMINAL_SEMANAL',t:'Pago x objetivo (semanal)',tipo:'number'},
       {k:'SUELDO_FIJO_SEMANAL',t:'Pago fijo (semanal)',tipo:'number'},
+      {k:'MEDIO_COMUNICACION',t:'Medio de comunicación'},
       {k:'ACTIVO',opts:['SI','NO']}],
-    csv:'NOMBRE, PAGO_NOMINAL_SEMANAL, SUELDO_FIJO_SEMANAL, ACTIVO' },
+    csv:'NOMBRE, PAGO_NOMINAL_SEMANAL, SUELDO_FIJO_SEMANAL, MEDIO_COMUNICACION, ACTIVO' },
   EJECUTIVOS:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
   REMOLQUES:{ cols:[{k:'ECONOMICO'},{k:'PLACAS'},{k:'TIPO',opts:['REMOLQUE','PORTACONTENEDOR','DOLLY']}],
     csv:'ECONOMICO, PLACAS, TIPO' },
@@ -3592,7 +3775,8 @@ const ADMIN = {
   CIUDADES:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
   SERVICIOS:{ soloLectura:true, invertido:true,
     cols:[{k:'MODALIDAD'},{k:'SERVICIO'},{k:'CP'},{k:'CLIENTE'},{k:'CITA_CARGA'},
-          {k:'SEMANA'},{k:'CIUDAD_DESTINO'},{k:'TIPO_UNIDAD'},{k:'ESTATUS'}] },
+          {k:'SEMANA'},{k:'CIUDAD_DESTINO'},{k:'TIPO_UNIDAD'},
+          {k:'ECONOMICO'},{k:'OPERADOR'},{k:'ESTATUS'}] },
   RUTAS:{ soloLectura:true, cols:[{k:'RUTA'},{k:'CLIENTE'},{k:'TIPO_SERVICIO'},{k:'TOTAL_KM'},{k:'COSTO_CASETAS'}] },
   SOLICITUDES:{ soloLectura:true, sinBorrarMasivo:true, cols:[{k:'FOLIO'},{k:'FECHA_SERVICIO'},{k:'RUTA'},{k:'OPERADOR'},{k:'TOTAL'}] },
   /* Tarifario por kilómetros y tipo de unidad para el esquema de nómina fija.
@@ -3619,9 +3803,9 @@ let adminOk=false;
    se usan las pestañas por defecto del rol. Administración queda aparte:
    siempre exclusiva del rol ADMIN, nunca se otorga por este panel. */
 const SECCIONES_INFO = {
-  rutas:'Rutas', nuevoservicio:'Nuevo Servicio', asignacion:'Asignación de Unidad',
-  tdc:'TDC', fwd:'FWD', solicitud:'Solicitud de Gasto', dispersiones:'Dispersiones',
-  liquidacion:'Liquidación', prenomina:'Pre-Nómina', indicadores:'Indicadores'
+  nuevoservicio:'Nuevo Servicio', asignacion:'Asignación de Unidad', tdc:'TDC', fwd:'FWD',
+  solicitud:'Solicitud de Gasto', dispersiones:'Dispersiones', liquidacion:'Liquidación',
+  prenomina:'Pre-Nómina', indicadores:'Indicadores', rutas:'Rutas'
 };
 const TODAS_LAS_SECCIONES = Object.keys(SECCIONES_INFO);
 const SECCIONES_AUDITOR = ['dispersiones','liquidacion','prenomina','indicadores'];
@@ -3954,8 +4138,10 @@ function refrescarTodo(){
   alCambiarUnidad(); alCambiarRuta();
   pintarResumenDispersion();
   if(document.querySelector('#sec-rutas.active')) pintarListaRutas();
-  if(document.querySelector('#sec-solicitud.active')) pintarListaSol();
+  if(document.querySelector('#sec-solicitud.active')){ pintarListaSol(); pintarDespacho(); }
   if(document.querySelector('#sec-nuevoservicio.active')) pintarServicios();
+  if(document.querySelector('#sec-tdc.active')) pintarTdc();
+  if(document.querySelector('#sec-fwd.active')) pintarFwd();
   if(document.querySelector('#sec-prenomina.active')) pintarPrenomina(); else pintarNominas();
   if(document.querySelector('#sec-liquidacion.active')) pintarLiquidacion();
   if(document.querySelector('#sec-dispersiones.active')) pintarTablaDispersiones();

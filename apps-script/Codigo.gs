@@ -27,7 +27,7 @@ var HOJAS = {
   /* Dos sueldos semanales, uno por esquema de pre-nómina:
      PAGO_NOMINAL_SEMANAL  → esquema de pago por objetivo (el de siempre)
      SUELDO_FIJO_SEMANAL   → esquema de nómina fija */
-  OPERADORES: ['ID','NOMBRE','PAGO_NOMINAL_SEMANAL','SUELDO_FIJO_SEMANAL','ACTIVO'],
+  OPERADORES: ['ID','NOMBRE','PAGO_NOMINAL_SEMANAL','SUELDO_FIJO_SEMANAL','MEDIO_COMUNICACION','ACTIVO'],
 
   EJECUTIVOS: ['ID','NOMBRE'],
 
@@ -50,6 +50,10 @@ var HOJAS = {
               'CLIENTE','CITA_ENTREGA','ESTATUS','SERVICIO','CP','CONTENEDORES',
               'TIPO_MERCANCIA','BOOKING','PO','ESTADO_ORIGEN','PUNTO_CARGA',
               'CIUDAD_DESTINO','PUNTO_DESCARGA','LINEA_TRANSPORTISTA','TIPO_UNIDAD',
+              /* Despacho: un servicio TDC nace PENDIENTE POR DESPACHAR y pasa a
+                 ASIGNADO cuando se le captura unidad y operador. */
+              'ECONOMICO','PLACAS','OPERADOR','MEDIO_COMUNICACION',
+              'ASIGNADO_POR','FECHA_ASIGNACION',
               'CREADO_POR','FECHA_REGISTRO'],
 
   /* Catálogo de casetas: un costo por categoría de ejes */
