@@ -225,8 +225,9 @@ Un servicio **TDC** nace con estatus **`PENDIENTE POR DESPACHAR`**: le falta
 unidad y operador. Un **FWD** nace **`ASIGNADO`**, porque lo mueve un tercero.
 En ambos casos se puede marcar **`CANCELADO`** a mano.
 
-Los pendientes aparecen en **Solicitud de Gasto → Pendientes de despacho**.
-Ahí se les captura:
+La asignación se hace en la pestaña **Asignación de unidad**, que lista los
+servicios TDC filtrados por estatus (pendientes, asignados o todos). Ahí se
+les captura:
 
 | Campo | Cómo se llena |
 |---|---|
@@ -235,16 +236,22 @@ Ahí se les captura:
 | Operador | Catálogo de Operadores |
 | Medio de comunicación | **Solo**, del operador elegido (`OPERADORES.MEDIO_COMUNICACION`) |
 
-Al asignar, el servicio pasa a **`ASIGNADO`**, se firma con quién y cuándo
-(`ASIGNADO_POR`, `FECHA_ASIGNACION`) y desaparece de la lista de pendientes.
+Al asignar, el servicio pasa a **`ASIGNADO`** y se firma con quién y cuándo
+(`ASIGNADO_POR`, `FECHA_ASIGNACION`). El botón *Asignar* pasa a *Reasignar* y
+precarga lo que ya tenía.
+
+Cada renglón trae también un botón **Solicitud de gasto**, que salta a esa
+pestaña con la carta porte puesta y el formulario prellenado. **Está
+deshabilitado mientras al servicio le falte económico u operador**: sin eso no
+se le puede pedir el gasto.
 
 ### Prellenado por carta porte
 
 Ya asignado el servicio, al capturar su **carta porte** en la Solicitud de
-Gasto se prellenan solos el **económico**, las **placas**, el **tipo de
-unidad**, el **operador** y la **fecha de servicio** (de la cita de carga), y
-un aviso confirma de qué servicio se tomaron. Falta elegir la ruta, que no
-existe en el servicio.
+Gasto —con el botón de arriba o escribiéndola a mano— se prellenan solos el
+**económico**, las **placas**, el **tipo de unidad**, el **operador** y la
+**fecha de servicio** (de la cita de carga), y un aviso confirma de qué
+servicio se tomaron. Falta elegir la ruta, que no existe en el servicio.
 
 Si la carta porte pertenece a un servicio que sigue **pendiente de despacho**
 —o que está **cancelado**— no se prellena nada: sale un aviso explicando por
@@ -257,8 +264,9 @@ por servicio, CP, cliente, booking, contenedor, PO, origen, destino, operador
 o económico, y filtro por estatus. El botón *Editar* devuelve el servicio al
 formulario de Nuevo Servicio.
 
-**Asignación de Unidad** sigue pendiente de definir: hoy la asignación se hace
-desde Pendientes de despacho.
+**Solicitud de Gasto** conserva su tarjeta de **Solicitudes recientes**, desde
+donde se reabre una solicitud para modificarla mientras siga pendiente de
+dispersión.
 
 ## Qué viaja en cada guardado
 

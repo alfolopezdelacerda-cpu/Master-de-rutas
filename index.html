@@ -377,8 +377,35 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 <section class="sec" id="sec-asignacion">
   <div class="card">
     <h2>Asignación de unidad</h2>
-    <div class="sub">Pendiente de definir.</div>
-    <div class="mini">Por ahora la asignación de unidad y operador se hace en <b>Solicitud de Gasto → Pendientes de Despacho</b>.</div>
+    <div class="sub">Servicios <b>TDC</b> dados de alta. Asígnales unidad y operador: al hacerlo pasan de <b>Pendiente por despachar</b> a <b>Asignado</b> y ya se les puede pedir el gasto.</div>
+
+    <div id="despDetalle" style="display:none;background:var(--surface2);border:1px dashed var(--road);border-radius:10px;padding:14px;margin-bottom:14px">
+      <h3 style="margin-bottom:4px">Asignar · <span id="despTit"></span></h3>
+      <div class="mini" id="despInfo" style="margin-bottom:12px"></div>
+      <div class="grid g4" style="margin-bottom:12px">
+        <div><label>Económico</label><select id="despEco"></select></div>
+        <div><label>Placas (automático)</label><input id="despPlacas" readonly></div>
+        <div><label>Operador</label><select id="despOperador"></select></div>
+        <div><label>Medio de comunicación (automático)</label><input id="despMedio" readonly></div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-p" id="btnAsignarDesp">✔ Asignar unidad y operador</button>
+        <button class="btn btn-s" id="btnDespCerrar">Cancelar</button>
+      </div>
+    </div>
+
+    <div class="grid g3" style="margin-bottom:12px">
+      <div style="grid-column:1/3"><label>Buscar</label><input id="despBusca" placeholder="🔍 Servicio, CP, cliente, operador, económico…"></div>
+      <div><label>Estatus</label><select id="despFiltro"><option value="PENDIENTE POR DESPACHAR">Pendientes por despachar</option><option value="ASIGNADO">Asignados</option><option value="todos">Todos</option></select></div>
+    </div>
+
+    <div class="twrap" style="max-height:520px;overflow-y:auto"><table>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
+        <th>Servicio</th><th>CP</th><th>Cliente</th><th>Cita de carga</th><th>Origen</th><th>Destino</th>
+        <th>Unidad</th><th>Económico</th><th>Operador</th><th>Estatus</th><th></th>
+      </tr></thead>
+      <tbody id="tbodyDespacho"></tbody>
+    </table></div>
   </div>
 </section>
 
@@ -517,29 +544,11 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
   </div>
 
   <div class="card">
-    <h2>Pendientes de despacho</h2>
-    <div class="sub">Servicios <b>TDC</b> dados de alta que todavía no tienen unidad ni operador. Asígnalos aquí: al hacerlo pasan a <b>Asignado</b> y ya se les puede solicitar el gasto capturando su carta porte arriba.</div>
-
-    <div id="despDetalle" style="display:none;background:var(--surface2);border:1px dashed var(--road);border-radius:10px;padding:14px;margin-bottom:14px">
-      <h3 style="margin-bottom:4px">Asignar · <span id="despTit"></span></h3>
-      <div class="mini" id="despInfo" style="margin-bottom:12px"></div>
-      <div class="grid g4" style="margin-bottom:12px">
-        <div><label>Económico</label><select id="despEco"></select></div>
-        <div><label>Placas (automático)</label><input id="despPlacas" readonly></div>
-        <div><label>Operador</label><select id="despOperador"></select></div>
-        <div><label>Medio de comunicación (automático)</label><input id="despMedio" readonly></div>
-      </div>
-      <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <button class="btn btn-p" id="btnAsignarDesp">✔ Asignar unidad y operador</button>
-        <button class="btn btn-s" id="btnDespCerrar">Cancelar</button>
-      </div>
-    </div>
-
+    <h2>Solicitudes recientes</h2>
+    <div class="sub">Haz clic en un renglón para abrirla y modificarla, mientras siga pendiente de dispersión.</div>
     <div class="twrap" style="max-height:420px;overflow-y:auto"><table>
-      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
-        <th>Servicio</th><th>CP</th><th>Cliente</th><th>Cita de carga</th><th>Origen</th><th>Destino</th><th>Unidad</th><th>Estatus</th><th></th>
-      </tr></thead>
-      <tbody id="tbodyDespacho"></tbody>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr><th>Folio</th><th>Fecha serv.</th><th>Ruta</th><th>Operador</th><th>Económico</th><th class="right">KM</th><th class="right">Total</th><th>Dispersión</th><th></th></tr></thead>
+      <tbody id="tbodySol"></tbody>
     </table></div>
   </div>
 </section>
@@ -1427,7 +1436,8 @@ document.querySelectorAll('.tab[data-sec]').forEach(b=>b.addEventListener('click
   if(b.dataset.sec==='liquidacion') pintarLiquidacion();
   if(b.dataset.sec==='dispersiones') pintarTablaDispersiones();
   if(b.dataset.sec==='rutas') pintarListaRutas();
-  if(b.dataset.sec==='solicitud'){ pintarListaSol(); pintarDespacho(); }
+  if(b.dataset.sec==='solicitud') pintarListaSol();
+  if(b.dataset.sec==='asignacion') pintarDespacho();
   if(b.dataset.sec==='nuevoservicio') pintarServicios();
   if(b.dataset.sec==='tdc') pintarTdc();
   if(b.dataset.sec==='fwd') pintarFwd();
@@ -1911,32 +1921,69 @@ $('tdcEstatus').addEventListener('change', pintarTdc);
 ['fwdBusca','fwdEstatus'].forEach(id=>$(id).addEventListener('input', pintarFwd));
 $('fwdEstatus').addEventListener('change', pintarFwd);
 
-/* ---------- Pendientes de despacho (dentro de Solicitud de Gasto) ----------
+/* ---------- Asignación de unidad ----------
    Un servicio TDC nace sin unidad ni operador. Aquí se le asignan, y al
    hacerlo pasa a ASIGNADO y ya se le puede pedir el gasto. */
 let despachoEditando = null;
-function serviciosPendientesDespacho(){
-  return DB.SERVICIOS.filter(s=>String(s.ESTATUS||'').toUpperCase()===EST_PENDIENTE);
-}
 function servicioPorCP(cp){
   const v = String(cp||'').trim().toUpperCase();
   if(!v) return null;
   return DB.SERVICIOS.find(s=>String(s.CP||'').trim().toUpperCase()===v) || null;
 }
+/* Sin unidad y operador no se puede pedir el gasto */
+function servicioDespachado(s){ return !!(s && String(s.ECONOMICO||'').trim() && String(s.OPERADOR||'').trim()); }
 
 function pintarDespacho(){
-  const pend = serviciosPendientesDespacho();
+  const q = ($('despBusca').value||'').trim().toUpperCase();
+  const filtro = $('despFiltro').value;
+  const filas = DB.SERVICIOS.filter(s=>{
+    if(String(s.MODALIDAD).toUpperCase()!=='TDC') return false;
+    const est = String(s.ESTATUS||'').toUpperCase();
+    if(filtro==='todos'){ if(est==='CANCELADO') return false; }
+    else if(est!==filtro) return false;
+    if(!q) return true;
+    return [s.SERVICIO,s.CP,s.CLIENTE,s.OPERADOR,s.ECONOMICO,s.CIUDAD_DESTINO,s.ESTADO_ORIGEN]
+      .some(v=>String(v||'').toUpperCase().includes(q));
+  });
+
   const tb=$('tbodyDespacho'); tb.innerHTML='';
-  pend.forEach(s=>{
+  [...filas].reverse().forEach(s=>{
+    const listo = servicioDespachado(s);
     const tr=document.createElement('tr');
     tr.innerHTML=`<td>${esc(s.SERVICIO)}</td><td>${esc(s.CP)}</td><td>${esc(s.CLIENTE)}</td>
       <td>${esc(String(s.CITA_CARGA||'').replace('T',' '))}</td><td>${esc(s.ESTADO_ORIGEN)}</td>
-      <td>${esc(s.CIUDAD_DESTINO)}</td><td>${esc(s.TIPO_UNIDAD)}</td><td>${etiquetaEstatus(s.ESTATUS)}</td>
-      <td><button class="btn btn-p btn-sm" data-xdesp="${s.ID}">Asignar</button></td>`;
+      <td>${esc(s.CIUDAD_DESTINO)}</td><td>${esc(s.TIPO_UNIDAD)}</td>
+      <td>${esc(s.ECONOMICO)||'<span class="mini">—</span>'}</td>
+      <td>${esc(s.OPERADOR)||'<span class="mini">—</span>'}</td>
+      <td>${etiquetaEstatus(s.ESTATUS)}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-s btn-sm" data-xdesp="${s.ID}">${listo? 'Reasignar' : 'Asignar'}</button>
+        <button class="btn btn-p btn-sm" data-xgasto="${s.ID}"${listo?'':' disabled title="Primero asígnale económico y operador"'}>Solicitud de gasto</button>
+      </td>`;
     tb.appendChild(tr);
   });
-  if(!pend.length) tb.innerHTML='<tr><td colspan="9" class="mini">Sin servicios pendientes de despacho.</td></tr>';
+  if(!filas.length) tb.innerHTML='<tr><td colspan="11" class="mini">Sin servicios en este filtro.</td></tr>';
   tb.querySelectorAll('[data-xdesp]').forEach(b=>b.addEventListener('click',()=>abrirDespacho(b.dataset.xdesp)));
+  tb.querySelectorAll('[data-xgasto]').forEach(b=>b.addEventListener('click',()=>irASolicitudDeGasto(b.dataset.xgasto)));
+}
+['despBusca','despFiltro'].forEach(id=>$(id).addEventListener('input', pintarDespacho));
+$('despFiltro').addEventListener('change', pintarDespacho);
+
+/* Salta a Solicitud de Gasto con la carta porte puesta y todo prellenado */
+function irASolicitudDeGasto(id){
+  const s = DB.SERVICIOS.find(x=>String(x.ID)===String(id)); if(!s) return;
+  if(!servicioDespachado(s)){
+    modal('Falta asignar la unidad',
+      `El servicio <b>${esc(s.SERVICIO)}</b> todavía no tiene <b>económico</b> ni <b>operador</b>. `+
+      `Asígnaselos aquí antes de pedirle el gasto.`, '🔒');
+    return;
+  }
+  document.querySelector('.tab[data-sec="solicitud"]').click();
+  nuevaSolicitud();
+  cartasPorte = [String(s.CP||'')];
+  pintarCP();
+  prellenarDesdeServicio(s.CP);
+  $('sec-solicitud').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
 function abrirDespacho(id){
@@ -1948,8 +1995,13 @@ function abrirDespacho(id){
     `${esc(s.ESTADO_ORIGEN)} → ${esc(s.CIUDAD_DESTINO)} · Unidad solicitada: <b>${esc(s.TIPO_UNIDAD||'—')}</b>`;
   llenarSelect('despEco', DB.UNIDADES, u=>`${u.ECONOMICO} · ${u.TIPO_UNIDAD}`);
   llenarSelect('despOperador', DB.OPERADORES.filter(o=>String(o.ACTIVO).toUpperCase()!=='NO'), o=>o.NOMBRE);
-  $('despEco').value=''; $('despOperador').value='';
-  $('despPlacas').value=''; $('despMedio').value='';
+  // Al reasignar se precarga lo que ya tenía
+  const u = DB.UNIDADES.find(x=>String(x.ECONOMICO||'').toUpperCase()===String(s.ECONOMICO||'').toUpperCase());
+  const o = DB.OPERADORES.find(x=>String(x.NOMBRE||'').toUpperCase()===String(s.OPERADOR||'').toUpperCase());
+  $('despEco').value = u? u.ID : '';
+  $('despOperador').value = o? o.ID : '';
+  $('despPlacas').value = u? (u.PLACAS||'') : '';
+  $('despMedio').value = o? (o.MEDIO_COMUNICACION||'') : '';
   $('despDetalle').scrollIntoView({behavior:'smooth',block:'center'});
 }
 /* Placas y medio de comunicación salen solos de los catálogos */
@@ -4138,7 +4190,8 @@ function refrescarTodo(){
   alCambiarUnidad(); alCambiarRuta();
   pintarResumenDispersion();
   if(document.querySelector('#sec-rutas.active')) pintarListaRutas();
-  if(document.querySelector('#sec-solicitud.active')){ pintarListaSol(); pintarDespacho(); }
+  if(document.querySelector('#sec-solicitud.active')) pintarListaSol();
+  if(document.querySelector('#sec-asignacion.active')) pintarDespacho();
   if(document.querySelector('#sec-nuevoservicio.active')) pintarServicios();
   if(document.querySelector('#sec-tdc.active')) pintarTdc();
   if(document.querySelector('#sec-fwd.active')) pintarFwd();
