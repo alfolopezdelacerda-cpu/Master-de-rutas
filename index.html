@@ -219,6 +219,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
   <button class="tab" data-sec="fwd">FWD</button>
   <button class="tab" data-sec="solicitud">Solicitud de Gasto</button>
   <button class="tab" data-sec="dispersiones">Dispersiones</button>
+  <button class="tab" data-sec="monitoreo">Monitoreo</button>
   <button class="tab" data-sec="liquidacion">Liquidación</button>
   <button class="tab" data-sec="prenomina">Pre-Nómina</button>
   <button class="tab" data-sec="indicadores">Indicadores</button>
@@ -632,6 +633,26 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <th>Folio</th><th>Fecha serv.</th><th>Operador</th><th>Económico</th><th>Ruta</th><th class="right">Total</th><th>Estado</th><th></th>
       </tr></thead>
       <tbody id="tbodyDisp"></tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============ MONITOREO ============ -->
+<section class="sec" id="sec-monitoreo">
+  <div class="card">
+    <h2>Monitoreo</h2>
+    <div class="sub">Dónde va cada servicio en el proceso. Las etapas avanzan solas conforme cada área hace su parte; aquí se marcan las tres que dependen del monitoreo: <b>salida</b>, <b>finalizado</b> y <b>entrega de evidencia</b>.</div>
+    <div id="monChips" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
+    <div class="grid g3" style="margin-bottom:12px">
+      <div style="grid-column:1/3"><label>Buscar</label><input id="monBusca" placeholder="🔍 Carta porte, cliente, operador, económico…"></div>
+      <div><label>Etapa</label><select id="monFiltro"><option value="activos">En proceso</option><option value="todos">Todas</option></select></div>
+    </div>
+    <div class="twrap" style="max-height:560px;overflow-y:auto"><table>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
+        <th>Cartas porte</th><th>Cliente</th><th>Ruta</th><th>Económico</th><th>Operador</th>
+        <th>Cita de carga</th><th>Etapa</th><th>Nota</th><th></th>
+      </tr></thead>
+      <tbody id="tbodyMonitoreo"></tbody>
     </table></div>
   </div>
 </section>
@@ -1477,6 +1498,7 @@ document.querySelectorAll('.tab[data-sec]').forEach(b=>b.addEventListener('click
   if(b.dataset.sec==='rutas') pintarListaRutas();
   if(b.dataset.sec==='solicitud') pintarListaSol();
   if(b.dataset.sec==='asignacion'){ pintarDespacho(); pintarTablero(); }
+  if(b.dataset.sec==='monitoreo') pintarMonitoreo();
   if(b.dataset.sec==='nuevoservicio') pintarServicios();
   if(b.dataset.sec==='tdc') pintarTdc();
   if(b.dataset.sec==='fwd') pintarFwd();
@@ -1891,6 +1913,8 @@ function armarServicio(){
     MEDIO_COMUNICACION: (prev && prev.MEDIO_COMUNICACION) || '',
     ASIGNADO_POR: (prev && prev.ASIGNADO_POR) || '',
     FECHA_ASIGNACION: (prev && prev.FECHA_ASIGNACION) || '',
+    // Paso 1 del proceso. Al editar se respeta la etapa a la que ya llegó.
+    ETAPA: (prev && prev.ETAPA) || 'SOLICITADO',
     CREADO_POR: (prev && prev.CREADO_POR) || nombreUsuario(),
     FECHA_REGISTRO: (prev && prev.FECHA_REGISTRO) || hoyISO()
   };
@@ -2043,6 +2067,104 @@ function pintarDespacho(){
 ['despBusca','despFiltro'].forEach(id=>$(id).addEventListener('input', pintarDespacho));
 $('despFiltro').addEventListener('change', pintarDespacho);
 
+/* ---------- Etapas del proceso ----------
+   El servicio es la columna vertebral del proceso operativo. Su etapa la
+   mueven solas las pantallas de cada paso (el backend la avanza al guardar
+   la solicitud, al liquidar y al registrar la nómina); las tres del
+   monitoreo —salida, finalizado y evidencia— se marcan aquí. */
+const ETAPAS = ['SOLICITADO','ASIGNADO','GASTO SOLICITADO','DISPERSADO','EN RUTA',
+                'FINALIZADO','EVIDENCIA ENTREGADA','LIQUIDADO','EN PRE-NÓMINA','PAGADO'];
+const PASO_DE_ETAPA = { 'SOLICITADO':1,'ASIGNADO':2,'GASTO SOLICITADO':3,'DISPERSADO':4,'EN RUTA':5,
+                        'FINALIZADO':6,'EVIDENCIA ENTREGADA':7,'LIQUIDADO':8,'EN PRE-NÓMINA':9,'PAGADO':10 };
+function etapaDe(s){
+  const v = String((s&&s.ETAPA)||'').toUpperCase();
+  if(ETAPAS.includes(v)) return v;
+  // Servicios de antes de las etapas: se deduce de lo que ya tengan
+  return servicioDespachado(s)? 'ASIGNADO' : 'SOLICITADO';
+}
+function indiceEtapa(e){ const i=ETAPAS.indexOf(String(e||'').toUpperCase()); return i<0?0:i; }
+function etiquetaEtapa(s){
+  const e = etapaDe(s);
+  const fin = indiceEtapa(e) >= indiceEtapa('LIQUIDADO');
+  return `<span class="tag${fin?' ok':''}">${PASO_DE_ETAPA[e]}. ${e}</span>`;
+}
+
+/* Marca a mano una etapa del monitoreo sobre un servicio */
+async function marcarEtapa(id, etapa, campoFecha){
+  const s = DB.SERVICIOS.find(x=>String(x.ID)===String(id)); if(!s) return;
+  if(indiceEtapa(etapaDe(s)) >= indiceEtapa(etapa)){
+    toast('Ese servicio ya pasó de la etapa '+etapa+'.', true); return;
+  }
+  const nota = $('tbodyMonitoreo').querySelector(`[data-monnota="${id}"]`);
+  const reg = Object.assign({}, s, { ETAPA: etapa, NOTA_MONITOREO: nota? nota.value.trim() : (s.NOTA_MONITOREO||'') });
+  reg[campoFecha] = ahoraTexto();
+  if(await apiEnviar({action:'upsert', sheet:'SERVICIOS', record:reg})){
+    toast((s.CP||'')+' → '+etapa);
+    pintarMonitoreo();
+  }
+}
+
+function pintarMonitoreo(){
+  const selF=$('monFiltro');
+  if(selF.options.length<=2){
+    ETAPAS.forEach(e=>{ const o=document.createElement('option'); o.value=e; o.textContent=PASO_DE_ETAPA[e]+'. '+e; selF.appendChild(o); });
+  }
+  const tdc = DB.SERVICIOS.filter(s=>String(s.MODALIDAD).toUpperCase()==='TDC' &&
+                                     String(s.ESTATUS||'').toUpperCase()!=='CANCELADO');
+
+  // Resumen del embudo: cuántos servicios hay en cada etapa
+  const cuenta={}; tdc.forEach(s=>{ const e=etapaDe(s); cuenta[e]=(cuenta[e]||0)+1; });
+  const chips=$('monChips'); chips.innerHTML='';
+  ETAPAS.forEach(e=>{
+    const c=document.createElement('span');
+    const n = cuenta[e]||0;
+    c.className='tag'; c.style.cursor='pointer'; c.style.opacity = n? '1' : '.45';
+    if(n && indiceEtapa(e)<indiceEtapa('LIQUIDADO')){ c.style.background='var(--accent)'; c.style.color='var(--accent-ink)'; }
+    else if(n){ c.style.background='var(--ok)'; c.style.color='#fff'; }
+    c.textContent = PASO_DE_ETAPA[e]+'. '+e+' · '+n;
+    c.addEventListener('click',()=>{ $('monFiltro').value = e; pintarMonitoreo(); });
+    chips.appendChild(c);
+  });
+
+  const q = ($('monBusca').value||'').trim().toUpperCase();
+  const filtro = $('monFiltro').value;
+  const filas = tdc.filter(s=>{
+    const e = etapaDe(s);
+    if(filtro==='activos'){ if(indiceEtapa(e) >= indiceEtapa('LIQUIDADO')) return false; }
+    else if(filtro!=='todos' && e!==filtro) return false;
+    if(!q) return true;
+    return [s.CP,s.CLIENTE,s.OPERADOR,s.ECONOMICO,s.CIUDAD_DESTINO,s.ESTADO_ORIGEN]
+      .some(v=>String(v||'').toUpperCase().includes(q));
+  });
+
+  const tb=$('tbodyMonitoreo'); tb.innerHTML='';
+  [...filas].reverse().forEach(s=>{
+    const i = indiceEtapa(etapaDe(s));
+    // Cada botón solo aparece cuando toca: la salida después de dispersar,
+    // el fin después de la salida y la evidencia después del fin.
+    const btn = (etapa, campo, txt, listo) =>
+      `<button class="btn btn-${listo?'p':'s'} btn-sm" data-monet="${s.ID}" data-etapa="${etapa}" data-campo="${campo}"${listo?'':' disabled'}>${txt}</button>`;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${esc(s.CP)}</td><td>${esc(s.CLIENTE)}</td>
+      <td class="mini">${esc(s.ESTADO_ORIGEN)} → ${esc(s.CIUDAD_DESTINO)}</td>
+      <td>${esc(s.ECONOMICO)||'—'}</td><td>${esc(s.OPERADOR)||'—'}</td>
+      <td>${esc(String(s.CITA_CARGA||'').replace('T',' '))}</td>
+      <td>${etiquetaEtapa(s)}</td>
+      <td><input data-monnota="${s.ID}" value="${esc(s.NOTA_MONITOREO)}" placeholder="—"></td>
+      <td style="white-space:nowrap">
+        ${btn('EN RUTA','FECHA_SALIDA','Salida', i===indiceEtapa('DISPERSADO'))}
+        ${btn('FINALIZADO','FECHA_FINALIZADO','Finalizado', i===indiceEtapa('EN RUTA'))}
+        ${btn('EVIDENCIA ENTREGADA','FECHA_EVIDENCIA','Evidencia', i===indiceEtapa('FINALIZADO'))}
+      </td>`;
+    tb.appendChild(tr);
+  });
+  if(!filas.length) tb.innerHTML='<tr><td colspan="9" class="mini">Sin servicios en este filtro.</td></tr>';
+  tb.querySelectorAll('[data-monet]').forEach(b=>b.addEventListener('click',
+    ()=>marcarEtapa(b.dataset.monet, b.dataset.etapa, b.dataset.campo)));
+}
+['monBusca','monFiltro'].forEach(id=>$(id).addEventListener('input', pintarMonitoreo));
+$('monFiltro').addEventListener('change', pintarMonitoreo);
+
 /* ---------- Tablero operativo ----------
    El estado de cada unidad de la flota, editable en el propio renglón. */
 const ESTATUS_OPERATIVO = ['DISPONIBLE','PROGRAMADO','DESPACHADO','EN SERVICIO','VACÍO',
@@ -2186,7 +2308,8 @@ $('btnAsignarDesp').addEventListener('click', async ()=>{
   const reg = Object.assign({}, s, {
     ECONOMICO: u.ECONOMICO, PLACAS: u.PLACAS||'',
     OPERADOR: o.NOMBRE, MEDIO_COMUNICACION: o.MEDIO_COMUNICACION||'',
-    ESTATUS: 'ASIGNADO', ASIGNADO_POR: nombreUsuario(), FECHA_ASIGNACION: hoyISO()
+    ESTATUS: 'ASIGNADO', ASIGNADO_POR: nombreUsuario(), FECHA_ASIGNACION: hoyISO(),
+    ETAPA: 'ASIGNADO'                      // paso 2 del proceso
   });
   if(await apiEnviar({action:'upsert', sheet:'SERVICIOS', record:reg})){
     toast('Servicio '+(s.CP||'')+' asignado a '+o.NOMBRE);
@@ -2467,6 +2590,8 @@ function armarSolicitud(){
     FECHA_SOLICITUD: hoyISO(),
     FECHA_SERVICIO: $('sFechaServ').value || hoyISO(),
     CARTAS_PORTE: cartasPorte.filter(Boolean).join(', '),
+    // Liga la solicitud con el servicio del que salió, por su carta porte
+    SERVICIO_ID: (servicioPorCP(cartasPorte.filter(Boolean)[0])||{}).ID || '',
     TIPO_ARRASTRE: $('sArrastre').value,
     ECONOMICO: u? u.ECONOMICO:'', PLACAS: u? u.PLACAS:'',
     TIPO_UNIDAD: $('sTipoUnidad').value,
@@ -3444,13 +3569,25 @@ function pintarNominas(){
   const tb=$('tbodyNom'); if(!tb) return; tb.innerHTML='';
   [...DB.NOMINAS].reverse().forEach(n=>{
     const tr=document.createElement('tr');
+    const pagada = String(n.PAGADA||'').toUpperCase()==='SI';
     tr.innerHTML=`<td>${esc(n.OPERADOR)}</td><td>${esc(n.PERIODO)}</td><td class="right num"><b>${money(n.TOTAL)}</b></td><td>${fmtFecha(n.FECHA_REGISTRO)}</td>
-      <td><button class="btn btn-d btn-sm" data-nrm="${n.ID}">✕</button></td>`;
+      <td style="white-space:nowrap">
+        ${pagada
+          ? `<span class="tag ok" title="Pagada por ${esc(n.PAGADA_POR)} el ${esc(n.FECHA_PAGO)}">✔ Pagada</span>`
+          : `<button class="btn btn-p btn-sm" data-npag="${n.ID}">Marcar pagada</button>`}
+        <button class="btn btn-d btn-sm" data-nrm="${n.ID}">✕</button></td>`;
     tb.appendChild(tr);
   });
   if(!DB.NOMINAS.length) tb.innerHTML='<tr><td colspan="5" class="mini">Aún no hay nóminas registradas.</td></tr>';
   tb.querySelectorAll('[data-nrm]').forEach(b=>b.addEventListener('click', async ()=>{
     if(confirm('¿Eliminar este registro de nómina?')){ if(await apiEnviar({action:'delete', sheet:'NOMINAS', id:b.dataset.nrm})) toast('Registro eliminado'); }
+  }));
+  // Paso 10 del proceso: al marcarla pagada, sus viajes liquidados pasan a PAGADO
+  tb.querySelectorAll('[data-npag]').forEach(b=>b.addEventListener('click', async ()=>{
+    const n = DB.NOMINAS.find(x=>String(x.ID)===String(b.dataset.npag)); if(!n) return;
+    if(!confirm('¿Marcar como pagada la nómina de '+n.OPERADOR+' ('+n.PERIODO+') por '+money(n.TOTAL)+'?')) return;
+    const reg = Object.assign({}, n, { PAGADA:'SI', PAGADA_POR: nombreUsuario(), FECHA_PAGO: hoyISO() });
+    if(await apiEnviar({action:'upsert', sheet:'NOMINAS', record:reg})) toast('Nómina de '+n.OPERADOR+' marcada como pagada');
   }));
 }
 $('btnCsvNom').addEventListener('click',()=>{
@@ -4017,11 +4154,11 @@ let adminOk=false;
    siempre exclusiva del rol ADMIN, nunca se otorga por este panel. */
 const SECCIONES_INFO = {
   nuevoservicio:'Nuevo Servicio', asignacion:'Asignación de Unidad', tdc:'TDC', fwd:'FWD',
-  solicitud:'Solicitud de Gasto', dispersiones:'Dispersiones', liquidacion:'Liquidación',
-  prenomina:'Pre-Nómina', indicadores:'Indicadores', rutas:'Rutas'
+  solicitud:'Solicitud de Gasto', dispersiones:'Dispersiones', monitoreo:'Monitoreo',
+  liquidacion:'Liquidación', prenomina:'Pre-Nómina', indicadores:'Indicadores', rutas:'Rutas'
 };
 const TODAS_LAS_SECCIONES = Object.keys(SECCIONES_INFO);
-const SECCIONES_AUDITOR = ['dispersiones','liquidacion','prenomina','indicadores'];
+const SECCIONES_AUDITOR = ['dispersiones','monitoreo','liquidacion','prenomina','indicadores'];
 function seccionesPorDefecto(rol){
   return String(rol||'').toUpperCase()==='AUDITOR' ? SECCIONES_AUDITOR : TODAS_LAS_SECCIONES;
 }
@@ -4374,6 +4511,7 @@ function refrescarTodo(){
   if(document.querySelector('#sec-rutas.active')) pintarListaRutas();
   if(document.querySelector('#sec-solicitud.active')) pintarListaSol();
   if(document.querySelector('#sec-asignacion.active')){ pintarDespacho(); pintarTablero(); }
+  if(document.querySelector('#sec-monitoreo.active')) pintarMonitoreo();
   if(document.querySelector('#sec-nuevoservicio.active')) pintarServicios();
   if(document.querySelector('#sec-tdc.active')) pintarTdc();
   if(document.querySelector('#sec-fwd.active')) pintarFwd();

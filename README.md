@@ -140,6 +140,12 @@ estar en dos servicios: al guardar se comprueba y se rechaza el duplicado.
 despacha, se llenan `ECONOMICO`, `PLACAS`, `OPERADOR`, `MEDIO_COMUNICACION`,
 `ASIGNADO_POR` y `FECHA_ASIGNACION`.
 
+`ETAPA` es la que recorre los diez pasos del proceso operativo (ver "El
+proceso operativo"), con las fechas de cada salto en `FECHA_GASTO`,
+`FECHA_DISPERSION`, `FECHA_SALIDA`, `FECHA_FINALIZADO`, `FECHA_EVIDENCIA`,
+`FECHA_LIQUIDACION` y `FECHA_PAGO`, más `SOLICITUD_ID`, `FOLIO_GASTO`,
+`NOMINA_ID` y `NOTA_MONITOREO`.
+
 Cinco catálogos nuevos la alimentan, todos con la misma forma (`ID`,
 `NOMBRE`) y editables en Administración:
 
@@ -187,6 +193,8 @@ la constante `BITACORA_MAX`.
   `DISP_GASTOS_ADICIONALES_JSON`, `DISP_TOTAL`
 - `OPERADORES`: `SUELDO_FIJO_SEMANAL`, `MEDIO_COMUNICACION`
 - `UNIDADES`: `ESTATUS_OPERATIVO`, `NOTA_OPERATIVA`, `ESTATUS_ACTUALIZADO`
+- `SOLICITUDES`: `SERVICIO_ID`
+- `NOMINAS`: `PAGADA`, `PAGADA_POR`, `FECHA_PAGO`
 - `LIQUIDACION`: `ODOMETRO_INICIAL`, `ODOMETRO_FINAL`, `KM_ODOMETRO`, `KM_RUTA`,
   `DIFERENCIA_KM`, `REVISAR_KM`, `LIQUIDADO_POR`, `MOTIVO_ACLARACION`,
   `ACLARACION_POR`, `ACLARACION_FECHA`, `AUTORIZADO_POR`, `FECHA_AUTORIZACION`,
@@ -197,6 +205,56 @@ la constante `BITACORA_MAX`.
   `DIFERENCIA_SERVICIOS`, `OBJ_LLEGADA_TIEMPO`, `OBJ_SIN_INCIDENCIAS`
 - `SOLICITUDES_CANCELADAS`: `ESTADO_CANCELACION`
 - `USUARIOS`: `PESTANAS`
+
+## El proceso operativo
+
+El **servicio** es la columna vertebral de la plataforma. Nace en Nuevo
+Servicio y va avanzando de **etapa** conforme cada área hace su parte, de modo
+que en cualquier momento se sabe dónde está cada viaje. Las etapas **no se
+capturan a mano**: las mueve la pantalla que le toca a cada paso.
+
+| # | Paso | Dónde se hace | Etapa a la que pasa |
+|---|---|---|---|
+| 1 | Solicitud para TDC | Nuevo Servicio | `SOLICITADO` |
+| 2 | Asignación de unidad y operador | Asignación de Unidad | `ASIGNADO` |
+| 3 | Asignación de gastos | Solicitud de Gasto | `GASTO SOLICITADO` |
+| 4 | Dispersión | Dispersiones (auditor) | `DISPERSADO` |
+| 5 | Monitoreo | Monitoreo → *Salida* | `EN RUTA` |
+| 6 | Servicio finalizado | Monitoreo → *Finalizado* | `FINALIZADO` |
+| 7 | Entrega de evidencia | Monitoreo → *Evidencia* | `EVIDENCIA ENTREGADA` |
+| 8 | Liquidación de viaje | Liquidación | `LIQUIDADO` |
+| 9 | Pre-nómina | Pre-Nómina → *Registrar nómina* | `EN PRE-NÓMINA` |
+| 10 | Pago al operador | Pre-Nómina → *Marcar pagada* | `PAGADO` |
+
+Cada salto deja su **fecha** en el propio servicio (`FECHA_GASTO`,
+`FECHA_DISPERSION`, `FECHA_SALIDA`, `FECHA_FINALIZADO`, `FECHA_EVIDENCIA`,
+`FECHA_LIQUIDACION`, `FECHA_PAGO`), así que la traza del viaje completo se lee
+en un solo renglón.
+
+### Cómo se enlazan las etapas
+
+Los pasos 1, 2, 5, 6, 7 y 10 los marca la pantalla directamente. Los pasos 3,
+4, 8 y 9 los deduce el **backend**, que al guardar busca el servicio por su
+carta porte y lo adelanta solo:
+
+- Guardar una **solicitud de gasto** → `GASTO SOLICITADO` (o `DISPERSADO`, si
+  el auditor ya la dispersó). La solicitud además guarda `SERVICIO_ID`.
+- **Liquidar** un viaje → `LIQUIDADO`.
+- **Registrar una nómina** → todos los viajes liquidados de ese operador pasan
+  a `EN PRE-NÓMINA`; al marcarla **pagada**, a `PAGADO`.
+
+Una etapa **nunca retrocede**: si se reedita la solicitud de un viaje que ya
+está liquidado, se guardan los datos nuevos pero el servicio se queda donde
+iba.
+
+### Monitoreo
+
+La pestaña **Monitoreo** es la vista del embudo: arriba, cuántos servicios hay
+en cada una de las diez etapas —cada contador funciona como filtro—; abajo, la
+lista con su etapa, su nota y los tres botones del monitoreo. Cada botón se
+habilita **solo cuando toca**: la salida después de la dispersión, el
+finalizado después de la salida y la evidencia después del finalizado. El
+filtro arranca en *En proceso*, que esconde lo que ya se liquidó.
 
 ## Nuevo Servicio
 

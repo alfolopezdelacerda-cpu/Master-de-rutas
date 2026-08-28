@@ -60,6 +60,12 @@ var HOJAS = {
                  ASIGNADO cuando se le captura unidad y operador. */
               'ECONOMICO','PLACAS','OPERADOR','MEDIO_COMUNICACION',
               'ASIGNADO_POR','FECHA_ASIGNACION',
+              /* ETAPA: en qué punto del proceso operativo va el servicio.
+                 Es la columna vertebral: la mueven solas las pantallas de
+                 cada paso (ver avanzarEtapa). Las fechas dejan la traza. */
+              'ETAPA','SOLICITUD_ID','FOLIO_GASTO','FECHA_GASTO','FECHA_DISPERSION',
+              'FECHA_SALIDA','FECHA_FINALIZADO','FECHA_EVIDENCIA','FECHA_LIQUIDACION',
+              'NOMINA_ID','FECHA_PAGO','NOTA_MONITOREO',
               'CREADO_POR','FECHA_REGISTRO'],
 
   /* Catálogo de casetas: un costo por categoría de ejes */
@@ -90,6 +96,7 @@ var HOJAS = {
                    operador al confirmar la dispersión. Puede diferir de lo
                    que pidió operaciones. */
                 'DISP_COMBUSTIBLE','DISP_CASETAS','DISP_GASTOS_ADICIONALES_JSON','DISP_TOTAL',
+                'SERVICIO_ID',
                 'DISPERSION','DISPERSADO_POR','FECHA_DISPERSION'],
 
   NOMINAS: ['ID','OPERADOR','MODO','PERIODO','SEMANAS','TIPO_PAGO','SUELDO_BRUTO','SUELDO_FIJO','IMPUESTO_PCT','IMPUESTOS',
@@ -100,7 +107,8 @@ var HOJAS = {
             'PAGO_SERVICIOS','DIFERENCIA_SERVICIOS',
             'APOYO_VIAJE','APOYO_PCT','APOYO_AUTORIZADO','AUTORIZADO_POR',
             'DESCUENTO_GASTOS',
-            'TOTAL','REGISTRADO_POR','FECHA_REGISTRO'],
+            'TOTAL','REGISTRADO_POR','FECHA_REGISTRO',
+            'PAGADA','PAGADA_POR','FECHA_PAGO'],
 
   /* ESTADO: LIQUIDADO | ACLARACION. DISPERSION: SI | NO — confirmación del
      auditor de que los gastos capturados son los que se le pagan al operador. */
@@ -212,12 +220,16 @@ function doGet() {
 function hojasDeAccion(p) {
   switch (p.action) {
     case 'upsert':
+      if (!p.sheet) return [];
+      // Guardar una solicitud o una nómina mueve la etapa del servicio
+      return (p.sheet === 'SOLICITUDES' || p.sheet === 'NOMINAS')
+        ? [p.sheet, 'SERVICIOS'] : [p.sheet];
     case 'bulkUpsert':
     case 'delete':
     case 'deleteMany':
     case 'clearAll':
       return p.sheet ? [p.sheet] : [];
-    case 'liquidar':           return ['LIQUIDACION', 'SOLICITUDES'];
+    case 'liquidar':           return ['LIQUIDACION', 'SOLICITUDES', 'SERVICIOS'];
     case 'cancelarSolicitud':  return ['SOLICITUDES', HOJA_CANCELADAS];
     case 'dispersar':          return ['LIQUIDACION'];
     case 'setConfig':          return ['CONFIG'];   // solo los parámetros
@@ -258,13 +270,16 @@ function doPost(e) {
         // La sábana solo se escribe al LIQUIDAR (ver liquidar()): guardar la
         // solicitud de gasto no toca la sábana.
         upsert(p.sheet, p.record);
+        // El servicio avanza de etapa solo, según lo que se acabe de guardar
+        if (p.sheet === 'SOLICITUDES') etapaPorSolicitud(p.record);
+        if (p.sheet === 'NOMINAS')     etapaPorNomina(p.record);
         break;
       case 'bulkUpsert':  bulkUpsert(p.sheet, p.records);   break;
       case 'delete':      borrar(p.sheet, [p.id]);          break;
       case 'deleteMany':  borrar(p.sheet, p.ids || []);     break;
       case 'clearAll':    vaciar(p.sheet);                  break;
       case 'setConfig':   setConfig(p.clave, p.valor);      break;
-      case 'liquidar':    liquidar(p.record);               break;
+      case 'liquidar':    liquidar(p.record); etapaPorLiquidacion(p.record); break;
       case 'cancelarSolicitud': cancelarSolicitud(p.record); break;
       case 'dispersar':   upsert('LIQUIDACION', p.record);  break;
       default:
@@ -838,6 +853,108 @@ function liquidar(record) {
 
 function buscarRegistroPorId(nombre, id) {
   return leerHoja(nombre).find(function (r) { return String(r.ID) === String(id); }) || null;
+}
+
+/* ------------------------------------------------------------------ *
+ *  Etapas del proceso operativo
+ *
+ *  El servicio es la columna vertebral: nace en Nuevo Servicio y va
+ *  avanzando de etapa conforme cada área hace su parte. Las etapas NO se
+ *  capturan a mano — las mueve sola la pantalla que le toca a cada paso,
+ *  desde aquí, para que no dependa de que alguien se acuerde.
+ * ------------------------------------------------------------------ */
+
+var ETAPAS = ['SOLICITADO','ASIGNADO','GASTO SOLICITADO','DISPERSADO','EN RUTA',
+              'FINALIZADO','EVIDENCIA ENTREGADA','LIQUIDADO','EN PRE-NÓMINA','PAGADO'];
+
+function indiceEtapa(e) {
+  var i = ETAPAS.indexOf(String(e || '').toUpperCase());
+  return i < 0 ? 0 : i;
+}
+
+/** Cartas porte de un servicio (CP puede traer varias, separadas por coma) */
+function cpsDeServicio(servicio) {
+  return String((servicio && servicio.CP) || '')
+    .split(/[,;\s]+/)
+    .map(function (x) { return x.trim().toUpperCase(); })
+    .filter(String);
+}
+
+/** Ubica el servicio al que pertenece cualquiera de esas cartas porte */
+function servicioDeCartasPorte(cartasPorte) {
+  var buscadas = String(cartasPorte || '')
+    .split(/[,;\s]+/).map(function (x) { return x.trim().toUpperCase(); }).filter(String);
+  if (!buscadas.length) return null;
+
+  var servicios = leerHoja('SERVICIOS');
+  for (var i = 0; i < servicios.length; i++) {
+    var propias = cpsDeServicio(servicios[i]);
+    for (var j = 0; j < buscadas.length; j++) {
+      if (propias.indexOf(buscadas[j]) >= 0) return servicios[i];
+    }
+  }
+  return null;
+}
+
+/**
+ * Mueve un servicio a una etapa. Nunca retrocede: si el servicio ya venía
+ * más adelante (por ejemplo, se reeditó la solicitud de un viaje que ya está
+ * liquidado) se queda donde estaba y solo se guardan los datos nuevos.
+ */
+function avanzarEtapa(servicio, etapa, campos) {
+  if (!servicio) return;
+  var reg = { ID: servicio.ID };
+  Object.keys(campos || {}).forEach(function (k) { reg[k] = campos[k]; });
+
+  if (indiceEtapa(etapa) > indiceEtapa(servicio.ETAPA)) reg.ETAPA = etapa;
+  else if (!servicio.ETAPA) reg.ETAPA = servicio.ETAPA || etapa;
+
+  upsert('SERVICIOS', reg);
+}
+
+function hoyTexto() {
+  var tz = SpreadsheetApp.getActiveSpreadsheet().getSpreadsheetTimeZone();
+  return Utilities.formatDate(new Date(), tz, 'yyyy-MM-dd HH:mm');
+}
+
+/* Guardar la solicitud de gasto: el servicio pasa a GASTO SOLICITADO, y si
+   el auditor ya la dispersó, a DISPERSADO. */
+function etapaPorSolicitud(record) {
+  if (!record) return;
+  var servicio = servicioDeCartasPorte(record.CARTAS_PORTE);
+  if (!servicio) return;
+
+  var dispersada = String(record.DISPERSION || '').toUpperCase() === 'SI';
+  avanzarEtapa(servicio, dispersada ? 'DISPERSADO' : 'GASTO SOLICITADO', dispersada
+    ? { SOLICITUD_ID: record.ID, FOLIO_GASTO: record.FOLIO, FECHA_DISPERSION: record.FECHA_DISPERSION || hoyTexto() }
+    : { SOLICITUD_ID: record.ID, FOLIO_GASTO: record.FOLIO, FECHA_GASTO: hoyTexto() });
+}
+
+/* Liquidar el viaje: el servicio pasa a LIQUIDADO */
+function etapaPorLiquidacion(record) {
+  if (!record) return;
+  if (String(record.ESTADO || '').toUpperCase() !== 'LIQUIDADO') return;
+  var servicio = servicioDeCartasPorte(record.CARTAS_PORTE);
+  if (!servicio) return;
+  avanzarEtapa(servicio, 'LIQUIDADO', { FECHA_LIQUIDACION: record.FECHA_LIQUIDACION || hoyTexto() });
+}
+
+/* Registrar la nómina: los viajes liquidados de ese operador y periodo pasan
+   a EN PRE-NÓMINA; al marcarla pagada, a PAGADO. */
+function etapaPorNomina(record) {
+  if (!record || !record.OPERADOR) return;
+  var pagada = String(record.PAGADA || '').toUpperCase() === 'SI';
+  var etapa  = pagada ? 'PAGADO' : 'EN PRE-NÓMINA';
+
+  leerHoja('SERVICIOS').forEach(function (s) {
+    if (String(s.OPERADOR || '').toUpperCase() !== String(record.OPERADOR).toUpperCase()) return;
+    var i = indiceEtapa(s.ETAPA);
+    // Solo los que ya están liquidados y no han llegado a la etapa nueva
+    if (i < indiceEtapa('LIQUIDADO') || i >= indiceEtapa(etapa)) return;
+    avanzarEtapa(s, etapa, pagada
+      ? { NOMINA_ID: record.ID, FECHA_PAGO: record.FECHA_PAGO || hoyTexto() }
+      : { NOMINA_ID: record.ID });
+  });
 }
 
 /** Envuelve escribirSabana(): nunca lanza, y deja el resultado en avisoSabana
