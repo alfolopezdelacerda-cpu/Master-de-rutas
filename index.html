@@ -1323,6 +1323,11 @@ async function apiEnviar(payload){
     const r = await fetch(WEBHOOK, { method:'POST', body: JSON.stringify(payload) });
     const j = await r.json();
     if(!j.ok) throw new Error(j.error||'Error');
+    /* Lo que se acaba de guardar se aplica también en local, ANTES de la
+       respuesta: si el backend no devolvió esa hoja —por ejemplo con un Apps
+       Script publicado viejo— la pantalla seguiría mostrando lo anterior
+       aunque el guardado sí quedó. Confirmar y no verlo no puede pasar. */
+    aplicarLocal(payload);
     aplicarDatos(j.data);
     // La respuesta del guardado no trae las hojas de archivo: se piden aparte
     // para que después de guardar quede todo al día (ver refrescarArchivo).
@@ -1351,6 +1356,24 @@ const HOJAS_APP = ['UNIDADES','OPERADORES','EJECUTIVOS','REMOLQUES','CLIENTES','
   'NOMINAS','LIQUIDACION','CASETAS','USUARIOS','BITACORA','SOLICITUDES_CANCELADAS','PAGO_X_KM',
   'SERVICIOS','TIPO_NEGOCIO','ADUANAS','ESTADOS','CIUDADES','PROVEEDORES'];
 const hojasPedidas = new Set();
+
+/* Refleja en memoria lo que el guardado acaba de escribir, sin esperar a que
+   el backend lo devuelva. La respuesta lo sobrescribe enseguida con lo que
+   quedó realmente en el Sheet; esto solo evita que la pantalla se quede
+   atrás cuando esa hoja no viene en la respuesta. */
+function aplicarLocal(p){
+  if(!p || !DB[p.sheet]) return;
+  const meter = rec => {
+    if(!rec || rec.ID===undefined) return;
+    const arr = DB[p.sheet];
+    const i = arr.findIndex(x=>String(x.ID)===String(rec.ID));
+    if(i>=0) arr[i] = Object.assign({}, arr[i], rec); else arr.push(Object.assign({}, rec));
+  };
+  if(p.action==='upsert') meter(p.record);
+  else if(p.action==='bulkUpsert') (p.records||[]).forEach(meter);
+  else if(p.action==='delete') DB[p.sheet] = DB[p.sheet].filter(x=>String(x.ID)!==String(p.id));
+  else if(p.action==='deleteMany') DB[p.sheet] = DB[p.sheet].filter(x=>!(p.ids||[]).some(id=>String(id)===String(x.ID)));
+}
 
 /* Al guardar, el backend ya no devuelve las hojas de archivo (bitácora y
    canceladas): son las que más pesan y solo se ven en Administración. Por eso

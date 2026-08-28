@@ -355,6 +355,12 @@ tiempo de respuesta.
 La app **fusiona** en vez de reemplazar, así que lo que no viene en la
 respuesta se conserva de la carga anterior.
 
+Además, lo que se acaba de guardar se aplica **también en local**, sin esperar
+a que el backend lo devuelva. Así no puede pasar que la app confirme un
+guardado y la pantalla siga mostrando lo anterior — el caso típico es un Apps
+Script publicado viejo, que escribe bien pero no devuelve esa hoja. La
+respuesta lo sobrescribe enseguida con lo que quedó realmente en el Sheet.
+
 Las dos hojas de archivo, `BITACORA` y `SOLICITUDES_CANCELADAS`, crecen sin
 tope y solo se ven en Administración, así que **no viajan nunca** en la
 respuesta —ni siquiera en la carga inicial, para que entrar a la app sea
