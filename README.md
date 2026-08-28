@@ -251,10 +251,61 @@ iba.
 
 La pestaña **Monitoreo** es la vista del embudo: arriba, cuántos servicios hay
 en cada una de las diez etapas —cada contador funciona como filtro—; abajo, la
-lista con su etapa, su nota y los tres botones del monitoreo. Cada botón se
-habilita **solo cuando toca**: la salida después de la dispersión, el
-finalizado después de la salida y la evidencia después del finalizado. El
-filtro arranca en *En proceso*, que esconde lo que ya se liquidó.
+lista de viajes con su estatus, sus citas y su cumplimiento. El filtro arranca
+en *En proceso*, que esconde lo que ya se liquidó.
+
+**Estatus del viaje** (`ESTATUS_MONITOREO`), con su color: En ruta, En espera
+de carga, En espera de descarga, Descargando, Vacío, En taller, En resguardo,
+Falla mecánica, Detenido, Siniestro y Servicio finalizado.
+
+**Bitácora de horarios.** Al abrir un viaje se registran sus siete horarios,
+cada uno sellado con la fecha y hora del momento en que se pulsa el botón:
+
+| # | Horario | Deja el estatus en |
+|---|---|---|
+| 1 | Salida de patio | En ruta |
+| 2 | Arribo a carga | En espera de carga |
+| 3 | Ingreso a cargar | — |
+| 4 | Inicio de ruta | En ruta |
+| 5 | Arribo a destino | En espera de descarga |
+| 6 | Ingreso a descarga | Descargando |
+| 7 | Servicio finalizado | Servicio finalizado |
+
+Se registran **en orden** —cada botón espera al anterior— y **el servicio no
+se puede finalizar si falta alguno de los seis previos**; la pantalla dice
+cuáles faltan. Tampoco se puede poner el estatus en *Servicio finalizado* a
+mano sin haber cerrado la bitácora.
+
+**Citas y cumplimiento.** La cita de carga (`CITA_CARGA`) y la de descarga
+(`CITA_ENTREGA`) se muestran solas, tal como se capturaron en Nuevo Servicio.
+De ahí salen los dos cumplimientos, sin capturar nada:
+
+- `CUMPLIMIENTO_CARGA` — `ON TIME` si el **arribo a carga** fue a la cita de
+  carga o antes; `OFF TIME` si fue después.
+- `CUMPLIMIENTO_DESCARGA` — igual, comparando el **arribo a destino** contra
+  la cita de descarga.
+
+**Recordatorio de citas próximas.** Arriba de la pantalla aparece un aviso con
+los servicios cuya cita de carga cae dentro de las **próximas 2 horas** y que
+todavía no han registrado su arribo, con los minutos que faltan (o los que ya
+pasaron, en rojo).
+
+### El monitoreo mueve el tablero operativo
+
+Mientras el viaje está activo, el estatus del monitoreo **arrastra al estatus
+de la unidad** en el tablero operativo, y al finalizar la libera:
+
+| Estatus del viaje | Unidad en el tablero |
+|---|---|
+| En ruta · En espera de carga · En espera de descarga · Descargando · Detenido | En servicio |
+| Vacío | Vacío |
+| En taller | Mantenimiento |
+| En resguardo | Descanso |
+| Falla mecánica · Siniestro | Falla mecánica |
+| **Servicio finalizado** | **Disponible** |
+
+Y al **asignarle una unidad** a un servicio, esa unidad pasa sola a
+**Programado**.
 
 ## Nuevo Servicio
 

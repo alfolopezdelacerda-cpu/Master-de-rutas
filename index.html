@@ -642,18 +642,52 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
   <div class="card">
     <h2>Monitoreo</h2>
     <div class="sub">Dónde va cada servicio en el proceso. Las etapas avanzan solas conforme cada área hace su parte; aquí se marcan las tres que dependen del monitoreo: <b>salida</b>, <b>finalizado</b> y <b>entrega de evidencia</b>.</div>
+    <div id="monAlerta" style="display:none;background:var(--surface2);border-left:4px solid var(--accent);border-radius:8px;padding:12px 14px;margin-bottom:14px"></div>
     <div id="monChips" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
     <div class="grid g3" style="margin-bottom:12px">
       <div style="grid-column:1/3"><label>Buscar</label><input id="monBusca" placeholder="🔍 Carta porte, cliente, operador, económico…"></div>
       <div><label>Etapa</label><select id="monFiltro"><option value="activos">En proceso</option><option value="todos">Todas</option></select></div>
     </div>
-    <div class="twrap" style="max-height:560px;overflow-y:auto"><table>
+    <div class="twrap" style="max-height:480px;overflow-y:auto"><table>
       <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
-        <th>Cartas porte</th><th>Cliente</th><th>Ruta</th><th>Económico</th><th>Operador</th>
-        <th>Cita de carga</th><th>Etapa</th><th>Nota</th><th></th>
+        <th>Cartas porte</th><th>Cliente</th><th>Económico</th><th>Operador</th>
+        <th>Cita de carga</th><th>Cita de descarga</th><th style="min-width:200px">Estatus</th>
+        <th>Carga</th><th>Descarga</th><th>Etapa</th><th></th>
       </tr></thead>
       <tbody id="tbodyMonitoreo"></tbody>
     </table></div>
+  </div>
+
+  <!-- Bitácora de horarios del viaje seleccionado -->
+  <div class="card" id="monDetalle" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+      <div>
+        <h3 style="margin-bottom:4px">Bitácora del viaje · <span id="monTit"></span></h3>
+        <div class="mini" id="monInfo"></div>
+      </div>
+      <button class="btn btn-s btn-sm" id="btnMonCerrar">Cerrar</button>
+    </div>
+
+    <div class="grid g4" style="margin:14px 0">
+      <div><label>Cita de carga</label><input id="monCitaCarga" readonly></div>
+      <div><label>Cumplimiento de carga</label><input id="monCumpleCarga" readonly></div>
+      <div><label>Cita de descarga</label><input id="monCitaDescarga" readonly></div>
+      <div><label>Cumplimiento de descarga</label><input id="monCumpleDescarga" readonly></div>
+    </div>
+
+    <h3>Horarios del viaje</h3>
+    <div class="sub" style="margin-bottom:10px">Cada botón sella la fecha y hora del momento en que se pulsa. Se registran en orden, y el servicio no se puede finalizar si falta alguno.</div>
+    <div id="monHitos" class="grid g4" style="margin-bottom:14px"></div>
+
+    <div class="grid g3" style="margin-bottom:12px">
+      <div><label>Estatus del viaje</label><select id="monEstatus"></select></div>
+      <div style="grid-column:2/4"><label>Nota</label><input id="monNota" placeholder="—"></div>
+    </div>
+    <div class="mini" id="monAvisoFin" style="margin-bottom:10px"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-p btn-sm" id="btnMonGuardar">💾 Guardar estatus y nota</button>
+      <button class="btn btn-s btn-sm" id="btnMonEvidencia">📄 Registrar entrega de evidencia</button>
+    </div>
   </div>
 </section>
 
@@ -1259,6 +1293,15 @@ const num = (n,d=0) => (isFinite(n)?n:0).toLocaleString('es-MX',{maximumFraction
 const nf = v => parseFloat(v)||0;
 const hoyISO = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
 const fmtFecha = iso => { if(!iso) return ''; const [y,m,d]=String(iso).slice(0,10).split('-'); return `${d}/${m}/${y}`; };
+/* Fecha con hora, para las citas y la bitácora del monitoreo. Acepta tanto el
+   formato del input datetime-local (2026-08-28T08:00) como el ya formateado. */
+const fmtFechaHora = v => {
+  const t = String(v||'').trim();
+  if(!t) return '';
+  if(!/^\d{4}-\d{2}-\d{2}/.test(t)) return t;         // ya venía legible
+  const hora = t.slice(11,16);
+  return fmtFecha(t) + (hora? ' '+hora : '');
+};
 const ddmm = d => String(d.getDate()).padStart(2,'0')+'/'+String(d.getMonth()+1).padStart(2,'0');
 function isoWeek(iso){
   const d = new Date(String(iso).slice(0,10)+'T12:00:00');
@@ -2112,19 +2155,217 @@ function etiquetaEtapa(s){
   return `<span class="tag${fin?' ok':''}">${PASO_DE_ETAPA[e]}. ${e}</span>`;
 }
 
-/* Marca a mano una etapa del monitoreo sobre un servicio */
-async function marcarEtapa(id, etapa, campoFecha){
+/* ---------- Monitoreo ----------
+   Estatus del viaje y bitácora de horarios. Los siete hitos se sellan con la
+   fecha y hora del momento en que se pulsan; el cumplimiento sale de comparar
+   el arribo contra la cita, y el estatus arrastra al tablero operativo. */
+const ESTATUS_MONITOREO = ['EN RUTA','EN ESPERA DE CARGA','EN ESPERA DE DESCARGA','DESCARGANDO',
+  'VACÍO','EN TALLER','EN RESGUARDO','FALLA MECÁNICA','DETENIDO','SINIESTRO','SERVICIO FINALIZADO'];
+const COLOR_MONITOREO = {
+  'EN RUTA':'var(--ok)', 'EN ESPERA DE CARGA':'var(--accent)', 'EN ESPERA DE DESCARGA':'var(--accent)',
+  'DESCARGANDO':'var(--accent)', 'VACÍO':'var(--road)', 'EN TALLER':'var(--bad)',
+  'EN RESGUARDO':'var(--road)', 'FALLA MECÁNICA':'var(--bad)', 'DETENIDO':'var(--bad)',
+  'SINIESTRO':'var(--bad)', 'SERVICIO FINALIZADO':'var(--ok)'
+};
+/* Mientras el viaje está activo, el estatus del monitoreo arrastra al del
+   tablero operativo. Al finalizar, la unidad vuelve a quedar disponible. */
+const MONITOREO_A_TABLERO = {
+  'EN RUTA':'EN SERVICIO', 'EN ESPERA DE CARGA':'EN SERVICIO', 'EN ESPERA DE DESCARGA':'EN SERVICIO',
+  'DESCARGANDO':'EN SERVICIO', 'DETENIDO':'EN SERVICIO',
+  'VACÍO':'VACÍO', 'EN TALLER':'MANTENIMIENTO', 'EN RESGUARDO':'DESCANSO',
+  'FALLA MECÁNICA':'FALLA MECÁNICA', 'SINIESTRO':'FALLA MECÁNICA',
+  'SERVICIO FINALIZADO':'DISPONIBLE'
+};
+/* Los siete horarios del viaje, en el orden en que ocurren */
+const HITOS = [
+  { campo:'HITO_SALIDA_PATIO',        texto:'Salida de patio' },
+  { campo:'HITO_ARRIBO_CARGA',        texto:'Arribo a carga' },
+  { campo:'HITO_INGRESO_CARGAR',      texto:'Ingreso a cargar' },
+  { campo:'HITO_INICIO_RUTA',         texto:'Inicio de ruta' },
+  { campo:'HITO_ARRIBO_DESTINO',      texto:'Arribo a destino' },
+  { campo:'HITO_INGRESO_DESCARGA',    texto:'Ingreso a descarga' },
+  { campo:'HITO_SERVICIO_FINALIZADO', texto:'Servicio finalizado' }
+];
+function estatusMonitoreoDe(s){
+  const v = String((s&&s.ESTATUS_MONITOREO)||'').trim().toUpperCase();
+  return ESTATUS_MONITOREO.includes(v)? v : '';
+}
+/* Las citas vienen del input datetime-local (2026-08-28T08:00) y los hitos se
+   sellan legibles (28/08/2026 08:00). Hay que entender los dos para poder
+   compararlos. */
+function aFecha(v){
+  const t = String(v||'').trim();
+  if(!t) return null;
+  const dmy = t.match(/^(\d{2})\/(\d{2})\/(\d{4})(?:[ T](\d{2}):(\d{2}))?/);
+  if(dmy) return new Date(+dmy[3], +dmy[2]-1, +dmy[1], +(dmy[4]||0), +(dmy[5]||0));
+  const d = new Date(t.replace(' ','T'));
+  return isNaN(d)? null : d;
+}
+/* "ON TIME" si el arribo fue a la cita o antes */
+function cumplimiento(arribo, cita){
+  const a = aFecha(arribo), c = aFecha(cita);
+  if(!a || !c) return '';
+  return a <= c? 'ON TIME' : 'OFF TIME';
+}
+function pintaCumplimiento(v){
+  if(!v) return '<span class="mini">—</span>';
+  return `<span class="tag ${v==='ON TIME'?'ok':'bad'}">${v}</span>`;
+}
+/* Sella el estatus operativo de una unidad, buscándola por su económico */
+async function fijarEstatusUnidad(economico, estatus){
+  const u = DB.UNIDADES.find(x=>String(x.ECONOMICO||'').trim().toUpperCase()===String(economico||'').trim().toUpperCase());
+  if(!u || !estatus || estatusDeUnidad(u)===estatus) return;
+  await apiEnviar({action:'upsert', sheet:'UNIDADES',
+    record: Object.assign({}, u, { ESTATUS_OPERATIVO: estatus, ESTATUS_ACTUALIZADO: ahoraTexto() })});
+}
+
+/* ---- Panel de bitácora ---- */
+let monEditando = null;
+
+function abrirMonitoreo(id){
   const s = DB.SERVICIOS.find(x=>String(x.ID)===String(id)); if(!s) return;
-  if(indiceEtapa(etapaDe(s)) >= indiceEtapa(etapa)){
-    toast('Ese servicio ya pasó de la etapa '+etapa+'.', true); return;
+  monEditando = id;
+  $('monDetalle').style.display='';
+  $('monTit').textContent = s.CP || s.ID;
+  $('monInfo').innerHTML = `Cliente <b>${esc(s.CLIENTE)}</b> · ${esc(s.ESTADO_ORIGEN)} → ${esc(s.CIUDAD_DESTINO)} · `+
+    `Unidad <b>${esc(s.ECONOMICO)||'—'}</b> · Operador <b>${esc(s.OPERADOR)||'—'}</b>`;
+  $('monCitaCarga').value = fmtFechaHora(s.CITA_CARGA);
+  $('monCitaDescarga').value = fmtFechaHora(s.CITA_ENTREGA);
+  $('monCumpleCarga').value = cumplimiento(s.HITO_ARRIBO_CARGA, s.CITA_CARGA) || '—';
+  $('monCumpleDescarga').value = cumplimiento(s.HITO_ARRIBO_DESTINO, s.CITA_ENTREGA) || '—';
+
+  const selE=$('monEstatus');
+  selE.innerHTML='<option value="">— Sin estatus —</option>'+
+    ESTATUS_MONITOREO.map(e=>`<option>${e}</option>`).join('');
+  selE.value = estatusMonitoreoDe(s);
+  pintarColorEstatus();
+  $('monNota').value = s.NOTA_MONITOREO || '';
+  pintarHitos(s);
+  $('monDetalle').scrollIntoView({behavior:'smooth',block:'start'});
+}
+function pintarColorEstatus(){
+  const c = COLOR_MONITOREO[$('monEstatus').value];
+  $('monEstatus').style.borderLeft = c? '5px solid '+c : '';
+}
+$('monEstatus').addEventListener('change', pintarColorEstatus);
+$('btnMonCerrar').addEventListener('click',()=>{ $('monDetalle').style.display='none'; monEditando=null; });
+
+function pintarHitos(s){
+  const w=$('monHitos'); w.innerHTML='';
+  HITOS.forEach((h,i)=>{
+    const val = s[h.campo]||'';
+    // Se registran en orden: el anterior debe estar sellado
+    const previoListo = i===0 || !!s[HITOS[i-1].campo];
+    // El último exige que estén todos los demás (punto 5)
+    const esFinal = i===HITOS.length-1;
+    const faltan = HITOS.slice(0,-1).filter(x=>!s[x.campo]);
+    const puede = !val && previoListo && (!esFinal || !faltan.length);
+    const d=document.createElement('div');
+    d.innerHTML = `<label>${i+1}. ${h.texto}</label>`+
+      (val
+        ? `<input readonly value="${esc(val)}" style="border-left:5px solid var(--ok)">`
+        : `<button class="btn btn-${puede?'p':'s'} btn-sm" style="width:100%" data-monhito="${h.campo}"${puede?'':' disabled'}>Registrar</button>`);
+    w.appendChild(d);
+  });
+  const faltan = HITOS.slice(0,-1).filter(x=>!s[x.campo]);
+  $('monAvisoFin').innerHTML = s.HITO_SERVICIO_FINALIZADO
+    ? '<span style="color:var(--ok)">Servicio finalizado: la bitácora está completa.</span>'
+    : faltan.length
+      ? `<span style="color:var(--bad)">No se puede finalizar el servicio: faltan ${faltan.length} horario(s) — ${faltan.map(x=>x.texto).join(', ')}.</span>`
+      : 'Todos los horarios previos están registrados: ya se puede finalizar el servicio.';
+  w.querySelectorAll('[data-monhito]').forEach(b=>b.addEventListener('click',()=>registrarHito(b.dataset.monhito)));
+}
+
+async function registrarHito(campo){
+  const s = DB.SERVICIOS.find(x=>String(x.ID)===String(monEditando)); if(!s) return;
+  if(s[campo]){ toast('Ese horario ya está registrado.', true); return; }
+  if(campo==='HITO_SERVICIO_FINALIZADO'){
+    const faltan = HITOS.slice(0,-1).filter(x=>!s[x.campo]);
+    if(faltan.length){
+      modal('Falta registrar horarios',
+        'No se puede finalizar el servicio: faltan <b>'+faltan.map(x=>x.texto).join('</b>, <b>')+'</b>.', '⏱');
+      return;
+    }
   }
-  const nota = $('tbodyMonitoreo').querySelector(`[data-monnota="${id}"]`);
-  const reg = Object.assign({}, s, { ETAPA: etapa, NOTA_MONITOREO: nota? nota.value.trim() : (s.NOTA_MONITOREO||'') });
-  reg[campoFecha] = ahoraTexto();
+  const reg = Object.assign({}, s);
+  reg[campo] = ahoraTexto();
+  // El cumplimiento se recalcula en cuanto se sella el arribo que le toca
+  reg.CUMPLIMIENTO_CARGA    = cumplimiento(reg.HITO_ARRIBO_CARGA,   reg.CITA_CARGA);
+  reg.CUMPLIMIENTO_DESCARGA = cumplimiento(reg.HITO_ARRIBO_DESTINO, reg.CITA_ENTREGA);
+
+  // Los hitos que mueven la etapa del proceso y el estatus del viaje
+  if(campo==='HITO_SALIDA_PATIO'){
+    if(indiceEtapa(etapaDe(s)) < indiceEtapa('EN RUTA')){ reg.ETAPA='EN RUTA'; reg.FECHA_SALIDA=reg[campo]; }
+    if(!reg.ESTATUS_MONITOREO) reg.ESTATUS_MONITOREO='EN RUTA';
+  }
+  if(campo==='HITO_ARRIBO_CARGA')     reg.ESTATUS_MONITOREO='EN ESPERA DE CARGA';
+  if(campo==='HITO_INICIO_RUTA')      reg.ESTATUS_MONITOREO='EN RUTA';
+  if(campo==='HITO_ARRIBO_DESTINO')   reg.ESTATUS_MONITOREO='EN ESPERA DE DESCARGA';
+  if(campo==='HITO_INGRESO_DESCARGA') reg.ESTATUS_MONITOREO='DESCARGANDO';
+  if(campo==='HITO_SERVICIO_FINALIZADO'){
+    reg.ESTATUS_MONITOREO='SERVICIO FINALIZADO';
+    if(indiceEtapa(etapaDe(s)) < indiceEtapa('FINALIZADO')){ reg.ETAPA='FINALIZADO'; reg.FECHA_FINALIZADO=reg[campo]; }
+  }
+
   if(await apiEnviar({action:'upsert', sheet:'SERVICIOS', record:reg})){
-    toast((s.CP||'')+' → '+etapa);
+    await fijarEstatusUnidad(reg.ECONOMICO, MONITOREO_A_TABLERO[reg.ESTATUS_MONITOREO]);
+    toast(HITOS.find(h=>h.campo===campo).texto+' registrado');
+    abrirMonitoreo(monEditando); pintarMonitoreo();
+  }
+}
+
+$('btnMonGuardar').addEventListener('click', async ()=>{
+  const s = DB.SERVICIOS.find(x=>String(x.ID)===String(monEditando)); if(!s) return;
+  const est = $('monEstatus').value;
+  if(est==='SERVICIO FINALIZADO' && !s.HITO_SERVICIO_FINALIZADO){
+    modal('Falta la bitácora',
+      'Para dejar el viaje como <b>Servicio finalizado</b> hay que registrar antes el horario de finalización, y para eso no puede faltar ninguno de los otros.', '⏱');
+    return;
+  }
+  const reg = Object.assign({}, s, { ESTATUS_MONITOREO: est, NOTA_MONITOREO: $('monNota').value.trim() });
+  if(await apiEnviar({action:'upsert', sheet:'SERVICIOS', record:reg})){
+    await fijarEstatusUnidad(reg.ECONOMICO, MONITOREO_A_TABLERO[est]);
+    toast('Estatus actualizado');
     pintarMonitoreo();
   }
+});
+
+$('btnMonEvidencia').addEventListener('click', async ()=>{
+  const s = DB.SERVICIOS.find(x=>String(x.ID)===String(monEditando)); if(!s) return;
+  if(indiceEtapa(etapaDe(s)) < indiceEtapa('FINALIZADO')){
+    toast('Primero hay que finalizar el servicio.', true); return;
+  }
+  if(indiceEtapa(etapaDe(s)) >= indiceEtapa('EVIDENCIA ENTREGADA')){
+    toast('La evidencia ya estaba registrada.', true); return;
+  }
+  const reg = Object.assign({}, s, { ETAPA:'EVIDENCIA ENTREGADA', FECHA_EVIDENCIA: ahoraTexto() });
+  if(await apiEnviar({action:'upsert', sheet:'SERVICIOS', record:reg})){
+    toast('Evidencia registrada'); pintarMonitoreo();
+  }
+});
+
+/* Aviso de las citas de carga que caen dentro de las próximas 2 horas y
+   todavía no tienen arribo registrado */
+function avisoCitasProximas(servicios){
+  const ahora = Date.now(), dosHoras = 2*60*60*1000;
+  const proximos = servicios.filter(s=>{
+    if(s.HITO_ARRIBO_CARGA) return false;
+    const c = new Date(String(s.CITA_CARGA||'').replace(' ','T'));
+    if(isNaN(c)) return false;
+    const falta = c.getTime() - ahora;
+    return falta <= dosHoras && falta > -dosHoras;   // ±2 h alrededor de la cita
+  }).sort((a,b)=>String(a.CITA_CARGA).localeCompare(String(b.CITA_CARGA)));
+
+  const el = $('monAlerta');
+  el.style.display = proximos.length? '' : 'none';
+  if(!proximos.length) return;
+  el.innerHTML = `<b>⏰ ${proximos.length} servicio(s) con cita de carga próxima</b><br>`+
+    proximos.map(s=>{
+      const c = new Date(String(s.CITA_CARGA).replace(' ','T'));
+      const min = Math.round((c.getTime()-ahora)/60000);
+      const cuando = min >= 0? `en ${min} min` : `<span style="color:var(--bad)">hace ${-min} min</span>`;
+      return `· <b>${esc(s.CP)}</b> · ${esc(s.CLIENTE)} · ${esc(s.ECONOMICO)||'sin unidad'} — ${fmtFechaHora(s.CITA_CARGA)} (${cuando})`;
+    }).join('<br>');
 }
 
 function pintarMonitoreo(){
@@ -2134,6 +2375,9 @@ function pintarMonitoreo(){
   }
   const tdc = DB.SERVICIOS.filter(s=>String(s.MODALIDAD).toUpperCase()==='TDC' &&
                                      String(s.ESTATUS||'').toUpperCase()!=='CANCELADO');
+
+  // Recordatorio de citas próximas, sobre los viajes que aún no llegan a cargar
+  avisoCitasProximas(tdc.filter(s=>indiceEtapa(etapaDe(s)) < indiceEtapa('FINALIZADO')));
 
   // Resumen del embudo: cuántos servicios hay en cada etapa
   const cuenta={}; tdc.forEach(s=>{ const e=etapaDe(s); cuenta[e]=(cuenta[e]||0)+1; });
@@ -2145,12 +2389,12 @@ function pintarMonitoreo(){
     if(n && indiceEtapa(e)<indiceEtapa('LIQUIDADO')){ c.style.background='var(--accent)'; c.style.color='var(--accent-ink)'; }
     else if(n){ c.style.background='var(--ok)'; c.style.color='#fff'; }
     c.textContent = PASO_DE_ETAPA[e]+'. '+e+' · '+n;
-    c.addEventListener('click',()=>{ $('monFiltro').value = e; pintarMonitoreo(); });
+    c.addEventListener('click',()=>{ selF.value = e; pintarMonitoreo(); });
     chips.appendChild(c);
   });
 
   const q = ($('monBusca').value||'').trim().toUpperCase();
-  const filtro = $('monFiltro').value;
+  const filtro = selF.value;
   const filas = tdc.filter(s=>{
     const e = etapaDe(s);
     if(filtro==='activos'){ if(indiceEtapa(e) >= indiceEtapa('LIQUIDADO')) return false; }
@@ -2162,28 +2406,21 @@ function pintarMonitoreo(){
 
   const tb=$('tbodyMonitoreo'); tb.innerHTML='';
   [...filas].reverse().forEach(s=>{
-    const i = indiceEtapa(etapaDe(s));
-    // Cada botón solo aparece cuando toca: la salida después de dispersar,
-    // el fin después de la salida y la evidencia después del fin.
-    const btn = (etapa, campo, txt, listo) =>
-      `<button class="btn btn-${listo?'p':'s'} btn-sm" data-monet="${s.ID}" data-etapa="${etapa}" data-campo="${campo}"${listo?'':' disabled'}>${txt}</button>`;
+    const est = estatusMonitoreoDe(s);
+    const color = COLOR_MONITOREO[est] || 'var(--line)';
     const tr=document.createElement('tr');
     tr.innerHTML=`<td>${esc(s.CP)}</td><td>${esc(s.CLIENTE)}</td>
-      <td class="mini">${esc(s.ESTADO_ORIGEN)} → ${esc(s.CIUDAD_DESTINO)}</td>
       <td>${esc(s.ECONOMICO)||'—'}</td><td>${esc(s.OPERADOR)||'—'}</td>
-      <td>${esc(String(s.CITA_CARGA||'').replace('T',' '))}</td>
+      <td>${fmtFechaHora(s.CITA_CARGA)}</td><td>${fmtFechaHora(s.CITA_ENTREGA)}</td>
+      <td><span class="tag" style="background:${color};color:#fff;border-left:5px solid ${color}">${esc(est)||'sin estatus'}</span></td>
+      <td>${pintaCumplimiento(cumplimiento(s.HITO_ARRIBO_CARGA, s.CITA_CARGA))}</td>
+      <td>${pintaCumplimiento(cumplimiento(s.HITO_ARRIBO_DESTINO, s.CITA_ENTREGA))}</td>
       <td>${etiquetaEtapa(s)}</td>
-      <td><input data-monnota="${s.ID}" value="${esc(s.NOTA_MONITOREO)}" placeholder="—"></td>
-      <td style="white-space:nowrap">
-        ${btn('EN RUTA','FECHA_SALIDA','Salida', i===indiceEtapa('DISPERSADO'))}
-        ${btn('FINALIZADO','FECHA_FINALIZADO','Finalizado', i===indiceEtapa('EN RUTA'))}
-        ${btn('EVIDENCIA ENTREGADA','FECHA_EVIDENCIA','Evidencia', i===indiceEtapa('FINALIZADO'))}
-      </td>`;
+      <td><button class="btn btn-p btn-sm" data-monver="${s.ID}">Bitácora</button></td>`;
     tb.appendChild(tr);
   });
-  if(!filas.length) tb.innerHTML='<tr><td colspan="9" class="mini">Sin servicios en este filtro.</td></tr>';
-  tb.querySelectorAll('[data-monet]').forEach(b=>b.addEventListener('click',
-    ()=>marcarEtapa(b.dataset.monet, b.dataset.etapa, b.dataset.campo)));
+  if(!filas.length) tb.innerHTML='<tr><td colspan="11" class="mini">Sin servicios en este filtro.</td></tr>';
+  tb.querySelectorAll('[data-monver]').forEach(b=>b.addEventListener('click',()=>abrirMonitoreo(b.dataset.monver)));
 }
 ['monBusca','monFiltro'].forEach(id=>$(id).addEventListener('input', pintarMonitoreo));
 $('monFiltro').addEventListener('change', pintarMonitoreo);
@@ -2335,6 +2572,8 @@ $('btnAsignarDesp').addEventListener('click', async ()=>{
     ETAPA: 'ASIGNADO'                      // paso 2 del proceso
   });
   if(await apiEnviar({action:'upsert', sheet:'SERVICIOS', record:reg})){
+    // La unidad queda programada en el tablero en cuanto se le asigna un viaje
+    await fijarEstatusUnidad(u.ECONOMICO, 'PROGRAMADO');
     toast('Servicio '+(s.CP||'')+' asignado a '+o.NOMBRE);
     $('despDetalle').style.display='none'; despachoEditando=null;
     pintarDespacho();
@@ -2434,7 +2673,13 @@ function prellenarDesdeServicio(cp){
   if(u){ $('sEco').value = u.ID; alCambiarUnidad(); }
   const o = DB.OPERADORES.find(x=>String(x.NOMBRE||'').toUpperCase()===String(s.OPERADOR||'').toUpperCase());
   if(o) $('sOperador').value = o.ID;
-  if(s.TIPO_UNIDAD) $('sTipoUnidad').value = s.TIPO_UNIDAD;
+  /* El tipo de unidad se fija DESPUÉS de alCambiarUnidad, así que hay que
+     volver a aplicar el candado: si no, con un Full quedaban bloqueados el
+     remolque 2 y el dolly aunque el campo dijera FULL. */
+  if(s.TIPO_UNIDAD && [...$('sTipoUnidad').options].some(x=>x.value===s.TIPO_UNIDAD)){
+    $('sTipoUnidad').value = s.TIPO_UNIDAD;
+  }
+  aplicarTipoUnidad();
   if(s.CITA_CARGA){
     const f = String(s.CITA_CARGA).slice(0,10);
     if(f >= $('sFechaServ').min) $('sFechaServ').value = f;

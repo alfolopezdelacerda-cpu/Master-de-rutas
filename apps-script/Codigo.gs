@@ -66,6 +66,12 @@ var HOJAS = {
               'ETAPA','SOLICITUD_ID','FOLIO_GASTO','FECHA_GASTO','FECHA_DISPERSION',
               'FECHA_SALIDA','FECHA_FINALIZADO','FECHA_EVIDENCIA','FECHA_LIQUIDACION',
               'NOMINA_ID','FECHA_PAGO','NOTA_MONITOREO',
+              /* Monitoreo: estatus del viaje y bitácora de horarios. El
+                 cumplimiento sale de comparar el arribo contra la cita. */
+              'ESTATUS_MONITOREO',
+              'HITO_SALIDA_PATIO','HITO_ARRIBO_CARGA','HITO_INGRESO_CARGAR','HITO_INICIO_RUTA',
+              'HITO_ARRIBO_DESTINO','HITO_INGRESO_DESCARGA','HITO_SERVICIO_FINALIZADO',
+              'CUMPLIMIENTO_CARGA','CUMPLIMIENTO_DESCARGA',
               'CREADO_POR','FECHA_REGISTRO'],
 
   /* Catálogo de casetas: un costo por categoría de ejes */
