@@ -337,9 +337,13 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     </div>
 
     <h3>Servicio y carga</h3>
+    <div style="margin-bottom:6px;display:flex;align-items:center;gap:10px">
+      <label style="margin:0">Cartas porte</label>
+      <button class="btn btn-s btn-sm" id="btnAddCPServicio" title="Agregar otra carta porte a este mismo servicio">＋</button>
+      <span class="mini" style="color:var(--ink2)">Todas las que agregues quedan ligadas a este servicio</span>
+    </div>
+    <div id="nsCpWrap" class="grid g5" style="margin-bottom:14px"></div>
     <div class="grid g5" style="margin-bottom:14px">
-      <div><label>Servicio</label><input id="nsServicio"></div>
-      <div><label>CP</label><input id="nsCP"></div>
       <div><label>Contenedores</label><input id="nsContenedores"></div>
       <div><label>Tipo de mercancía</label><input id="nsMercancia"></div>
       <div><label>Booking</label><input id="nsBooking"></div>
@@ -395,16 +399,32 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     </div>
 
     <div class="grid g3" style="margin-bottom:12px">
-      <div style="grid-column:1/3"><label>Buscar</label><input id="despBusca" placeholder="🔍 Servicio, CP, cliente, operador, económico…"></div>
+      <div style="grid-column:1/3"><label>Buscar</label><input id="despBusca" placeholder="🔍 Carta porte, cliente, operador, económico…"></div>
       <div><label>Estatus</label><select id="despFiltro"><option value="PENDIENTE POR DESPACHAR">Pendientes por despachar</option><option value="ASIGNADO">Asignados</option><option value="todos">Todos</option></select></div>
     </div>
 
     <div class="twrap" style="max-height:520px;overflow-y:auto"><table>
       <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
-        <th>Servicio</th><th>CP</th><th>Cliente</th><th>Cita de carga</th><th>Origen</th><th>Destino</th>
+        <th>Cartas porte</th><th>Cliente</th><th>Cita de carga</th><th>Origen</th><th>Destino</th>
         <th>Unidad</th><th>Económico</th><th>Operador</th><th>Estatus</th><th></th>
       </tr></thead>
       <tbody id="tbodyDespacho"></tbody>
+    </table></div>
+  </div>
+
+  <div class="card">
+    <h2>Tablero operativo</h2>
+    <div class="sub">Estado de cada unidad de la flota. Cámbialo desde el propio renglón: se guarda al momento.</div>
+    <div id="tabChips" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
+    <div class="grid g3" style="margin-bottom:12px">
+      <div style="grid-column:1/3"><label>Buscar</label><input id="tabBusca" placeholder="🔍 Económico, placas, tipo de unidad…"></div>
+      <div><label>Estatus</label><select id="tabFiltro"><option value="todos">Todos</option></select></div>
+    </div>
+    <div class="twrap" style="max-height:520px;overflow-y:auto"><table>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
+        <th>Económico</th><th>Placas</th><th>Tipo</th><th style="min-width:190px">Estatus</th><th>Nota</th><th>Servicio en curso</th><th>Actualizado</th>
+      </tr></thead>
+      <tbody id="tbodyTablero"></tbody>
     </table></div>
   </div>
 </section>
@@ -415,12 +435,12 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <h2>TDC</h2>
     <div class="sub">Servicios capturados como <b>TDC</b>. Van a la hoja <b>Transportadora</b> de la sábana; el vínculo con la sábana todavía no se hace.</div>
     <div class="grid g3" style="margin-bottom:12px">
-      <div style="grid-column:1/3"><label>Buscar</label><input id="tdcBusca" placeholder="🔍 Servicio, CP, cliente, booking, contenedor…"></div>
+      <div style="grid-column:1/3"><label>Buscar</label><input id="tdcBusca" placeholder="🔍 Carta porte, cliente, booking, contenedor…"></div>
       <div><label>Estatus</label><select id="tdcEstatus"><option value="todos">Todos</option><option>PENDIENTE POR DESPACHAR</option><option>ASIGNADO</option><option>CANCELADO</option></select></div>
     </div>
     <div class="twrap" style="max-height:520px;overflow-y:auto"><table>
       <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
-        <th>Servicio</th><th>CP</th><th>Cliente</th><th>Cita de carga</th><th>Sem.</th>
+        <th>Cartas porte</th><th>Cliente</th><th>Cita de carga</th><th>Sem.</th>
         <th>Origen</th><th>Destino</th><th>Unidad</th><th>Económico</th><th>Operador</th><th>Estatus</th><th></th>
       </tr></thead>
       <tbody id="tbodyTdc"></tbody>
@@ -434,12 +454,12 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <h2>FWD</h2>
     <div class="sub">Servicios capturados como <b>FWD</b>. Van a la hoja <b>Reexpedidora</b> de la sábana; el vínculo con la sábana todavía no se hace.</div>
     <div class="grid g3" style="margin-bottom:12px">
-      <div style="grid-column:1/3"><label>Buscar</label><input id="fwdBusca" placeholder="🔍 Servicio, CP, cliente, booking, contenedor…"></div>
+      <div style="grid-column:1/3"><label>Buscar</label><input id="fwdBusca" placeholder="🔍 Carta porte, cliente, booking, contenedor…"></div>
       <div><label>Estatus</label><select id="fwdEstatus"><option value="todos">Todos</option><option>ASIGNADO</option><option>CANCELADO</option></select></div>
     </div>
     <div class="twrap" style="max-height:520px;overflow-y:auto"><table>
       <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
-        <th>Servicio</th><th>CP</th><th>Cliente</th><th>Cita de carga</th><th>Sem.</th>
+        <th>Cartas porte</th><th>Cliente</th><th>Cita de carga</th><th>Sem.</th>
         <th>Origen</th><th>Destino</th><th>Unidad</th><th>Línea transportista</th><th>Estatus</th><th></th>
       </tr></thead>
       <tbody id="tbodyFwd"></tbody>
@@ -1241,6 +1261,12 @@ function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;
 
 /* ---------- API ---------- */
 function setConn(on, txt){ $('connPill').classList.toggle('on', on); $('connTxt').textContent = txt; }
+/* Hasta que la carga termina, DB está vacío. Sin esto el login rechazaba
+   credenciales correctas: buscarUsuario no encontraba nada y caía al acceso
+   inicial admin/admin. */
+let datosListos = false;
+let cargaEnCurso = null;
+
 async function apiCargar(){
   setConn(false,'Conectando…');
   try{
@@ -1248,11 +1274,20 @@ async function apiCargar(){
     const j = await r.json();
     if(!j.ok) throw new Error(j.error||'Error');
     aplicarDatos(j.data);
+    datosListos = true;
+    if(j.parcial) refrescarArchivo();   // solo lo que ya estuviera cargado
     setConn(true,'Conectado al Sheet');
   }catch(e){
     setConn(false,'Sin conexión');
     toast('No se pudo conectar al Google Sheet. Revisa la URL en Administración.', true);
   }
+}
+/* Espera a que los datos estén cargados; si la carga falló, reintenta */
+async function asegurarDatos(){
+  if(datosListos) return true;
+  if(!cargaEnCurso) cargaEnCurso = apiCargar().finally(()=>{ cargaEnCurso = null; });
+  await cargaEnCurso;
+  return datosListos;
 }
 /* Identidad que se manda al backend para la bitácora */
 function nombreUsuario(){ return usuarioActual? (usuarioActual.NOMBRE || usuarioActual.USUARIO || '') : ''; }
@@ -1332,9 +1367,13 @@ async function cargarHojaSiHaceFalta(hoja){
    varios guardados seguidos se coalescen en un solo refresco. */
 let archivoEnCurso = false, archivoPendiente = false;
 async function refrescarArchivo(){
+  // Solo las que ya están cargadas: si nadie ha abierto la bitácora, no tiene
+  // caso bajarla en segundo plano — se pide entera al abrir su pestaña.
+  const hojas = HOJAS_ARCHIVO.filter(h=>hojasPedidas.has(h));
+  if(!hojas.length) return;
   if(archivoEnCurso){ archivoPendiente = true; return; }
   archivoEnCurso = true;
-  try{ await traerHojas(HOJAS_ARCHIVO); }
+  try{ await traerHojas(hojas); }
   catch(e){ /* el guardado ya quedó; no se molesta al usuario por el archivo */ }
   archivoEnCurso = false;
   if(archivoPendiente){ archivoPendiente = false; refrescarArchivo(); }
@@ -1437,7 +1476,7 @@ document.querySelectorAll('.tab[data-sec]').forEach(b=>b.addEventListener('click
   if(b.dataset.sec==='dispersiones') pintarTablaDispersiones();
   if(b.dataset.sec==='rutas') pintarListaRutas();
   if(b.dataset.sec==='solicitud') pintarListaSol();
-  if(b.dataset.sec==='asignacion') pintarDespacho();
+  if(b.dataset.sec==='asignacion'){ pintarDespacho(); pintarTablero(); }
   if(b.dataset.sec==='nuevoservicio') pintarServicios();
   if(b.dataset.sec==='tdc') pintarTdc();
   if(b.dataset.sec==='fwd') pintarFwd();
@@ -1684,6 +1723,32 @@ const TIPOS_UNIDAD_SERVICIO = ['FULL','SENCILLO','RABÓN','3.5','1.5'];
 let servicioEditando = null;
 
 const EST_PENDIENTE = 'PENDIENTE POR DESPACHAR';
+
+/* Un servicio puede traer varias cartas porte; todas quedan ligadas al mismo
+   registro y cualquiera de ellas lo ubica. Se guardan separadas por coma. */
+let cpServicio = [''];
+function cpsDeServicio(s){
+  return String((s&&s.CP)||'').split(/[,;\s]+/).map(x=>x.trim()).filter(Boolean);
+}
+function pintarCpServicio(){
+  const w=$('nsCpWrap'); w.innerHTML='';
+  cpServicio.forEach((c,i)=>{
+    const d=document.createElement('div');
+    d.innerHTML=`<label>Carta porte ${i+1}</label>
+      <div style="display:flex;gap:6px">
+        <input value="${esc(c)}" data-nscp="${i}" placeholder="Carta porte" style="flex:1">
+        ${i>0?`<button class="xbtn" data-nscpdel="${i}">✕</button>`:''}
+      </div>`;
+    w.appendChild(d);
+  });
+  w.querySelectorAll('[data-nscp]').forEach(el=>el.addEventListener('input',()=>{
+    cpServicio[+el.dataset.nscp] = el.value.trim();
+  }));
+  w.querySelectorAll('[data-nscpdel]').forEach(el=>el.addEventListener('click',()=>{
+    cpServicio.splice(+el.dataset.nscpdel,1); pintarCpServicio();
+  }));
+}
+$('btnAddCPServicio').addEventListener('click',()=>{ cpServicio.push(''); pintarCpServicio(); });
 function modalidadServicio(){ return $('nsModalidad').checked? 'FWD' : 'TDC'; }
 function sabanaDeModalidad(m){ return m==='FWD'? 'Reexpedidora' : 'Transportadora'; }
 /* Un servicio TDC nace pendiente por despachar: le falta unidad y operador.
@@ -1766,8 +1831,9 @@ function limpiarServicio(){
   servicioEditando = null;
   $('nsEditando').textContent = '';
   $('nsFechaSol').value = ahoraTexto();
-  ['nsFechaAcep','nsCitaCarga','nsCitaEntrega','nsServicio','nsCP','nsContenedores',
+  ['nsFechaAcep','nsCitaCarga','nsCitaEntrega','nsContenedores',
    'nsMercancia','nsBooking','nsPO','nsPuntoCarga','nsPuntoDescarga'].forEach(id=>$(id).value='');
+  cpServicio=['']; pintarCpServicio();
   ['nsTipoNegocio','nsAduana','nsCliente','nsEstadoOrigen','nsCiudadDestino','nsLineaSel','nsTipoUnidad']
     .forEach(id=>$(id).value='');
   $('nsEstatus').value=EST_PENDIENTE;
@@ -1781,7 +1847,13 @@ function limpiarServicio(){
 function armarServicio(){
   if(!$('nsCitaCarga').value){ toast('Captura la cita de carga.', true); $('nsCitaCarga').focus(); return null; }
   if(!$('nsCliente').value){ toast('Selecciona el cliente.', true); $('nsCliente').focus(); return null; }
-  if(!$('nsServicio').value.trim()){ toast('Captura el servicio.', true); $('nsServicio').focus(); return null; }
+  const cps = cpServicio.map(c=>String(c||'').trim()).filter(Boolean);
+  if(!cps.length){ toast('Captura al menos una carta porte.', true); $('nsCpWrap').querySelector('input').focus(); return null; }
+  if(new Set(cps.map(c=>c.toUpperCase())).size !== cps.length){ toast('Hay cartas porte repetidas en este servicio.', true); return null; }
+  // Una carta porte no puede estar en dos servicios
+  const choque = DB.SERVICIOS.find(x=>String(x.ID)!==String(servicioEditando||'') &&
+    cpsDeServicio(x).some(c=>cps.some(n=>n.toUpperCase()===c.toUpperCase())));
+  if(choque){ toast('La carta porte ya pertenece a otro servicio ('+(choque.CP||choque.ID)+').', true); return null; }
 
   const m = modalidadServicio();
   const prev = servicioEditando? DB.SERVICIOS.find(x=>String(x.ID)===String(servicioEditando)) : null;
@@ -1801,7 +1873,7 @@ function armarServicio(){
     CLIENTE: nombreDeSelect('nsCliente','CLIENTES'),
     CITA_ENTREGA: $('nsCitaEntrega').value,
     ESTATUS: $('nsEstatus').value,
-    SERVICIO: $('nsServicio').value.trim(), CP: $('nsCP').value.trim(),
+    CP: cps.join(', '),
     CONTENEDORES: $('nsContenedores').value.trim(),
     TIPO_MERCANCIA: $('nsMercancia').value.trim(),
     BOOKING: $('nsBooking').value.trim(), PO: $('nsPO').value.trim(),
@@ -1827,7 +1899,7 @@ function armarServicio(){
 $('btnGuardarServicio').addEventListener('click', async ()=>{
   const reg = armarServicio(); if(!reg) return;
   if(await apiEnviar({action:'upsert', sheet:'SERVICIOS', record:reg})){
-    toast('Servicio '+reg.SERVICIO+' guardado ('+reg.MODALIDAD+')');
+    toast('Servicio '+reg.CP+' guardado ('+reg.MODALIDAD+')');
     limpiarServicio();
   }
 });
@@ -1839,7 +1911,7 @@ $('nsCitaCarga').addEventListener('input', alCambiarCitaCarga);
 function abrirServicio(id){
   const s = DB.SERVICIOS.find(x=>String(x.ID)===String(id)); if(!s) return;
   servicioEditando = id;
-  $('nsEditando').innerHTML = 'Editando <b>'+esc(s.SERVICIO||s.ID)+'</b>';
+  $('nsEditando').innerHTML = 'Editando <b>'+esc(s.CP||s.ID)+'</b>';
   $('nsModalidad').checked = String(s.MODALIDAD).toUpperCase()==='FWD';
   alCambiarModalidadServicio();
   $('nsFechaSol').value = s.FECHA_SOLICITUD||'';
@@ -1856,7 +1928,8 @@ function abrirServicio(id){
   seleccionarPorNombre('nsCiudadDestino','CIUDADES', s.CIUDAD_DESTINO);
   seleccionarPorNombre('nsLineaSel','PROVEEDORES', s.LINEA_TRANSPORTISTA);
   marcarPar('rfseco', s.RF_SECO); marcarPar('owrt', s.OW_RT);
-  $('nsServicio').value = s.SERVICIO||''; $('nsCP').value = s.CP||'';
+  cpServicio = cpsDeServicio(s); if(!cpServicio.length) cpServicio=[''];
+  pintarCpServicio();
   $('nsContenedores').value = s.CONTENEDORES||''; $('nsMercancia').value = s.TIPO_MERCANCIA||'';
   $('nsBooking').value = s.BOOKING||''; $('nsPO').value = s.PO||'';
   $('nsPuntoCarga').value = s.PUNTO_CARGA||''; $('nsPuntoDescarga').value = s.PUNTO_DESCARGA||'';
@@ -1884,7 +1957,7 @@ function filtrarServicios(modalidad, texto, estatus){
     if(String(s.MODALIDAD).toUpperCase()!==modalidad) return false;
     if(estatus && estatus!=='todos' && String(s.ESTATUS||'').toUpperCase()!==estatus) return false;
     if(!q) return true;
-    return [s.SERVICIO,s.CP,s.CLIENTE,s.BOOKING,s.CONTENEDORES,s.PO,s.CIUDAD_DESTINO,s.ESTADO_ORIGEN,s.OPERADOR,s.ECONOMICO]
+    return [s.CP,s.CLIENTE,s.BOOKING,s.CONTENEDORES,s.PO,s.CIUDAD_DESTINO,s.ESTADO_ORIGEN,s.OPERADOR,s.ECONOMICO]
       .some(v=>String(v||'').toUpperCase().includes(q));
   });
 }
@@ -1902,19 +1975,19 @@ function pintarTablaServicios(tbody, filas, columnas, nCols){
     abrirServicio(b.dataset.sedserv);
   }));
 }
-const celdasComunes = s => `<td>${esc(s.SERVICIO)}</td><td>${esc(s.CP)}</td><td>${esc(s.CLIENTE)}</td>
+const celdasComunes = s => `<td>${esc(s.CP)}</td><td>${esc(s.CLIENTE)}</td>
   <td>${esc(String(s.CITA_CARGA||'').replace('T',' '))}</td><td>${esc(s.SEMANA)}</td>
   <td>${esc(s.ESTADO_ORIGEN)}</td><td>${esc(s.CIUDAD_DESTINO)}</td><td>${esc(s.TIPO_UNIDAD)}</td>`;
 
 function pintarTdc(){
   pintarTablaServicios('tbodyTdc',
     filtrarServicios('TDC', $('tdcBusca').value, $('tdcEstatus').value),
-    s => celdasComunes(s) + `<td>${esc(s.ECONOMICO)}</td><td>${esc(s.OPERADOR)}</td><td>${etiquetaEstatus(s.ESTATUS)}</td>`, 12);
+    s => celdasComunes(s) + `<td>${esc(s.ECONOMICO)}</td><td>${esc(s.OPERADOR)}</td><td>${etiquetaEstatus(s.ESTATUS)}</td>`, 11);
 }
 function pintarFwd(){
   pintarTablaServicios('tbodyFwd',
     filtrarServicios('FWD', $('fwdBusca').value, $('fwdEstatus').value),
-    s => celdasComunes(s) + `<td>${esc(s.LINEA_TRANSPORTISTA)}</td><td>${etiquetaEstatus(s.ESTATUS)}</td>`, 11);
+    s => celdasComunes(s) + `<td>${esc(s.LINEA_TRANSPORTISTA)}</td><td>${etiquetaEstatus(s.ESTATUS)}</td>`, 10);
 }
 ['tdcBusca','tdcEstatus'].forEach(id=>$(id).addEventListener('input', pintarTdc));
 $('tdcEstatus').addEventListener('change', pintarTdc);
@@ -1928,7 +2001,8 @@ let despachoEditando = null;
 function servicioPorCP(cp){
   const v = String(cp||'').trim().toUpperCase();
   if(!v) return null;
-  return DB.SERVICIOS.find(s=>String(s.CP||'').trim().toUpperCase()===v) || null;
+  // Cualquiera de las cartas porte del servicio lo ubica
+  return DB.SERVICIOS.find(s=>cpsDeServicio(s).some(c=>c.toUpperCase()===v)) || null;
 }
 /* Sin unidad y operador no se puede pedir el gasto */
 function servicioDespachado(s){ return !!(s && String(s.ECONOMICO||'').trim() && String(s.OPERADOR||'').trim()); }
@@ -1942,7 +2016,7 @@ function pintarDespacho(){
     if(filtro==='todos'){ if(est==='CANCELADO') return false; }
     else if(est!==filtro) return false;
     if(!q) return true;
-    return [s.SERVICIO,s.CP,s.CLIENTE,s.OPERADOR,s.ECONOMICO,s.CIUDAD_DESTINO,s.ESTADO_ORIGEN]
+    return [s.CP,s.CLIENTE,s.OPERADOR,s.ECONOMICO,s.CIUDAD_DESTINO,s.ESTADO_ORIGEN]
       .some(v=>String(v||'').toUpperCase().includes(q));
   });
 
@@ -1950,7 +2024,7 @@ function pintarDespacho(){
   [...filas].reverse().forEach(s=>{
     const listo = servicioDespachado(s);
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td>${esc(s.SERVICIO)}</td><td>${esc(s.CP)}</td><td>${esc(s.CLIENTE)}</td>
+    tr.innerHTML=`<td>${esc(s.CP)}</td><td>${esc(s.CLIENTE)}</td>
       <td>${esc(String(s.CITA_CARGA||'').replace('T',' '))}</td><td>${esc(s.ESTADO_ORIGEN)}</td>
       <td>${esc(s.CIUDAD_DESTINO)}</td><td>${esc(s.TIPO_UNIDAD)}</td>
       <td>${esc(s.ECONOMICO)||'<span class="mini">—</span>'}</td>
@@ -1962,27 +2036,113 @@ function pintarDespacho(){
       </td>`;
     tb.appendChild(tr);
   });
-  if(!filas.length) tb.innerHTML='<tr><td colspan="11" class="mini">Sin servicios en este filtro.</td></tr>';
+  if(!filas.length) tb.innerHTML='<tr><td colspan="10" class="mini">Sin servicios en este filtro.</td></tr>';
   tb.querySelectorAll('[data-xdesp]').forEach(b=>b.addEventListener('click',()=>abrirDespacho(b.dataset.xdesp)));
   tb.querySelectorAll('[data-xgasto]').forEach(b=>b.addEventListener('click',()=>irASolicitudDeGasto(b.dataset.xgasto)));
 }
 ['despBusca','despFiltro'].forEach(id=>$(id).addEventListener('input', pintarDespacho));
 $('despFiltro').addEventListener('change', pintarDespacho);
 
+/* ---------- Tablero operativo ----------
+   El estado de cada unidad de la flota, editable en el propio renglón. */
+const ESTATUS_OPERATIVO = ['DISPONIBLE','PROGRAMADO','DESPACHADO','EN SERVICIO','VACÍO',
+                           'DESCANSO','MANTENIMIENTO','FALLA MECÁNICA','SIN GPS'];
+const COLOR_ESTATUS = {
+  'DISPONIBLE':'var(--ok)', 'PROGRAMADO':'var(--accent)', 'DESPACHADO':'var(--accent)',
+  'EN SERVICIO':'var(--accent)', 'VACÍO':'var(--road)', 'DESCANSO':'var(--road)',
+  'MANTENIMIENTO':'var(--bad)', 'FALLA MECÁNICA':'var(--bad)', 'SIN GPS':'var(--bad)'
+};
+function estatusDeUnidad(u){
+  const v = String(u.ESTATUS_OPERATIVO||'').trim().toUpperCase();
+  return ESTATUS_OPERATIVO.includes(v)? v : 'DISPONIBLE';
+}
+/* El servicio TDC asignado y todavía sin liquidar que trae esa unidad */
+function servicioEnCurso(eco){
+  const e = String(eco||'').trim().toUpperCase();
+  if(!e) return null;
+  return DB.SERVICIOS.find(s=>String(s.ECONOMICO||'').trim().toUpperCase()===e &&
+    String(s.ESTATUS||'').toUpperCase()==='ASIGNADO') || null;
+}
+
+function pintarTablero(){
+  // Filtro de estatus, una sola vez
+  const sel=$('tabFiltro');
+  if(sel.options.length<=1){
+    ESTATUS_OPERATIVO.forEach(e=>{ const o=document.createElement('option'); o.value=e; o.textContent=e; sel.appendChild(o); });
+  }
+
+  // Resumen por estatus
+  const cuenta = {};
+  DB.UNIDADES.forEach(u=>{ const e=estatusDeUnidad(u); cuenta[e]=(cuenta[e]||0)+1; });
+  const chips=$('tabChips'); chips.innerHTML='';
+  const total = document.createElement('span');
+  total.className='tag'; total.textContent = DB.UNIDADES.length+' unidades';
+  chips.appendChild(total);
+  ESTATUS_OPERATIVO.forEach(e=>{
+    if(!cuenta[e]) return;
+    const c=document.createElement('span');
+    c.className='tag'; c.style.background=COLOR_ESTATUS[e]; c.style.color='#fff';
+    c.style.cursor='pointer'; c.title='Ver solo estas';
+    c.textContent = e+' · '+cuenta[e];
+    c.addEventListener('click',()=>{ sel.value=e; pintarTablero(); });
+    chips.appendChild(c);
+  });
+
+  const q = ($('tabBusca').value||'').trim().toUpperCase();
+  const filtro = sel.value;
+  const filas = DB.UNIDADES.filter(u=>{
+    if(filtro!=='todos' && estatusDeUnidad(u)!==filtro) return false;
+    if(!q) return true;
+    return [u.ECONOMICO,u.PLACAS,u.TIPO_UNIDAD].some(v=>String(v||'').toUpperCase().includes(q));
+  });
+
+  const tb=$('tbodyTablero'); tb.innerHTML='';
+  filas.forEach(u=>{
+    const e = estatusDeUnidad(u);
+    const srv = servicioEnCurso(u.ECONOMICO);
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><b>${esc(u.ECONOMICO)}</b></td><td>${esc(u.PLACAS)}</td><td>${esc(u.TIPO_UNIDAD)}</td>
+      <td><select data-tabest="${u.ID}" style="border-left:5px solid ${COLOR_ESTATUS[e]}">${
+        ESTATUS_OPERATIVO.map(x=>`<option${x===e?' selected':''}>${x}</option>`).join('')}</select></td>
+      <td><input data-tabnota="${u.ID}" value="${esc(u.NOTA_OPERATIVA)}" placeholder="—"></td>
+      <td>${srv? esc(srv.CP)+' · '+esc(srv.CIUDAD_DESTINO||'') : '<span class="mini">—</span>'}</td>
+      <td class="mini">${esc(u.ESTATUS_ACTUALIZADO)||'—'}</td>`;
+    tb.appendChild(tr);
+  });
+  if(!filas.length) tb.innerHTML='<tr><td colspan="7" class="mini">Sin unidades en este filtro.</td></tr>';
+
+  tb.querySelectorAll('[data-tabest]').forEach(el=>el.addEventListener('change',()=>guardarTablero(el.dataset.tabest)));
+  tb.querySelectorAll('[data-tabnota]').forEach(el=>el.addEventListener('change',()=>guardarTablero(el.dataset.tabnota)));
+}
+async function guardarTablero(id){
+  const u = DB.UNIDADES.find(x=>String(x.ID)===String(id)); if(!u) return;
+  const sel = $('tbodyTablero').querySelector(`[data-tabest="${id}"]`);
+  const nota = $('tbodyTablero').querySelector(`[data-tabnota="${id}"]`);
+  const reg = Object.assign({}, u, {
+    ESTATUS_OPERATIVO: sel? sel.value : estatusDeUnidad(u),
+    NOTA_OPERATIVA: nota? nota.value.trim() : (u.NOTA_OPERATIVA||''),
+    ESTATUS_ACTUALIZADO: ahoraTexto()
+  });
+  if(await apiEnviar({action:'upsert', sheet:'UNIDADES', record:reg})) toast('Unidad '+u.ECONOMICO+': '+reg.ESTATUS_OPERATIVO);
+}
+['tabBusca','tabFiltro'].forEach(id=>$(id).addEventListener('input', pintarTablero));
+$('tabFiltro').addEventListener('change', pintarTablero);
+
 /* Salta a Solicitud de Gasto con la carta porte puesta y todo prellenado */
 function irASolicitudDeGasto(id){
   const s = DB.SERVICIOS.find(x=>String(x.ID)===String(id)); if(!s) return;
   if(!servicioDespachado(s)){
     modal('Falta asignar la unidad',
-      `El servicio <b>${esc(s.SERVICIO)}</b> todavía no tiene <b>económico</b> ni <b>operador</b>. `+
+      `El servicio <b>${esc(s.CP)}</b> todavía no tiene <b>económico</b> ni <b>operador</b>. `+
       `Asígnaselos aquí antes de pedirle el gasto.`, '🔒');
     return;
   }
   document.querySelector('.tab[data-sec="solicitud"]').click();
   nuevaSolicitud();
-  cartasPorte = [String(s.CP||'')];
+  const cps = cpsDeServicio(s);
+  cartasPorte = cps.length? cps : [''];
   pintarCP();
-  prellenarDesdeServicio(s.CP);
+  prellenarDesdeServicio(cps[0]||'');
   $('sec-solicitud').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
@@ -1990,8 +2150,8 @@ function abrirDespacho(id){
   const s = DB.SERVICIOS.find(x=>String(x.ID)===String(id)); if(!s) return;
   despachoEditando = id;
   $('despDetalle').style.display='';
-  $('despTit').textContent = s.SERVICIO || s.ID;
-  $('despInfo').innerHTML = `CP <b>${esc(s.CP)}</b> · Cliente <b>${esc(s.CLIENTE)}</b> · `+
+  $('despTit').textContent = s.CP || s.ID;
+  $('despInfo').innerHTML = `Cartas porte <b>${esc(s.CP)}</b> · Cliente <b>${esc(s.CLIENTE)}</b> · `+
     `${esc(s.ESTADO_ORIGEN)} → ${esc(s.CIUDAD_DESTINO)} · Unidad solicitada: <b>${esc(s.TIPO_UNIDAD||'—')}</b>`;
   llenarSelect('despEco', DB.UNIDADES, u=>`${u.ECONOMICO} · ${u.TIPO_UNIDAD}`);
   llenarSelect('despOperador', DB.OPERADORES.filter(o=>String(o.ACTIVO).toUpperCase()!=='NO'), o=>o.NOMBRE);
@@ -2029,7 +2189,7 @@ $('btnAsignarDesp').addEventListener('click', async ()=>{
     ESTATUS: 'ASIGNADO', ASIGNADO_POR: nombreUsuario(), FECHA_ASIGNACION: hoyISO()
   });
   if(await apiEnviar({action:'upsert', sheet:'SERVICIOS', record:reg})){
-    toast('Servicio '+(s.SERVICIO||'')+' asignado a '+o.NOMBRE);
+    toast('Servicio '+(s.CP||'')+' asignado a '+o.NOMBRE);
     $('despDetalle').style.display='none'; despachoEditando=null;
     pintarDespacho();
   }
@@ -2115,12 +2275,12 @@ function prellenarDesdeServicio(cp){
   const s = servicioPorCP(cp);
   if(!s) return;
   if(String(s.ESTATUS||'').toUpperCase()===EST_PENDIENTE){
-    avisoServicio(`La CP <b>${esc(s.CP)}</b> es del servicio <b>${esc(s.SERVICIO)}</b>, que sigue `+
+    avisoServicio(`Esa carta porte es del servicio <b>${esc(s.CP)}</b>, que sigue `+
       `<b>pendiente de despacho</b>. Asígnale unidad y operador abajo antes de pedir el gasto.`, true);
     return;
   }
   if(String(s.ESTATUS||'').toUpperCase()==='CANCELADO'){
-    avisoServicio(`La CP <b>${esc(s.CP)}</b> pertenece a un servicio <b>cancelado</b>.`, true);
+    avisoServicio(`Esa carta porte pertenece a un servicio <b>cancelado</b>.`, true);
     return;
   }
 
@@ -2134,7 +2294,7 @@ function prellenarDesdeServicio(cp){
     if(f >= $('sFechaServ').min) $('sFechaServ').value = f;
   }
   recalcularSolicitud();
-  avisoServicio(`Prellenado con el servicio <b>${esc(s.SERVICIO)}</b> · Cliente <b>${esc(s.CLIENTE)}</b> · `+
+  avisoServicio(`Prellenado con el servicio <b>${esc(s.CP)}</b> · Cliente <b>${esc(s.CLIENTE)}</b> · `+
     `${esc(s.ESTADO_ORIGEN)} → ${esc(s.CIUDAD_DESTINO)} · Unidad <b>${esc(s.ECONOMICO)}</b> · `+
     `Operador <b>${esc(s.OPERADOR)}</b>. Falta elegir la ruta.`, false);
 }
@@ -3798,7 +3958,8 @@ function pintarIndicadores(){
 const ADMIN = {
   UNIDADES:{ cols:[
       {k:'ECONOMICO'},{k:'PLACAS'},{k:'TIPO_UNIDAD',opts:TIPOS_UNIDAD},{k:'MODELO'},{k:'ANIO',tipo:'number'},
-      {k:'COMBUSTIBLE',opts:COMBUSTIBLES},{k:'RENDIMIENTO',tipo:'number'},{k:'UREA',opts:['SI','NO']}],
+      {k:'COMBUSTIBLE',opts:COMBUSTIBLES},{k:'RENDIMIENTO',tipo:'number'},{k:'UREA',opts:['SI','NO']},
+      {k:'ESTATUS_OPERATIVO',t:'Estatus operativo',opts:ESTATUS_OPERATIVO}],
     csv:'ECONOMICO, PLACAS, TIPO_UNIDAD, MODELO, ANIO, COMBUSTIBLE, RENDIMIENTO, UREA' },
   CASETAS:{ cols:[
       {k:'NOMBRE'},{k:'CARRETERA'},
@@ -3826,7 +3987,7 @@ const ADMIN = {
   ESTADOS:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
   CIUDADES:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
   SERVICIOS:{ soloLectura:true, invertido:true,
-    cols:[{k:'MODALIDAD'},{k:'SERVICIO'},{k:'CP'},{k:'CLIENTE'},{k:'CITA_CARGA'},
+    cols:[{k:'MODALIDAD'},{k:'CP'},{k:'CLIENTE'},{k:'CITA_CARGA'},
           {k:'SEMANA'},{k:'CIUDAD_DESTINO'},{k:'TIPO_UNIDAD'},
           {k:'ECONOMICO'},{k:'OPERADOR'},{k:'ESTATUS'}] },
   RUTAS:{ soloLectura:true, cols:[{k:'RUTA'},{k:'CLIENTE'},{k:'TIPO_SERVICIO'},{k:'TOTAL_KM'},{k:'COSTO_CASETAS'}] },
@@ -4145,11 +4306,32 @@ function cerrarSesion(){
   pistaLogin();
   $('logUser').focus();
 }
-function intentarLogin(){
-  const u = buscarUsuario($('logUser').value, $('logPass').value);
+let entrando = false;
+async function intentarLogin(){
+  if(entrando) return;                     // doble clic o Enter repetido
+  const user = $('logUser').value, pass = $('logPass').value;
+
+  /* Si los datos todavía no llegaron, se espera en vez de rechazar: antes
+     esto se veía como "contraseña incorrecta" hasta que cargaba el Sheet. */
+  if(!datosListos){
+    entrando = true;
+    $('btnLogin').disabled = true;
+    $('logErr').style.color = 'var(--ink2)';
+    $('logErr').textContent = 'Conectando con el Sheet…';
+    await asegurarDatos();
+    $('btnLogin').disabled = false;
+    $('logErr').style.color = '';
+    entrando = false;
+    if(!datosListos){
+      $('logErr').textContent = 'No hay conexión con el Sheet. Reintenta en unos segundos.';
+      return;
+    }
+  }
+
+  const u = buscarUsuario(user, pass);
   if(!u){
     $('logErr').textContent = 'Usuario o contraseña incorrectos.';
-    bitacora('ACCESO RECHAZADO', 'Usuario intentado: '+($('logUser').value||'').trim());
+    bitacora('ACCESO RECHAZADO', 'Usuario intentado: '+String(user||'').trim());
     $('logPass').value=''; $('logPass').focus();
     return;
   }
@@ -4191,7 +4373,7 @@ function refrescarTodo(){
   pintarResumenDispersion();
   if(document.querySelector('#sec-rutas.active')) pintarListaRutas();
   if(document.querySelector('#sec-solicitud.active')) pintarListaSol();
-  if(document.querySelector('#sec-asignacion.active')) pintarDespacho();
+  if(document.querySelector('#sec-asignacion.active')){ pintarDespacho(); pintarTablero(); }
   if(document.querySelector('#sec-nuevoservicio.active')) pintarServicios();
   if(document.querySelector('#sec-tdc.active')) pintarTdc();
   if(document.querySelector('#sec-fwd.active')) pintarFwd();
@@ -4215,7 +4397,7 @@ let sesionRestaurada = false;
   limpiarServicio();
   document.querySelectorAll('.tab-admin').forEach(t=>t.style.display='none');
   $('logUser').focus();
-  apiCargar();
+  asegurarDatos();
 })();
 </script>
 </body>

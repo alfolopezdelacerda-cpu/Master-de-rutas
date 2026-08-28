@@ -22,7 +22,11 @@
  * ------------------------------------------------------------------ */
 
 var HOJAS = {
-  UNIDADES: ['ID','ECONOMICO','PLACAS','TIPO_UNIDAD','MODELO','ANIO','COMBUSTIBLE','RENDIMIENTO','UREA'],
+  /* ESTATUS_OPERATIVO: lo que el tablero operativo muestra de cada unidad
+     (Disponible, Programado, Despachado, En servicio, Vacío, Descanso,
+     Mantenimiento, Falla mecánica, Sin GPS). */
+  UNIDADES: ['ID','ECONOMICO','PLACAS','TIPO_UNIDAD','MODELO','ANIO','COMBUSTIBLE','RENDIMIENTO','UREA',
+             'ESTATUS_OPERATIVO','NOTA_OPERATIVA','ESTATUS_ACTUALIZADO'],
 
   /* Dos sueldos semanales, uno por esquema de pre-nómina:
      PAGO_NOMINAL_SEMANAL  → esquema de pago por objetivo (el de siempre)
@@ -44,10 +48,12 @@ var HOJAS = {
 
   /* Alta de servicios. MODALIDAD: TDC | FWD — define a qué hoja de la sábana
      pertenece el servicio (TDC → Transportadora, FWD → Reexpedidora). Ese
-     vínculo con la sábana todavía NO está hecho: aquí solo se registra. */
+     vínculo con la sábana todavía NO está hecho: aquí solo se registra.
+     CP puede traer VARIAS cartas porte separadas por coma: todas pertenecen
+     al mismo servicio y cualquiera de ellas lo ubica. */
   SERVICIOS: ['ID','MODALIDAD','SABANA','FECHA_SOLICITUD','FECHA_ACEPTACION','CITA_CARGA',
               'SEMANA','MES','EJECUTIVO','TIPO_NEGOCIO','ADUANA_PUERTO','RF_SECO','OW_RT',
-              'CLIENTE','CITA_ENTREGA','ESTATUS','SERVICIO','CP','CONTENEDORES',
+              'CLIENTE','CITA_ENTREGA','ESTATUS','CP','CONTENEDORES',
               'TIPO_MERCANCIA','BOOKING','PO','ESTADO_ORIGEN','PUNTO_CARGA',
               'CIUDAD_DESTINO','PUNTO_DESCARGA','LINEA_TRANSPORTISTA','TIPO_UNIDAD',
               /* Despacho: un servicio TDC nace PENDIENTE POR DESPACHAR y pasa a
@@ -151,7 +157,7 @@ var COLUMNAS_TEXTO = {
   USUARIOS: ['USUARIO','PASSWORD'],
   SOLICITUDES: ['CARTAS_PORTE','FOLIO'],
   LIQUIDACION: ['CARTAS_PORTE','FOLIO'],
-  SERVICIOS: ['CP','SERVICIO','CONTENEDORES','BOOKING','PO']
+  SERVICIOS: ['CP','CONTENEDORES','BOOKING','PO']
 };
 
 var HOJA_CONFIG = 'CONFIG';
@@ -193,7 +199,9 @@ function doGet() {
     // Barrido completo de IDs faltantes: solo aquí, en la carga/actualización
     // (no en cada doPost), para no pagar ese costo en cada registro guardado.
     asignarIdsFaltantes();
-    return json({ ok: true, data: leerTodo(true) });
+    // Sin las hojas de archivo: son las que más pesan y no hacen falta para
+    // entrar a la app. Se piden aparte al abrir su pestaña.
+    return json({ ok: true, data: leerTodo(false), parcial: true });
   } catch (err) {
     return json({ ok: false, error: String(err && err.message || err) });
   }
@@ -207,10 +215,12 @@ function hojasDeAccion(p) {
     case 'bulkUpsert':
     case 'delete':
     case 'deleteMany':
+    case 'clearAll':
       return p.sheet ? [p.sheet] : [];
     case 'liquidar':           return ['LIQUIDACION', 'SOLICITUDES'];
     case 'cancelarSolicitud':  return ['SOLICITUDES', HOJA_CANCELADAS];
     case 'dispersar':          return ['LIQUIDACION'];
+    case 'setConfig':          return ['CONFIG'];   // solo los parámetros
     default:                   return [];
   }
 }
@@ -263,7 +273,7 @@ function doPost(e) {
 
     registrarAccion(p);
 
-    var respuesta = { ok: true, data: leerTodo(false), parcial: true };
+    var respuesta = { ok: true, data: datosDeRespuesta(p), parcial: true };
     if (avisoSabana) { respuesta.aviso = avisoSabana; avisoSabana = ''; }
     return json(respuesta);
 
@@ -423,9 +433,8 @@ var HOJAS_ARCHIVO = [HOJA_BITACORA, HOJA_CANCELADAS];
 
 /**
  * Lee las hojas que la app necesita.
- * @param {boolean} completo  true en doGet (carga inicial y "Actualizar"):
- *   trae todo. false al guardar: omite las hojas de archivo, que el front
- *   conserva de la carga anterior.
+ * @param {boolean} completo  true trae todas; false omite las de archivo
+ *   (bitácora y canceladas), que el front pide aparte cuando las necesita.
  */
 function leerTodo(completo) {
   var data = {};
@@ -433,6 +442,26 @@ function leerTodo(completo) {
     if (!completo && HOJAS_ARCHIVO.indexOf(n) >= 0) return;
     data[n] = leerHoja(n);
   });
+  data.CONFIG = leerConfig();
+  return data;
+}
+
+/**
+ * Respuesta de un guardado: SOLO las hojas que esa acción tocó. El front
+ * fusiona, así que lo demás lo conserva de la carga anterior. Antes se releía
+ * y se devolvía el Sheet completo en cada guardado, que era el grueso del
+ * tiempo de respuesta.
+ */
+function datosDeRespuesta(p) {
+  var hojas = hojasDeAccion(p);
+  // Acción no contemplada: se responde con todo menos el archivo, como antes
+  if (!hojas.length) return leerTodo(false);
+
+  var data = {};
+  hojas.forEach(function (n) {
+    if (n && HOJAS[n]) data[n] = leerHoja(n);
+  });
+  // Los parámetros son chicos y varias pantallas dependen de ellos
   data.CONFIG = leerConfig();
   return data;
 }

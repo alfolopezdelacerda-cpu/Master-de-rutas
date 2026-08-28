@@ -132,6 +132,10 @@ ahora solo queda registrado en el propio renglón.
 Los campos de catálogo se guardan **por nombre, no por ID**, para que el
 renglón siga siendo legible aunque el catálogo cambie después.
 
+`CP` puede traer **varias cartas porte separadas por coma**: todas pertenecen
+al mismo servicio y cualquiera de ellas lo ubica. Una carta porte no puede
+estar en dos servicios: al guardar se comprueba y se rechaza el duplicado.
+
 `ESTATUS` es `PENDIENTE POR DESPACHAR`, `ASIGNADO` o `CANCELADO`. Cuando se
 despacha, se llenan `ECONOMICO`, `PLACAS`, `OPERADOR`, `MEDIO_COMUNICACION`,
 `ASIGNADO_POR` y `FECHA_ASIGNACION`.
@@ -182,6 +186,7 @@ la constante `BITACORA_MAX`.
   `GASTOS_ADICIONALES_JSON`, `DISP_COMBUSTIBLE`, `DISP_CASETAS`,
   `DISP_GASTOS_ADICIONALES_JSON`, `DISP_TOTAL`
 - `OPERADORES`: `SUELDO_FIJO_SEMANAL`, `MEDIO_COMUNICACION`
+- `UNIDADES`: `ESTATUS_OPERATIVO`, `NOTA_OPERATIVA`, `ESTATUS_ACTUALIZADO`
 - `LIQUIDACION`: `ODOMETRO_INICIAL`, `ODOMETRO_FINAL`, `KM_ODOMETRO`, `KM_RUTA`,
   `DIFERENCIA_KM`, `REVISAR_KM`, `LIQUIDADO_POR`, `MOTIVO_ACLARACION`,
   `ACLARACION_POR`, `ACLARACION_FECHA`, `AUTORIZADO_POR`, `FECHA_AUTORIZACION`,
@@ -268,28 +273,37 @@ formulario de Nuevo Servicio.
 donde se reabre una solicitud para modificarla mientras siga pendiente de
 dispersión.
 
+### Tablero operativo
+
+Debajo de la asignación, el **tablero operativo** lista toda la flota con su
+estado: **Disponible, Programado, Despachado, En servicio, Vacío, Descanso,
+Mantenimiento, Falla mecánica** o **Sin GPS**. Una unidad sin estado
+capturado se muestra como *Disponible*.
+
+El estado se cambia en el propio renglón y se guarda al momento, sellando
+cuándo (`ESTATUS_ACTUALIZADO`); junto a él hay una **nota** libre para el
+detalle. Arriba, un resumen cuenta las unidades por estado y sirve de filtro
+al hacerle clic; también se puede buscar por económico, placas o tipo. Cada
+renglón muestra además el **servicio en curso** de esa unidad, si trae uno
+asignado.
+
 ## Qué viaja en cada guardado
 
-Después de cada guardado queda **todo actualizado**, pero no todo viaja por el
-mismo camino.
+Guardar **solo devuelve las hojas que esa acción tocó**: guardar una ruta
+responde con `RUTAS`, liquidar con `LIQUIDACION` y `SOLICITUDES`, y así. Antes
+se releía y se mandaba el Sheet entero en cada guardado, que era el grueso del
+tiempo de respuesta.
 
-La respuesta del guardado trae los datos de trabajo y refresca la pantalla al
-instante. Lo que **no** incluye son las dos hojas de archivo, `BITACORA` y
-`SOLICITUDES_CANCELADAS`: crecen sin tope y solo se ven en Administración, y
-con una bitácora de 8 000 renglones son ~1.7 MB que el Apps Script tendría que
-leer, serializar y mandar en **cada** guardado.
+La app **fusiona** en vez de reemplazar, así que lo que no viene en la
+respuesta se conserva de la carga anterior.
 
-Esas dos se refrescan **en segundo plano**, con una petición aparte que sale
-justo después de que el guardado respondió. El resultado es el mismo —quedan
-al día tras cada guardado— pero sin hacerte esperar por ellas. Si se
-encadenan varios guardados seguidos, los refrescos se **coalescen** en uno
-solo en vez de apilarse.
-
-También se traen completas en la **carga inicial** y al pulsar **Actualizar**,
-y bajo demanda al abrir su pestaña si aún no están en memoria.
-
-Como la respuesta del guardado es parcial, la app **fusiona** en vez de
-reemplazar: lo que no venga en ella se conserva.
+Las dos hojas de archivo, `BITACORA` y `SOLICITUDES_CANCELADAS`, crecen sin
+tope y solo se ven en Administración, así que **no viajan nunca** en la
+respuesta —ni siquiera en la carga inicial, para que entrar a la app sea
+rápido—. Se piden aparte al **abrir su pestaña**, y a partir de ahí se
+refrescan **en segundo plano** después de cada guardado, sin hacerte esperar
+por ellas. Si se encadenan varios guardados, los refrescos se **coalescen** en
+uno solo en vez de apilarse.
 
 Del lado del navegador, al guardar solo se **repinta la sección que estás
 viendo**; las demás se dibujan al entrar a su pestaña.
