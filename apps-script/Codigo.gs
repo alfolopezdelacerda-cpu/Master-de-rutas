@@ -26,7 +26,10 @@ var HOJAS = {
      (Disponible, Programado, Despachado, En servicio, Vacío, Descanso,
      Mantenimiento, Falla mecánica, Sin GPS). */
   UNIDADES: ['ID','ECONOMICO','PLACAS','TIPO_UNIDAD','MODELO','ANIO','COMBUSTIBLE','RENDIMIENTO','UREA',
-             'ESTATUS_OPERATIVO','NOTA_OPERATIVA','ESTATUS_ACTUALIZADO'],
+             'ESTATUS_OPERATIVO','NOTA_OPERATIVA','ESTATUS_ACTUALIZADO',
+             /* Última ubicación reportada a mano por el monitorista. El
+                histórico completo vive en la hoja UBICACIONES. */
+             'UBICACION_ACTUAL','UBICACION_ACTUALIZADA'],
 
   /* Dos sueldos semanales, uno por esquema de pre-nómina:
      PAGO_NOMINAL_SEMANAL  → esquema de pago por objetivo (el de siempre)
@@ -45,6 +48,18 @@ var HOJAS = {
   ESTADOS: ['ID','NOMBRE'],
   CIUDADES: ['ID','NOMBRE'],
   PROVEEDORES: ['ID','NOMBRE'],
+  /* Catálogo de incidencias que el monitorista puede reportar en ruta
+     (desvío de ruta, estadía no autorizada, etc.) */
+  TIPOS_INCIDENCIA: ['ID','NOMBRE'],
+
+  /* Incidencias reportadas desde el monitoreo. Quedan ligadas al servicio y
+     al operador, para poder verlas después por cualquiera de los dos. */
+  INCIDENCIAS: ['ID','FECHA_HORA','SERVICIO_ID','CP','CLIENTE','ECONOMICO','OPERADOR',
+                'TIPO','DESCRIPCION','REGISTRADO_POR'],
+
+  /* Bitácora de ubicaciones reportadas a mano durante el viaje */
+  UBICACIONES: ['ID','FECHA_HORA','SERVICIO_ID','CP','ECONOMICO','OPERADOR',
+                'UBICACION','REGISTRADO_POR'],
 
   /* Alta de servicios. MODALIDAD: TDC | FWD — define a qué hoja de la sábana
      pertenece el servicio (TDC → Transportadora, FWD → Reexpedidora). Ese
@@ -334,6 +349,8 @@ function configurarHojas() {
     if (agregadas.length) resumen.push(nombre + ' → columnas nuevas: ' + agregadas.join(', '));
     aplicarFormatoTexto(hoja, nombre);
     hoja.setFrozenRows(1);
+    var sembradas = sembrarCatalogo(hoja, nombre);
+    if (sembradas) resumen.push(nombre + ' → catálogo inicial con ' + sembradas + ' valores.');
   });
 
   // Hoja CONFIG (clave/valor)
@@ -373,6 +390,32 @@ function asegurarEncabezados(hoja, columnas) {
         .setFontWeight('bold');
   }
   return faltantes;
+}
+
+/* Catálogos que se entregan ya cargados la primera vez, para que la pantalla
+   que los usa sirva desde el arranque. Solo se escriben si la hoja está
+   vacía: si ya hay filas, no se toca nada. */
+var SEMILLAS = {
+  TIPOS_INCIDENCIA: ['Desvío de ruta','Estadía no autorizada','Retraso en carga','Retraso en descarga',
+                     'Paro no autorizado','Exceso de velocidad','Falla mecánica','Accidente',
+                     'Robo o siniestro','Sin reporte de posición','Documentación incompleta',
+                     'Unidad sin combustible','Otro']
+};
+
+function sembrarCatalogo(hoja, nombre) {
+  var valores = SEMILLAS[nombre];
+  if (!valores || hoja.getLastRow() > 1) return 0;
+  var heads = encabezados(hoja);
+  var iId = heads.indexOf('ID'), iNom = heads.indexOf('NOMBRE');
+  if (iId < 0 || iNom < 0) return 0;
+  var filas = valores.map(function (v) {
+    var fila = new Array(heads.length).join(',').split(',');
+    fila[iId] = Utilities.getUuid();
+    fila[iNom] = v;
+    return fila;
+  });
+  hoja.getRange(2, 1, filas.length, heads.length).setValues(filas);
+  return filas.length;
 }
 
 function aplicarFormatoTexto(hoja, nombre) {

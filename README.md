@@ -156,6 +156,20 @@ Cinco catálogos nuevos la alimentan, todos con la misma forma (`ID`,
 | `ESTADOS` | Estado de origen |
 | `CIUDADES` | Ciudad destino |
 | `PROVEEDORES` | Línea transportista (solo en FWD) |
+| `TIPOS_INCIDENCIA` | Tipo de incidencia en el monitoreo |
+
+### Hojas `INCIDENCIAS` y `UBICACIONES`
+
+Las dos las escribe el monitoreo y las dos son solo de consulta en la app.
+
+| Hoja | Columnas |
+|---|---|
+| `INCIDENCIAS` | `ID`, `FECHA_HORA`, `SERVICIO_ID`, `CP`, `CLIENTE`, `ECONOMICO`, `OPERADOR`, `TIPO`, `DESCRIPCION`, `REGISTRADO_POR` |
+| `UBICACIONES` | `ID`, `FECHA_HORA`, `SERVICIO_ID`, `CP`, `ECONOMICO`, `OPERADOR`, `UBICACION`, `REGISTRADO_POR` |
+
+`INCIDENCIAS` guarda lo que se reporta en ruta contra el servicio y su
+operador; `UBICACIONES` es el histórico de ubicaciones capturadas a mano. La
+última ubicación de cada unidad se copia además a `UNIDADES.UBICACION_ACTUAL`.
 
 ### Hoja `PAGO_X_KM`
 
@@ -192,7 +206,8 @@ la constante `BITACORA_MAX`.
   `GASTOS_ADICIONALES_JSON`, `DISP_COMBUSTIBLE`, `DISP_CASETAS`,
   `DISP_GASTOS_ADICIONALES_JSON`, `DISP_TOTAL`
 - `OPERADORES`: `SUELDO_FIJO_SEMANAL`, `MEDIO_COMUNICACION`
-- `UNIDADES`: `ESTATUS_OPERATIVO`, `NOTA_OPERATIVA`, `ESTATUS_ACTUALIZADO`
+- `UNIDADES`: `ESTATUS_OPERATIVO`, `NOTA_OPERATIVA`, `ESTATUS_ACTUALIZADO`,
+  `UBICACION_ACTUAL`, `UBICACION_ACTUALIZADA`
 - `SOLICITUDES`: `SERVICIO_ID`
 - `NOMINAS`: `PAGADA`, `PAGADA_POR`, `FECHA_PAGO`
 - `LIQUIDACION`: `ODOMETRO_INICIAL`, `ODOMETRO_FINAL`, `KM_ODOMETRO`, `KM_RUTA`,
@@ -290,6 +305,36 @@ los servicios cuya cita de carga cae dentro de las **próximas 2 horas** y que
 todavía no han registrado su arribo, con los minutos que faltan (o los que ya
 pasaron, en rojo).
 
+### Incidencias en ruta
+
+En la bitácora del viaje, el botón **Reportar incidencia** abre una ventana
+donde el monitorista elige el **tipo** del catálogo `TIPOS_INCIDENCIA` —desvío
+de ruta, estadía no autorizada, retraso en carga, paro no autorizado, falla
+mecánica, robo o siniestro, etc.— y escribe una **descripción breve**. Los dos
+campos son obligatorios.
+
+Cada incidencia queda en la hoja `INCIDENCIAS` ligada al **servicio** (por
+`SERVICIO_ID` y carta porte) y al **operador**, con la unidad, la fecha y hora
+y quién la reportó. Se ven en la propia bitácora, en el detalle del servicio y,
+completas, en *Administración → Incidencias*.
+
+El catálogo se edita en *Administración → Tipos de incidencia*, y
+`configurarHojas()` lo siembra la primera vez con los tipos de arriba, para que
+la pantalla sirva desde el arranque. Si la hoja quedara vacía, la app usa esa
+misma lista por defecto.
+
+### Ubicación de la unidad, a mano
+
+La bitácora tiene un campo de **ubicación actual** con su botón *Registrar
+ubicación*: cada captura deja un renglón en la hoja `UBICACIONES` —fecha y
+hora, servicio, carta porte, unidad, operador y quién la reportó— y la última
+se copia a `UNIDADES.UBICACION_ACTUAL` / `UBICACION_ACTUALIZADA`, que es lo que
+se ve en el tablero operativo. Debajo del campo queda el histórico reciente.
+
+También se puede capturar **desde el propio tablero operativo**, en la columna
+*Ubicación*: se guarda igual y deja el mismo renglón en el histórico, ligándolo
+al servicio en curso de esa unidad si trae uno.
+
 ### El monitoreo mueve el tablero operativo
 
 Mientras el viaje está activo, el estatus del monitoreo **arrastra al estatus
@@ -378,6 +423,18 @@ por servicio, CP, cliente, booking, contenedor, PO, origen, destino, operador
 o económico, y filtro por estatus. El botón *Editar* devuelve el servicio al
 formulario de Nuevo Servicio.
 
+Son el **registro histórico**: aquí se queda todo servicio capturado, también
+los que ya terminaron, se liquidaron o se pagaron —ninguno se saca de la
+lista—. Cada renglón muestra su **etapa** del proceso, y el botón **Ver
+detalle** abre el seguimiento completo del viaje:
+
+- los **siete horarios** de la bitácora de monitoreo, con la hora sellada de
+  cada uno y los que quedaron sin registrar;
+- las **citas** de carga y descarga con sus dos **cumplimientos**;
+- la traza de **etapas**, con la fecha en que el servicio pasó por cada una;
+- las **ubicaciones** reportadas y las **incidencias** del viaje;
+- la nota del monitorista, si la hay.
+
 **Solicitud de Gasto** conserva su tarjeta de **Solicitudes recientes**, desde
 donde se reabre una solicitud para modificarla mientras siga pendiente de
 dispersión.
@@ -390,7 +447,8 @@ Mantenimiento, Falla mecánica** o **Sin GPS**. Una unidad sin estado
 capturado se muestra como *Disponible*.
 
 El estado se cambia en el propio renglón y se guarda al momento, sellando
-cuándo (`ESTATUS_ACTUALIZADO`); junto a él hay una **nota** libre para el
+cuándo (`ESTATUS_ACTUALIZADO`); junto a él hay la **ubicación** —capturada a
+mano, aquí o desde la bitácora del viaje— y una **nota** libre para el
 detalle. Arriba, un resumen cuenta las unidades por estado y sirve de filtro
 al hacerle clic; también se puede buscar por económico, placas o tipo. Cada
 renglón muestra además el **servicio en curso** de esa unidad, si trae uno

@@ -152,10 +152,23 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 .userchip{font-size:12px;font-weight:600;padding:5px 12px;border-radius:99px;background:rgba(255,255,255,.12);white-space:nowrap}
 
 /* Modal de aviso */
-#modalWrap,#cancelWrap,#permWrap{position:fixed;inset:0;z-index:210;background:rgba(9,14,24,.55);display:none;align-items:center;justify-content:center;padding:20px}
-#modalWrap.show,#cancelWrap.show,#permWrap.show{display:flex}
+#modalWrap,#cancelWrap,#permWrap,#detWrap,#incWrap{position:fixed;inset:0;z-index:210;background:rgba(9,14,24,.55);display:none;align-items:center;justify-content:center;padding:20px}
+#modalWrap.show,#cancelWrap.show,#permWrap.show,#detWrap.show,#incWrap.show{display:flex}
 #cancelWrap,#permWrap{z-index:220}
 #cancelWrap .mbox,#permWrap .mbox{max-height:92vh;overflow-y:auto}
+#detWrap,#incWrap{z-index:230}
+#detWrap .mbox,#incWrap .mbox{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.3);padding:24px;max-height:92vh;overflow-y:auto}
+#detWrap .mbox{max-width:900px}
+#incWrap .mbox{max-width:520px}
+/* Línea de tiempo de la bitácora del viaje */
+.tl{list-style:none;margin:0;padding:0}
+.tl li{position:relative;padding:0 0 14px 26px;border-left:2px solid var(--line)}
+.tl li:last-child{border-left-color:transparent;padding-bottom:0}
+.tl li::before{content:'';position:absolute;left:-7px;top:2px;width:12px;height:12px;border-radius:99px;background:var(--line);border:2px solid var(--surface)}
+.tl li.hecho::before{background:var(--ok)}
+.tl li.hecho{border-left-color:var(--ok)}
+.tl .tlq{font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.tl .tlv{font-size:13px;color:var(--ink2)}
 #modalWrap .mbox{width:100%;max-width:460px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.3);padding:26px;text-align:center}
 #modalWrap .mico{font-size:40px;margin-bottom:8px}
 #modalWrap h3{font-size:20px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
@@ -415,7 +428,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 
   <div class="card">
     <h2>Tablero operativo</h2>
-    <div class="sub">Estado de cada unidad de la flota. Cámbialo desde el propio renglón: se guarda al momento.</div>
+    <div class="sub">Estado de cada unidad de la flota. Cámbialo desde el propio renglón: se guarda al momento. La <b>ubicación</b> se captura a mano aquí o desde la bitácora del viaje.</div>
     <div id="tabChips" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
     <div class="grid g3" style="margin-bottom:12px">
       <div style="grid-column:1/3"><label>Buscar</label><input id="tabBusca" placeholder="🔍 Económico, placas, tipo de unidad…"></div>
@@ -423,7 +436,8 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     </div>
     <div class="twrap" style="max-height:520px;overflow-y:auto"><table>
       <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
-        <th>Económico</th><th>Placas</th><th>Tipo</th><th style="min-width:190px">Estatus</th><th>Nota</th><th>Servicio en curso</th><th>Actualizado</th>
+        <th>Económico</th><th>Placas</th><th>Tipo</th><th style="min-width:190px">Estatus</th>
+        <th style="min-width:190px">Ubicación</th><th>Nota</th><th>Servicio en curso</th><th>Actualizado</th>
       </tr></thead>
       <tbody id="tbodyTablero"></tbody>
     </table></div>
@@ -434,7 +448,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 <section class="sec" id="sec-tdc">
   <div class="card">
     <h2>TDC</h2>
-    <div class="sub">Servicios capturados como <b>TDC</b>. Van a la hoja <b>Transportadora</b> de la sábana; el vínculo con la sábana todavía no se hace.</div>
+    <div class="sub">Registro de <b>todos</b> los servicios TDC, incluidos los ya finalizados: aquí no se borra ninguno. En <b>Ver detalle</b> aparece el seguimiento completo del viaje con los horarios registrados. Van a la hoja <b>Transportadora</b> de la sábana; el vínculo con la sábana todavía no se hace.</div>
     <div class="grid g3" style="margin-bottom:12px">
       <div style="grid-column:1/3"><label>Buscar</label><input id="tdcBusca" placeholder="🔍 Carta porte, cliente, booking, contenedor…"></div>
       <div><label>Estatus</label><select id="tdcEstatus"><option value="todos">Todos</option><option>PENDIENTE POR DESPACHAR</option><option>ASIGNADO</option><option>CANCELADO</option></select></div>
@@ -442,7 +456,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <div class="twrap" style="max-height:520px;overflow-y:auto"><table>
       <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
         <th>Cartas porte</th><th>Cliente</th><th>Cita de carga</th><th>Sem.</th>
-        <th>Origen</th><th>Destino</th><th>Unidad</th><th>Económico</th><th>Operador</th><th>Estatus</th><th></th>
+        <th>Origen</th><th>Destino</th><th>Unidad</th><th>Económico</th><th>Operador</th><th>Estatus</th><th>Etapa</th><th></th>
       </tr></thead>
       <tbody id="tbodyTdc"></tbody>
     </table></div>
@@ -461,7 +475,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <div class="twrap" style="max-height:520px;overflow-y:auto"><table>
       <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
         <th>Cartas porte</th><th>Cliente</th><th>Cita de carga</th><th>Sem.</th>
-        <th>Origen</th><th>Destino</th><th>Unidad</th><th>Línea transportista</th><th>Estatus</th><th></th>
+        <th>Origen</th><th>Destino</th><th>Unidad</th><th>Línea transportista</th><th>Estatus</th><th>Etapa</th><th></th>
       </tr></thead>
       <tbody id="tbodyFwd"></tbody>
     </table></div>
@@ -687,7 +701,19 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <button class="btn btn-p btn-sm" id="btnMonGuardar">💾 Guardar estatus y nota</button>
       <button class="btn btn-s btn-sm" id="btnMonEvidencia">📄 Registrar entrega de evidencia</button>
+      <button class="btn btn-s btn-sm" id="btnMonIncidencia" style="background:var(--bad);color:#fff">⚠ Reportar incidencia</button>
     </div>
+
+    <h3 style="margin-top:18px">Ubicación de la unidad</h3>
+    <div class="sub" style="margin-bottom:10px">Captura a mano dónde va la unidad. Queda con fecha y hora, se guarda el histórico y la última se ve en el tablero operativo.</div>
+    <div class="grid g3" style="margin-bottom:10px">
+      <div style="grid-column:1/3"><label>Ubicación actual</label><input id="monUbicacion" placeholder="Caseta, tramo carretero, ciudad, patio…"></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn btn-p btn-sm" id="btnMonUbicacion" style="width:100%">📍 Registrar ubicación</button></div>
+    </div>
+    <div class="mini" id="monUbicHist" style="margin-bottom:14px"></div>
+
+    <h3>Incidencias reportadas</h3>
+    <div id="monIncidencias" class="mini" style="margin-top:6px"></div>
   </div>
 </section>
 
@@ -1064,12 +1090,15 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <button class="tab atab" data-adm="ADUANAS">Aduanas / puertos</button>
         <button class="tab atab" data-adm="ESTADOS">Estados</button>
         <button class="tab atab" data-adm="CIUDADES">Ciudades</button>
+        <button class="tab atab" data-adm="TIPOS_INCIDENCIA">Tipos de incidencia</button>
         <button class="tab atab" data-adm="RUTAS">Rutas</button>
         <button class="tab atab" data-adm="SERVICIOS">Servicios</button>
         <button class="tab atab" data-adm="SOLICITUDES">Solicitudes</button>
         <button class="tab atab" data-adm="PAGO_X_KM">Pago x KM</button>
         <button class="tab atab" data-adm="NOMINAS">Nóminas</button>
         <button class="tab atab" data-adm="LIQUIDACION">Liquidación</button>
+        <button class="tab atab" data-adm="INCIDENCIAS">Incidencias</button>
+        <button class="tab atab" data-adm="UBICACIONES">Ubicaciones</button>
         <button class="tab atab" data-adm="CANCELADAS">Canceladas</button>
         <button class="tab atab" data-adm="BITACORA">Bitácora</button>
       </div>
@@ -1155,6 +1184,40 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <h3 id="modTit">Aviso</h3>
     <div class="mtxt" id="modTxt"></div>
     <button class="btn btn-p" id="modOk" style="min-width:140px">Entendido</button>
+  </div>
+</div>
+
+<!-- ============ DETALLE DEL SERVICIO (seguimiento completo) ============ -->
+<div id="detWrap">
+  <div class="mbox">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-bottom:12px">
+      <div>
+        <h3 style="margin-bottom:4px">Detalle del servicio · <span id="detTit"></span></h3>
+        <div class="mini" id="detInfo"></div>
+      </div>
+      <button class="btn btn-s btn-sm" id="detCerrar">Cerrar</button>
+    </div>
+    <div id="detCuerpo"></div>
+  </div>
+</div>
+
+<!-- ============ REPORTAR INCIDENCIA ============ -->
+<div id="incWrap">
+  <div class="mbox">
+    <h3 style="margin-bottom:4px">Reportar incidencia</h3>
+    <div class="mini" id="incInfo" style="margin-bottom:14px"></div>
+    <div style="margin-bottom:12px">
+      <label>Tipo de incidencia</label>
+      <select id="incTipo"></select>
+    </div>
+    <div style="margin-bottom:14px">
+      <label>Descripción breve</label>
+      <textarea id="incDesc" rows="3" placeholder="Qué pasó, dónde y desde cuándo…"></textarea>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-p" id="incGuardar">Registrar incidencia</button>
+      <button class="btn btn-s" id="incCerrar">Cancelar</button>
+    </div>
   </div>
 </div>
 
@@ -1284,7 +1347,8 @@ const CAMPOS_CASETA = ['COSTO_2E','COSTO_5E','COSTO_9E'];
 const TOLERANCIA_KM = 15;
 
 const DB = { UNIDADES:[], OPERADORES:[], EJECUTIVOS:[], REMOLQUES:[], CLIENTES:[], RUTAS:[], SOLICITUDES:[], NOMINAS:[], LIQUIDACION:[], CASETAS:[], USUARIOS:[], BITACORA:[], SOLICITUDES_CANCELADAS:[], PAGO_X_KM:[],
-  SERVICIOS:[], TIPO_NEGOCIO:[], ADUANAS:[], ESTADOS:[], CIUDADES:[], PROVEEDORES:[], CONFIG:{} };
+  SERVICIOS:[], TIPO_NEGOCIO:[], ADUANAS:[], ESTADOS:[], CIUDADES:[], PROVEEDORES:[],
+  TIPOS_INCIDENCIA:[], INCIDENCIAS:[], UBICACIONES:[], CONFIG:{} };
 
 const $  = id => document.getElementById(id);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
@@ -1397,7 +1461,8 @@ function bitacora(accion, detalle){
 
 const HOJAS_APP = ['UNIDADES','OPERADORES','EJECUTIVOS','REMOLQUES','CLIENTES','RUTAS','SOLICITUDES',
   'NOMINAS','LIQUIDACION','CASETAS','USUARIOS','BITACORA','SOLICITUDES_CANCELADAS','PAGO_X_KM',
-  'SERVICIOS','TIPO_NEGOCIO','ADUANAS','ESTADOS','CIUDADES','PROVEEDORES'];
+  'SERVICIOS','TIPO_NEGOCIO','ADUANAS','ESTADOS','CIUDADES','PROVEEDORES',
+  'TIPOS_INCIDENCIA','INCIDENCIAS','UBICACIONES'];
 const hojasPedidas = new Set();
 
 /* Refleja en memoria lo que el guardado acaba de escribir, sin esperar a que
@@ -1475,7 +1540,10 @@ function modal(titulo, html, ico){
 }
 $('modOk').addEventListener('click',()=>$('modalWrap').classList.remove('show'));
 $('modalWrap').addEventListener('click',e=>{ if(e.target===$('modalWrap')) $('modalWrap').classList.remove('show'); });
-document.addEventListener('keydown',e=>{ if(e.key==='Escape') $('modalWrap').classList.remove('show'); });
+document.addEventListener('keydown',e=>{
+  if(e.key!=='Escape') return;
+  ['modalWrap','detWrap','incWrap'].forEach(id=>$(id).classList.remove('show'));
+});
 
 /* ---------- Casetas: costo por tipo de unidad ---------- */
 function campoTarifa(tipoUnidad){
@@ -2056,7 +2124,11 @@ function pintarTablaServicios(tbody, filas, columnas, nCols){
   [...filas].reverse().forEach(s=>{
     const tr=document.createElement('tr');
     if(String(s.ESTATUS).toUpperCase()==='CANCELADO') tr.style.opacity='0.55';
-    tr.innerHTML = columnas(s) + `<td><button class="btn btn-s btn-sm" data-sedserv="${s.ID}">Editar</button></td>`;
+    tr.innerHTML = columnas(s) + `<td>${etiquetaEtapa(s)}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-s btn-sm" data-sedserv="${s.ID}">Editar</button>
+        <button class="btn btn-p btn-sm" data-verserv="${s.ID}">Ver detalle</button>
+      </td>`;
     tb.appendChild(tr);
   });
   if(!filas.length) tb.innerHTML=`<tr><td colspan="${nCols}" class="mini">Sin servicios.</td></tr>`;
@@ -2064,6 +2136,7 @@ function pintarTablaServicios(tbody, filas, columnas, nCols){
     document.querySelector('.tab[data-sec="nuevoservicio"]').click();
     abrirServicio(b.dataset.sedserv);
   }));
+  tb.querySelectorAll('[data-verserv]').forEach(b=>b.addEventListener('click',()=>abrirDetalleServicio(b.dataset.verserv)));
 }
 const celdasComunes = s => `<td>${esc(s.CP)}</td><td>${esc(s.CLIENTE)}</td>
   <td>${esc(String(s.CITA_CARGA||'').replace('T',' '))}</td><td>${esc(s.SEMANA)}</td>
@@ -2072,12 +2145,12 @@ const celdasComunes = s => `<td>${esc(s.CP)}</td><td>${esc(s.CLIENTE)}</td>
 function pintarTdc(){
   pintarTablaServicios('tbodyTdc',
     filtrarServicios('TDC', $('tdcBusca').value, $('tdcEstatus').value),
-    s => celdasComunes(s) + `<td>${esc(s.ECONOMICO)}</td><td>${esc(s.OPERADOR)}</td><td>${etiquetaEstatus(s.ESTATUS)}</td>`, 11);
+    s => celdasComunes(s) + `<td>${esc(s.ECONOMICO)}</td><td>${esc(s.OPERADOR)}</td><td>${etiquetaEstatus(s.ESTATUS)}</td>`, 12);
 }
 function pintarFwd(){
   pintarTablaServicios('tbodyFwd',
     filtrarServicios('FWD', $('fwdBusca').value, $('fwdEstatus').value),
-    s => celdasComunes(s) + `<td>${esc(s.LINEA_TRANSPORTISTA)}</td><td>${etiquetaEstatus(s.ESTATUS)}</td>`, 10);
+    s => celdasComunes(s) + `<td>${esc(s.LINEA_TRANSPORTISTA)}</td><td>${etiquetaEstatus(s.ESTATUS)}</td>`, 11);
 }
 ['tdcBusca','tdcEstatus'].forEach(id=>$(id).addEventListener('input', pintarTdc));
 $('tdcEstatus').addEventListener('change', pintarTdc);
@@ -2241,6 +2314,7 @@ function abrirMonitoreo(id){
   pintarColorEstatus();
   $('monNota').value = s.NOTA_MONITOREO || '';
   pintarHitos(s);
+  pintarIncidenciasYUbicaciones(s);
   $('monDetalle').scrollIntoView({behavior:'smooth',block:'start'});
 }
 function pintarColorEstatus(){
@@ -2425,6 +2499,154 @@ function pintarMonitoreo(){
 ['monBusca','monFiltro'].forEach(id=>$(id).addEventListener('input', pintarMonitoreo));
 $('monFiltro').addEventListener('change', pintarMonitoreo);
 
+/* ---------- Incidencias del viaje ----------
+   El monitorista reporta contra el servicio y su operador. El tipo sale del
+   catálogo TIPOS_INCIDENCIA; si todavía está vacío se usa esta lista, para
+   que la pantalla sirva desde el primer día. */
+const TIPOS_INCIDENCIA_DEF = ['Desvío de ruta','Estadía no autorizada','Retraso en carga','Retraso en descarga',
+  'Paro no autorizado','Exceso de velocidad','Falla mecánica','Accidente','Robo o siniestro',
+  'Sin reporte de posición','Documentación incompleta','Unidad sin combustible','Otro'];
+function tiposIncidencia(){
+  const cat = (DB.TIPOS_INCIDENCIA||[]).map(t=>String(t.NOMBRE||'').trim()).filter(Boolean);
+  return cat.length? cat : TIPOS_INCIDENCIA_DEF;
+}
+const porServicio = (hoja, id) =>
+  (DB[hoja]||[]).filter(r=>String(r.SERVICIO_ID||'')===String(id))
+                .sort((a,b)=>String(a.FECHA_HORA).localeCompare(String(b.FECHA_HORA)));
+const incidenciasDe = id => porServicio('INCIDENCIAS', id);
+const ubicacionesDe = id => porServicio('UBICACIONES', id);
+
+let incServicio = null;
+function abrirIncidencia(id){
+  const s = DB.SERVICIOS.find(x=>String(x.ID)===String(id)); if(!s) return;
+  incServicio = id;
+  $('incInfo').innerHTML = `Servicio <b>${esc(s.CP)}</b> · ${esc(s.CLIENTE)} · Unidad <b>${esc(s.ECONOMICO)||'—'}</b> · `+
+    `Operador <b>${esc(s.OPERADOR)||'—'}</b>`;
+  $('incTipo').innerHTML = '<option value="">— Elige el tipo —</option>'+
+    tiposIncidencia().map(t=>`<option>${esc(t)}</option>`).join('');
+  $('incDesc').value = '';
+  $('incWrap').classList.add('show');
+}
+$('incCerrar').addEventListener('click',()=>{ $('incWrap').classList.remove('show'); incServicio=null; });
+$('incWrap').addEventListener('click',e=>{ if(e.target===$('incWrap')) $('incCerrar').click(); });
+
+$('incGuardar').addEventListener('click', async ()=>{
+  const s = DB.SERVICIOS.find(x=>String(x.ID)===String(incServicio)); if(!s) return;
+  const tipo = $('incTipo').value, desc = $('incDesc').value.trim();
+  if(!tipo){ toast('Elige el tipo de incidencia.', true); return; }
+  if(!desc){ toast('Escribe una descripción breve.', true); return; }
+  const ok = await apiEnviar({action:'upsert', sheet:'INCIDENCIAS', record:{
+    FECHA_HORA: ahoraTexto(), SERVICIO_ID: s.ID, CP: s.CP, CLIENTE: s.CLIENTE,
+    ECONOMICO: s.ECONOMICO, OPERADOR: s.OPERADOR,
+    TIPO: tipo, DESCRIPCION: desc, REGISTRADO_POR: nombreUsuario()
+  }});
+  if(!ok) return;
+  $('incWrap').classList.remove('show');
+  toast('Incidencia registrada');
+  if(monEditando===String(s.ID) || monEditando===s.ID) abrirMonitoreo(s.ID);
+});
+$('btnMonIncidencia').addEventListener('click',()=>{ if(monEditando) abrirIncidencia(monEditando); });
+
+/* Ubicación capturada a mano desde la bitácora del viaje */
+$('btnMonUbicacion').addEventListener('click', async ()=>{
+  const s = DB.SERVICIOS.find(x=>String(x.ID)===String(monEditando)); if(!s) return;
+  const donde = $('monUbicacion').value.trim();
+  if(!donde){ toast('Escribe dónde va la unidad.', true); return; }
+  const ahora = ahoraTexto();
+  const ok = await apiEnviar({action:'upsert', sheet:'UBICACIONES', record:{
+    FECHA_HORA: ahora, SERVICIO_ID: s.ID, CP: s.CP,
+    ECONOMICO: s.ECONOMICO, OPERADOR: s.OPERADOR,
+    UBICACION: donde, REGISTRADO_POR: nombreUsuario()
+  }});
+  if(!ok) return;
+  // La última reportada se queda a la vista en el tablero operativo
+  const u = DB.UNIDADES.find(x=>String(x.ECONOMICO||'').trim().toUpperCase()===String(s.ECONOMICO||'').trim().toUpperCase());
+  if(u) await apiEnviar({action:'upsert', sheet:'UNIDADES',
+    record: Object.assign({}, u, { UBICACION_ACTUAL: donde, UBICACION_ACTUALIZADA: ahora })});
+  toast('Ubicación registrada');
+  abrirMonitoreo(monEditando);
+});
+
+/* Lo que se ve dentro de la bitácora: histórico de ubicaciones e incidencias */
+function pintarIncidenciasYUbicaciones(s){
+  const ubis = ubicacionesDe(s.ID);
+  $('monUbicacion').value = '';
+  $('monUbicHist').innerHTML = ubis.length
+    ? [...ubis].reverse().slice(0,8).map(u=>`· <b>${esc(u.FECHA_HORA)}</b> — ${esc(u.UBICACION)} <span class="mini">(${esc(u.REGISTRADO_POR)||'—'})</span>`).join('<br>')
+    : 'Sin ubicaciones capturadas.';
+
+  const inc = incidenciasDe(s.ID);
+  $('monIncidencias').innerHTML = inc.length
+    ? [...inc].reverse().map(i=>`<div style="border-left:4px solid var(--bad);padding:6px 10px;margin-bottom:6px;background:var(--surface2);border-radius:6px">
+        <b>${esc(i.TIPO)}</b> · ${esc(i.FECHA_HORA)}<br>${esc(i.DESCRIPCION)}
+        <span class="mini">— reportó ${esc(i.REGISTRADO_POR)||'—'}</span></div>`).join('')
+    : 'Sin incidencias reportadas en este servicio.';
+}
+
+/* ---------- Detalle del servicio ----------
+   El seguimiento completo, para consultarlo desde TDC/FWD aunque el viaje ya
+   haya terminado: horarios, cumplimientos, etapas, ubicaciones e incidencias. */
+const FECHA_DE_ETAPA = {
+  'SOLICITADO':'FECHA_SOLICITUD', 'ASIGNADO':'FECHA_ASIGNACION', 'GASTO SOLICITADO':'FECHA_GASTO',
+  'DISPERSADO':'FECHA_DISPERSION', 'EN RUTA':'FECHA_SALIDA', 'FINALIZADO':'FECHA_FINALIZADO',
+  'EVIDENCIA ENTREGADA':'FECHA_EVIDENCIA', 'LIQUIDADO':'FECHA_LIQUIDACION', 'PAGADO':'FECHA_PAGO'
+};
+function abrirDetalleServicio(id){
+  const s = DB.SERVICIOS.find(x=>String(x.ID)===String(id)); if(!s) return;
+  $('detTit').textContent = s.CP || s.ID;
+  $('detInfo').innerHTML = `${esc(s.MODALIDAD)} · Cliente <b>${esc(s.CLIENTE)}</b> · ${esc(s.ESTADO_ORIGEN)} → ${esc(s.CIUDAD_DESTINO)} · `+
+    `Unidad <b>${esc(s.ECONOMICO)||'—'}</b> · Operador <b>${esc(s.OPERADOR)||'—'}</b> · ${etiquetaEtapa(s)}`;
+
+  const hitos = HITOS.map(h=>{
+    const v = s[h.campo]||'';
+    return `<li class="${v?'hecho':''}"><div class="tlq">${h.texto}</div>
+      <div class="tlv">${v? esc(v) : 'sin registrar'}</div></li>`;
+  }).join('');
+
+  const etapas = ETAPAS.filter(e=>FECHA_DE_ETAPA[e]).map(e=>{
+    const alcanzada = indiceEtapa(etapaDe(s)) >= indiceEtapa(e);
+    const f = s[FECHA_DE_ETAPA[e]]||'';
+    return `<li class="${alcanzada?'hecho':''}"><div class="tlq">${PASO_DE_ETAPA[e]}. ${e}</div>
+      <div class="tlv">${f? esc(f) : (alcanzada? '—' : 'pendiente')}</div></li>`;
+  }).join('');
+
+  const ubis = ubicacionesDe(s.ID);
+  const inc  = incidenciasDe(s.ID);
+
+  $('detCuerpo').innerHTML = `
+    <div class="grid g4" style="margin-bottom:16px">
+      <div><label>Cita de carga</label><input readonly value="${esc(fmtFechaHora(s.CITA_CARGA))}"></div>
+      <div><label>Cumplimiento de carga</label><input readonly value="${esc(s.CUMPLIMIENTO_CARGA || cumplimiento(s.HITO_ARRIBO_CARGA, s.CITA_CARGA) || '—')}"></div>
+      <div><label>Cita de descarga</label><input readonly value="${esc(fmtFechaHora(s.CITA_ENTREGA))}"></div>
+      <div><label>Cumplimiento de descarga</label><input readonly value="${esc(s.CUMPLIMIENTO_DESCARGA || cumplimiento(s.HITO_ARRIBO_DESTINO, s.CITA_ENTREGA) || '—')}"></div>
+    </div>
+    <div class="grid g2" style="gap:24px">
+      <div>
+        <h3 style="margin-bottom:10px">Seguimiento de monitoreo</h3>
+        <ul class="tl">${hitos}</ul>
+      </div>
+      <div>
+        <h3 style="margin-bottom:10px">Etapas del proceso</h3>
+        <ul class="tl">${etapas}</ul>
+      </div>
+    </div>
+    <h3 style="margin-top:18px;margin-bottom:8px">Ubicaciones reportadas</h3>
+    <div class="mini">${ubis.length
+      ? [...ubis].reverse().map(u=>`· <b>${esc(u.FECHA_HORA)}</b> — ${esc(u.UBICACION)} <span class="mini">(${esc(u.REGISTRADO_POR)||'—'})</span>`).join('<br>')
+      : 'Sin ubicaciones capturadas.'}</div>
+    <h3 style="margin-top:18px;margin-bottom:8px">Incidencias</h3>
+    <div class="mini">${inc.length
+      ? [...inc].reverse().map(i=>`<div style="border-left:4px solid var(--bad);padding:6px 10px;margin-bottom:6px;background:var(--surface2);border-radius:6px">
+          <b>${esc(i.TIPO)}</b> · ${esc(i.FECHA_HORA)}<br>${esc(i.DESCRIPCION)}
+          <span class="mini">— reportó ${esc(i.REGISTRADO_POR)||'—'}</span></div>`).join('')
+      : 'Sin incidencias reportadas en este servicio.'}</div>
+    ${s.NOTA_MONITOREO? `<h3 style="margin-top:18px;margin-bottom:8px">Nota de monitoreo</h3><div class="mini">${esc(s.NOTA_MONITOREO)}</div>`:''}`;
+
+  $('detWrap').classList.add('show');
+}
+$('detCerrar').addEventListener('click',()=>$('detWrap').classList.remove('show'));
+$('detWrap').addEventListener('click',e=>{ if(e.target===$('detWrap')) $('detWrap').classList.remove('show'); });
+
 /* ---------- Tablero operativo ----------
    El estado de cada unidad de la flota, editable en el propio renglón. */
 const ESTATUS_OPERATIVO = ['DISPONIBLE','PROGRAMADO','DESPACHADO','EN SERVICIO','VACÍO',
@@ -2486,26 +2708,47 @@ function pintarTablero(){
     tr.innerHTML=`<td><b>${esc(u.ECONOMICO)}</b></td><td>${esc(u.PLACAS)}</td><td>${esc(u.TIPO_UNIDAD)}</td>
       <td><select data-tabest="${u.ID}" style="border-left:5px solid ${COLOR_ESTATUS[e]}">${
         ESTATUS_OPERATIVO.map(x=>`<option${x===e?' selected':''}>${x}</option>`).join('')}</select></td>
+      <td><input data-tabubic="${u.ID}" value="${esc(u.UBICACION_ACTUAL)}" placeholder="Capturar ubicación…"${
+        u.UBICACION_ACTUALIZADA? ` title="Reportada el ${esc(u.UBICACION_ACTUALIZADA)}"`:''}></td>
       <td><input data-tabnota="${u.ID}" value="${esc(u.NOTA_OPERATIVA)}" placeholder="—"></td>
       <td>${srv? esc(srv.CP)+' · '+esc(srv.CIUDAD_DESTINO||'') : '<span class="mini">—</span>'}</td>
       <td class="mini">${esc(u.ESTATUS_ACTUALIZADO)||'—'}</td>`;
     tb.appendChild(tr);
   });
-  if(!filas.length) tb.innerHTML='<tr><td colspan="7" class="mini">Sin unidades en este filtro.</td></tr>';
+  if(!filas.length) tb.innerHTML='<tr><td colspan="8" class="mini">Sin unidades en este filtro.</td></tr>';
 
   tb.querySelectorAll('[data-tabest]').forEach(el=>el.addEventListener('change',()=>guardarTablero(el.dataset.tabest)));
   tb.querySelectorAll('[data-tabnota]').forEach(el=>el.addEventListener('change',()=>guardarTablero(el.dataset.tabnota)));
+  tb.querySelectorAll('[data-tabubic]').forEach(el=>el.addEventListener('change',()=>guardarTablero(el.dataset.tabubic)));
 }
 async function guardarTablero(id){
   const u = DB.UNIDADES.find(x=>String(x.ID)===String(id)); if(!u) return;
   const sel = $('tbodyTablero').querySelector(`[data-tabest="${id}"]`);
   const nota = $('tbodyTablero').querySelector(`[data-tabnota="${id}"]`);
+  const ubic = $('tbodyTablero').querySelector(`[data-tabubic="${id}"]`);
+  const ahora = ahoraTexto();
+  const ubicNueva = ubic? ubic.value.trim() : (u.UBICACION_ACTUAL||'');
+  const cambioUbic = ubicNueva !== String(u.UBICACION_ACTUAL||'');
   const reg = Object.assign({}, u, {
     ESTATUS_OPERATIVO: sel? sel.value : estatusDeUnidad(u),
     NOTA_OPERATIVA: nota? nota.value.trim() : (u.NOTA_OPERATIVA||''),
-    ESTATUS_ACTUALIZADO: ahoraTexto()
+    UBICACION_ACTUAL: ubicNueva,
+    UBICACION_ACTUALIZADA: cambioUbic? ahora : (u.UBICACION_ACTUALIZADA||''),
+    ESTATUS_ACTUALIZADO: ahora
   });
-  if(await apiEnviar({action:'upsert', sheet:'UNIDADES', record:reg})) toast('Unidad '+u.ECONOMICO+': '+reg.ESTATUS_OPERATIVO);
+  if(!await apiEnviar({action:'upsert', sheet:'UNIDADES', record:reg})) return;
+  // La ubicación capturada a mano también deja su renglón en el histórico
+  if(cambioUbic && ubicNueva){
+    const srv = servicioEnCurso(u.ECONOMICO);
+    await apiEnviar({action:'upsert', sheet:'UBICACIONES', record:{
+      FECHA_HORA: ahora, SERVICIO_ID: srv? srv.ID : '', CP: srv? srv.CP : '',
+      ECONOMICO: u.ECONOMICO, OPERADOR: srv? srv.OPERADOR : '',
+      UBICACION: ubicNueva, REGISTRADO_POR: nombreUsuario()
+    }});
+    toast('Unidad '+u.ECONOMICO+' en '+ubicNueva);
+    return;
+  }
+  toast('Unidad '+u.ECONOMICO+': '+reg.ESTATUS_OPERATIVO);
 }
 ['tabBusca','tabFiltro'].forEach(id=>$(id).addEventListener('input', pintarTablero));
 $('tabFiltro').addEventListener('change', pintarTablero);
@@ -4391,6 +4634,15 @@ const ADMIN = {
   ADUANAS:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
   ESTADOS:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
   CIUDADES:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
+  /* Catálogo de lo que el monitorista puede reportar en ruta */
+  TIPOS_INCIDENCIA:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
+  /* Lo que se reportó en ruta y dónde iba la unidad: solo consulta */
+  INCIDENCIAS:{ soloLectura:true, sinBorrar:true, invertido:true,
+    cols:[{k:'FECHA_HORA'},{k:'CP'},{k:'CLIENTE'},{k:'ECONOMICO'},{k:'OPERADOR'},
+          {k:'TIPO'},{k:'DESCRIPCION'},{k:'REGISTRADO_POR'}] },
+  UBICACIONES:{ soloLectura:true, sinBorrar:true, invertido:true,
+    cols:[{k:'FECHA_HORA'},{k:'CP'},{k:'ECONOMICO'},{k:'OPERADOR'},
+          {k:'UBICACION'},{k:'REGISTRADO_POR'}] },
   SERVICIOS:{ soloLectura:true, invertido:true,
     cols:[{k:'MODALIDAD'},{k:'CP'},{k:'CLIENTE'},{k:'CITA_CARGA'},
           {k:'SEMANA'},{k:'CIUDAD_DESTINO'},{k:'TIPO_UNIDAD'},
