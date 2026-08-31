@@ -1,4 +1,4 @@
-# Master de Ruta · ADL Transportes
+# Tracking ADL (Sábana) · ADL Distribución & Transporte
 
 Aplicación web de una sola página para la gestión de rutas, solicitudes de gasto,
 liquidación y pre-nómina. Los datos viven en un Google Sheet, al que la app se
@@ -66,7 +66,7 @@ Se puede llenar a mano en el Sheet, o desde **Administración → Casetas**
 > directamente en el Sheet sin llenar el ID, la app no puede distinguir un
 > registro de otro y al elegir una caseta siempre guarda la primera del
 > catálogo. El backend rellena los IDs faltantes solo, en cada escritura y al
-> correr `configurarHojas()`; también está el menú **Master de Ruta → Asignar
+> correr `configurarHojas()`; también está el menú **Tracking ADL → Asignar
 > IDs faltantes**.
 
 ### Hoja `USUARIOS`
@@ -81,7 +81,7 @@ Se puede llenar a mano en el Sheet, o desde **Administración → Casetas**
 |---|---|---|---|---|---|---|
 | `ADMIN` | sí | sí | sí | no | sí | todas |
 | `SUP` | no | no | sí | no | no | todas menos Administración |
-| `AUDITOR` | no | no | no | sí | no | solo Dispersiones, Liquidación, Pre-Nómina, Indicadores |
+| `AUDITOR` | no | no | no | sí | no | solo Dispersiones, Liquidación, Hoja de Servicio, Indicadores |
 | `OPERATIVO` | no | no | no | no | no | todas menos Administración |
 
 Mientras la hoja `USUARIOS` esté vacía, la app permite entrar con **admin /
@@ -99,7 +99,7 @@ Se administra desde **Administración → Usuarios**, columna **Permisos**: el
 botón muestra "Por rol" cuando el usuario no tiene nada personalizado, o el
 número de pestañas cuando sí. Al hacer clic se abre un panel con una casilla
 por pestaña (selección múltiple) — **Rutas, Solicitud de Gasto, Dispersiones,
-Liquidación, Pre-Nómina, Indicadores** — para marcar exactamente cuáles puede
+Liquidación, Hoja de Servicio, Indicadores** — para marcar exactamente cuáles puede
 ver ese usuario, sin importar su rol. El botón **Restablecer al rol** limpia
 la personalización y vuelve a las pestañas por defecto.
 
@@ -166,10 +166,13 @@ Las dos las escribe el monitoreo y las dos son solo de consulta en la app.
 |---|---|
 | `INCIDENCIAS` | `ID`, `FECHA_HORA`, `SERVICIO_ID`, `CP`, `CLIENTE`, `ECONOMICO`, `OPERADOR`, `TIPO`, `DESCRIPCION`, `REGISTRADO_POR` |
 | `UBICACIONES` | `ID`, `FECHA_HORA`, `SERVICIO_ID`, `CP`, `ECONOMICO`, `OPERADOR`, `UBICACION`, `REGISTRADO_POR` |
+| `EVIDENCIAS` | `ID`, `FECHA_HORA`, `SERVICIO_ID`, `FOLIO`, `CP`, `OPERADOR`, `NOMBRE`, `IMAGEN`, `REGISTRADO_POR` |
 
 `INCIDENCIAS` guarda lo que se reporta en ruta contra el servicio y su
 operador; `UBICACIONES` es el histórico de ubicaciones capturadas a mano. La
 última ubicación de cada unidad se copia además a `UNIDADES.UBICACION_ACTUAL`.
+`EVIDENCIAS` guarda las fotografías del viaje que se suben al liquidar, ya
+reducidas, en `IMAGEN` como data URL.
 
 ### Hoja `PAGO_X_KM`
 
@@ -178,7 +181,7 @@ operador; `UBICACIONES` es el histórico de ubicaciones capturadas a mano. La
 
 Tarifario que da un **monto de pago** a partir de los **kilómetros** del viaje
 y del **tipo de unidad** que lo hizo. Lo usa el esquema de **nómina fija** de
-la Pre-Nómina (ver "Pago por KM" más abajo). Se captura o se importa por CSV
+la Hoja de Servicio (ver "Pago por KM" más abajo). Se captura o se importa por CSV
 desde **Administración → Pago x KM**.
 
 `KMS_RED` es la columna con la que se busca; `VJS_MES` y `KMS_MES` son
@@ -238,8 +241,8 @@ capturan a mano**: las mueve la pantalla que le toca a cada paso.
 | 6 | Servicio finalizado | Monitoreo → *Finalizado* | `FINALIZADO` |
 | 7 | Entrega de evidencia | Monitoreo → *Evidencia* | `EVIDENCIA ENTREGADA` |
 | 8 | Liquidación de viaje | Liquidación | `LIQUIDADO` |
-| 9 | Pre-nómina | Pre-Nómina → *Registrar nómina* | `EN PRE-NÓMINA` |
-| 10 | Pago al operador | Pre-Nómina → *Marcar pagada* | `PAGADO` |
+| 9 | Hoja de servicio | Hoja de Servicio → *Registrar nómina* | `EN PRE-NÓMINA` |
+| 10 | Pago al operador | Hoja de Servicio → *Marcar pagada* | `PAGADO` |
 
 Cada salto deja su **fecha** en el propio servicio (`FECHA_GASTO`,
 `FECHA_DISPERSION`, `FECHA_SALIDA`, `FECHA_FINALIZADO`, `FECHA_EVIDENCIA`,
@@ -420,8 +423,11 @@ qué.
 
 Cada modalidad tiene su pestaña con la lista de sus servicios, con búsqueda
 por servicio, CP, cliente, booking, contenedor, PO, origen, destino, operador
-o económico, y filtro por estatus. El botón *Editar* devuelve el servicio al
-formulario de Nuevo Servicio.
+o económico, y filtro por estatus.
+
+**Editar un servicio ya capturado es exclusivo de los roles `SUP` (líder) y
+`ADMIN`.** A los demás roles ni siquiera se les pinta el botón *Editar* en TDC
+y FWD; *Ver detalle* lo tienen todos.
 
 Son el **registro histórico**: aquí se queda todo servicio capturado, también
 los que ya terminaron, se liquidaron o se pagaron —ninguno se saca de la
@@ -580,52 +586,57 @@ Un fallo al escribir en la sábana no tumba la liquidación que lo originó: esa
 queda guardada igual en el Sheet, y la app **muestra un aviso en pantalla**
 explicando qué pasó.
 
-**Si algo no llega a la sábana**, corre el menú **Master de Ruta → Probar
+**Si algo no llega a la sábana**, corre el menú **Tracking ADL → Probar
 sábana** dentro del Google Sheet. Sin modificar nada, te dice si el ID está
 configurado, si la sábana se puede abrir, qué hojas tiene, si encontró
 `Transportadora`, qué encabezado hay hoy en cada una de las columnas fijas, y
 qué hay en la columna de CP con la que se ubica el renglón del viaje.
 
-## Validación de Seguridad en Liquidación
+## Incidencias y evidencia en Liquidación
 
-Al liquidar, la tarjeta **Validación de Seguridad** arranca en gris con el
-estatus **Pendiente de validación**. Solo un usuario con rol **Administrador**
-puede capturarla; los demás roles la ven en gris, de solo lectura, y no la
-pueden modificar.
+**Ya no hay validación de Seguridad que capturar.** En su lugar, la pantalla de
+liquidación muestra dos cosas:
 
-Se registran dos cosas:
+**Incidencias del viaje.** Si el monitorista reportó algo en ruta (ver
+"Incidencias en ruta"), aparece aquí como **nota**, con su tipo, fecha,
+descripción y quién la reportó. Es informativo: no bloquea nada. Al liquidar se
+guarda el resumen en `INCIDENCIAS_NOTA` y cuántas fueron en `N_INCIDENCIAS`.
 
-- **¿Tuvo incidencias en ruta?**
-- **¿Llegó a tiempo?** — si se destilda, aparece una caja de **comentarios**
-  para explicar el retraso.
+**Evidencia del viaje, con fotografías.** El paso 7 del proceso —la entrega de
+evidencia— ya no se marca en Monitoreo: se registra aquí. Se agregan las
+fotografías desde el propio panel; el navegador las **reduce y comprime**
+(máximo ~1 100 px, JPEG) antes de subirlas, porque una celda del Sheet no
+aguanta una foto de cámara completa. Cada foto queda en la hoja `EVIDENCIAS`
+ligada al servicio y al folio, se ve como miniatura (clic para verla grande) y
+se puede quitar. Con la primera fotografía cargada, el servicio pasa a la etapa
+**Evidencia entregada**.
 
-**Mientras no esté validada, el proceso de liquidación no se cierra**: ni el
-botón *Liquidar viaje* ni *Autorizar y liquidar* la dejan pasar; sale un aviso
-de que un administrador debe validarla. Al validar se firma con el nombre y la
-fecha (`SEGURIDAD_VALIDADO_POR`, `SEGURIDAD_FECHA_VALIDACION`).
+Esa hoja **no viaja en la carga general** ni en el refresco de segundo plano:
+se pide sola al entrar a Liquidación, para no arrastrar las imágenes en cada
+guardado.
 
-Lo que Seguridad registre aquí es lo que llena solo los **objetivos de
-cumplimiento** de la Pre-Nómina.
+Las columnas `SEGURIDAD_*` de `LIQUIDACION` se conservan por el histórico, pero
+ya no se escriben.
 
 ## Objetivo semanal de KM
 
 Full y Sencillo tienen dos objetivos: uno para servicio **foráneo** y otro para
 **local** (1 500 km por defecto), configurables en Administración. En
-Pre-Nómina, el selector *Tipo de servicio* elige cuál aplica; se preselecciona
+Hoja de Servicio, el selector *Tipo de servicio* elige cuál aplica; se preselecciona
 solo con el tipo de servicio predominante de los viajes del periodo. Los demás
 tipos de unidad tienen un objetivo único y el selector queda deshabilitado.
 
-## Pre-Nómina
+## Hoja de Servicio
 
 ### Dos esquemas de pago
 
-Arriba a la derecha de Pre-Nómina hay un interruptor **«Pago de nómina fija»**
+Arriba a la derecha de Hoja de Servicio hay un interruptor **«Pago de nómina fija»**
 que cambia el esquema completo:
 
 Cada operador tiene **dos sueldos semanales** en Administración → Operadores,
 uno por esquema: **Pago x objetivo** (`PAGO_NOMINAL_SEMANAL`) y **Pago fijo**
 (`SUELDO_FIJO_SEMANAL`). Si un operador no tiene capturado su pago fijo, se usa
-el *Pago fijo semanal por defecto* de Administración → Pre-nómina.
+el *Pago fijo semanal por defecto* de Administración → Hoja de servicio.
 
 | | Variable (apagado) | Fija (encendido) |
 |---|---|---|
@@ -674,11 +685,13 @@ la tarjeta lo avisa en rojo en vez de pagar cero en silencio.
 
 ### Objetivos de cumplimiento
 
-**Llegada en tiempo** y **Sin incidencias en ruta** no se capturan a mano: se
-derivan de la **validación de Seguridad** de los viajes liquidados del periodo
-(ver "Validación de Seguridad" más abajo). Se marcan solo si **todos** los
-viajes validados del periodo llegaron a tiempo / no tuvieron incidencias.
-**Evidencia en tiempo** sigue siendo manual.
+Los tres —**Llegada en tiempo**, **Evidencia en tiempo** y **Sin incidencias en
+ruta**— se marcan **a mano**.
+
+Debajo de las casillas se listan las **incidencias reportadas en el periodo**
+para ese operador, con su tipo, fecha y descripción. Son **solo informativas**:
+no marcan ni desmarcan ninguna casilla ni afectan el bono por sí solas; quien
+arma la hoja decide con ellas a la vista.
 
 ### Apoyo para viaje
 
@@ -817,22 +830,43 @@ muestra una caja con cada concepto y lo asignado, y un campo para capturar
 cuánto **comprobó** el operador. La diferencia (asignado − comprobado) puede
 ir en dos sentidos:
 
-- **Positiva** (comprobó de menos) → se **descuenta** en su Pre-Nómina.
-- **Negativa** (comprobó de más) → se **abona** en su Pre-Nómina.
+- **Positiva** (comprobó de menos) → se **descuenta** en su Hoja de Servicio.
+- **Negativa** (comprobó de más) → se **abona** en su Hoja de Servicio.
 
 Esa diferencia, sumada por todos los viajes liquidados del periodo, aparece en
-la tarjeta **Descuentos por adelantos al operador** de Pre-Nómina y se
+la tarjeta **Descuentos por adelantos al operador** de Hoja de Servicio y se
 resta (o suma) del total a pagar. Se guarda en la liquidación
 (`GASTOS_ADICIONALES_JSON`, `DESCUENTO_GASTOS_ADICIONALES`) y en la nómina
 registrada (`DESCUENTO_GASTOS`).
 
 ### Rol Auditor
 
-Ve únicamente las pestañas **Dispersiones**, **Liquidación**, **Pre-Nómina** e
+Ve únicamente las pestañas **Dispersiones**, **Liquidación**, **Hoja de Servicio** e
 **Indicadores**; no entra a Rutas, Solicitud de Gasto ni Administración. Su
 función es revisar que los montos de la solicitud sean correctos antes de
-confirmar la dispersión. En Pre-Nómina tiene los mismos candados que un
+confirmar la dispersión. En Hoja de Servicio tiene los mismos candados que un
 operativo o supervisor: no modifica objetivos, sueldo ni montos.
+
+## Tiempos del proceso (Indicadores)
+
+Debajo de las gráficas de siempre, la tarjeta **Tiempos del proceso** mide
+cuánto tarda la operación en cada paso, con las fechas que el propio servicio
+va dejando (`FECHA_SOLICITUD`, `FECHA_ASIGNACION`, `FECHA_GASTO`,
+`FECHA_DISPERSION`, `FECHA_SALIDA`, `FECHA_FINALIZADO`, `FECHA_EVIDENCIA`,
+`FECHA_LIQUIDACION`, `FECHA_PAGO`).
+
+Se miden ocho tramos —Solicitud → Asignación, Asignación → Gasto, Gasto →
+Dispersión, Dispersión → Salida, Salida → Finalizado, Finalizado → Evidencia,
+Evidencia → Liquidación y Liquidación → Pago— más el **ciclo completo** de la
+solicitud al pago. De cada uno sale el promedio, el más rápido y el más lento,
+y solo cuentan los servicios que ya tienen las dos fechas del tramo.
+
+Arriba, cuatro tarjetas con lo que más se pregunta: ciclo completo, cuánto se
+tarda en **asignar la unidad**, en **dispersar los gastos** y en **liquidar**.
+Abajo, una gráfica de promedio por paso y otra del ciclo completo por semana,
+más la tabla con todo el detalle. Menos de un día se muestra en horas.
+
+El filtro de periodo de Indicadores también aplica aquí.
 
 ## Bitácora
 

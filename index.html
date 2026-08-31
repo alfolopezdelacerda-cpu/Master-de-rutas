@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Master de Ruta · ADL Transportes</title>
+<title>Tracking ADL (Sábana) · ADL Distribución &amp; Transporte</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
@@ -35,9 +35,17 @@ label{display:block;font-size:11px;font-weight:600;text-transform:uppercase;lett
 
 header{background:var(--primary);color:var(--primary-ink);position:sticky;top:0;z-index:50;box-shadow:var(--shadow)}
 .hbar{display:flex;align-items:center;gap:12px;padding:12px 22px;margin:0 auto}
-.logo{display:flex;align-items:baseline;gap:9px}
-.logo .adl{font-family:'Barlow Condensed';font-weight:700;font-size:26px;background:var(--accent);color:var(--accent-ink);padding:1px 9px;border-radius:6px}
+.logo{display:flex;align-items:center;gap:11px}
+.logo .adl{font-family:'Barlow Condensed';font-weight:700;font-size:26px;letter-spacing:.02em}
 .logo .tt{font-family:'Barlow Condensed';font-weight:600;font-size:22px;letter-spacing:.06em;text-transform:uppercase}
+/* Marca ADL: los aros concéntricos. El aro naranja es fijo y el otro toma el
+   color del texto, para que se vea igual sobre el header oscuro que sobre el
+   fondo claro del login. Si en Administración se captura una URL de logo, se
+   usa esa imagen en lugar de este dibujo. */
+.adlmark{display:block;height:38px;width:38px;flex:none}
+.adlmark .r1{stroke:currentColor}
+.adlmark .r2{stroke:#FF4B18}
+.logoimg{height:40px;width:auto;flex:none;display:block}
 .hspacer{flex:1}
 .pill{font-size:12px;font-weight:600;padding:5px 12px;border-radius:99px;display:inline-flex;align-items:center;gap:6px;background:rgba(255,255,255,.12)}
 .pill .dot{width:8px;height:8px;border-radius:50%;background:var(--bad)}
@@ -144,7 +152,10 @@ td input[type=checkbox],th input[type=checkbox]{width:16px;height:16px;min-width
 #loginWrap{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:20px}
 #loginWrap .lbox{width:100%;max-width:390px;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:var(--shadow);padding:28px}
 #loginWrap .lhead{text-align:center;margin-bottom:22px}
-#loginWrap .lhead .adl{font-family:'Barlow Condensed';font-weight:700;font-size:32px;background:var(--accent);color:var(--accent-ink);padding:2px 12px;border-radius:8px;display:inline-block}
+#loginWrap .lhead .adl{font-family:'Barlow Condensed';font-weight:700;font-size:32px;letter-spacing:.02em}
+#loginWrap .lhead .logo{justify-content:center}
+#loginWrap .lhead .adlmark{height:52px;width:52px}
+#loginWrap .lhead .logoimg{height:58px}
 #loginWrap .lhead .tt{display:block;font-family:'Barlow Condensed';font-weight:600;font-size:20px;letter-spacing:.06em;text-transform:uppercase;margin-top:10px}
 #loginWrap .lfield{margin-bottom:14px}
 #loginWrap .lerr{color:var(--bad);font-size:13px;font-weight:600;min-height:19px;margin-bottom:10px;text-align:center}
@@ -201,8 +212,17 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 <div id="loginWrap">
   <div class="lbox">
     <div class="lhead">
-      <span class="adl">ADL</span>
-      <span class="tt">Master de Ruta</span>
+      <div class="logo" id="logoLogin">
+        <svg class="adlmark" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+          <circle class="r1" cx="50" cy="50" r="45" stroke-width="6" stroke-linecap="round" stroke-dasharray="212 71" transform="rotate(-40 50 50)"/>
+          <circle class="r2" cx="50" cy="50" r="36" stroke-width="6" stroke-linecap="round" stroke-dasharray="170 56" transform="rotate(140 50 50)"/>
+          <circle class="r1" cx="50" cy="50" r="27" stroke-width="6" stroke-linecap="round" stroke-dasharray="127 43" transform="rotate(40 50 50)"/>
+          <circle class="r2" cx="50" cy="50" r="18" stroke-width="6" stroke-linecap="round" stroke-dasharray="85 28" transform="rotate(220 50 50)"/>
+          <circle class="r1" cx="50" cy="50" r="9" stroke-width="6" stroke-linecap="round" stroke-dasharray="42 14" transform="rotate(120 50 50)"/>
+        </svg>
+        <span class="adl">ADL</span>
+      </div>
+      <span class="tt">Tracking ADL · Sábana</span>
     </div>
     <div class="lfield"><label>Usuario</label><input id="logUser" autocomplete="username" placeholder="Usuario"></div>
     <div class="lfield"><label>Contraseña</label><input id="logPass" type="password" autocomplete="current-password" placeholder="Contraseña"></div>
@@ -214,7 +234,16 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 
 <header>
   <div class="hbar">
-    <div class="logo"><span class="adl">ADL</span><span class="tt">Master de Ruta</span></div>
+    <div class="logo" id="logoHeader">
+      <svg class="adlmark" viewBox="0 0 100 100" fill="none" aria-hidden="true">
+        <circle class="r1" cx="50" cy="50" r="45" stroke-width="6" stroke-linecap="round" stroke-dasharray="212 71" transform="rotate(-40 50 50)"/>
+        <circle class="r2" cx="50" cy="50" r="36" stroke-width="6" stroke-linecap="round" stroke-dasharray="170 56" transform="rotate(140 50 50)"/>
+        <circle class="r1" cx="50" cy="50" r="27" stroke-width="6" stroke-linecap="round" stroke-dasharray="127 43" transform="rotate(40 50 50)"/>
+        <circle class="r2" cx="50" cy="50" r="18" stroke-width="6" stroke-linecap="round" stroke-dasharray="85 28" transform="rotate(220 50 50)"/>
+        <circle class="r1" cx="50" cy="50" r="9" stroke-width="6" stroke-linecap="round" stroke-dasharray="42 14" transform="rotate(120 50 50)"/>
+      </svg>
+      <span class="adl">ADL</span><span class="tt">Tracking ADL (Sábana)</span>
+    </div>
     <div class="hspacer"></div>
     <span class="userchip" id="userChip"></span>
     <button class="hbtn" id="btnLogout" title="Cerrar sesión">Salir</button>
@@ -234,7 +263,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
   <button class="tab" data-sec="dispersiones">Dispersiones</button>
   <button class="tab" data-sec="monitoreo">Monitoreo</button>
   <button class="tab" data-sec="liquidacion">Liquidación</button>
-  <button class="tab" data-sec="prenomina">Pre-Nómina</button>
+  <button class="tab" data-sec="prenomina">Hoja de Servicio</button>
   <button class="tab" data-sec="indicadores">Indicadores</button>
   <button class="tab" data-sec="rutas">Rutas</button>
   <button class="tab tab-admin" data-sec="admin">Administración</button>
@@ -700,7 +729,6 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <div class="mini" id="monAvisoFin" style="margin-bottom:10px"></div>
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <button class="btn btn-p btn-sm" id="btnMonGuardar">💾 Guardar estatus y nota</button>
-      <button class="btn btn-s btn-sm" id="btnMonEvidencia">📄 Registrar entrega de evidencia</button>
       <button class="btn btn-s btn-sm" id="btnMonIncidencia" style="background:var(--bad);color:#fff">⚠ Reportar incidencia</button>
     </div>
 
@@ -771,7 +799,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <!-- Comprobación de los adelantos al operador capturados en la solicitud -->
     <div id="lqAdelantosBox" style="display:none">
       <h3 style="margin-top:10px">Comprobación de adelantos al operador</h3>
-      <div class="sub" style="margin-bottom:10px">Confirma cuánto comprobó el operador de cada adelanto que se le dio (adelanto de nómina, pensión, hotel…). La diferencia se descuenta o se abona en su Pre-Nómina.</div>
+      <div class="sub" style="margin-bottom:10px">Confirma cuánto comprobó el operador de cada adelanto que se le dio (adelanto de nómina, pensión, hotel…). La diferencia se descuenta o se abona en su Hoja de Servicio.</div>
       <div id="lqAdelantosWrap"></div>
       <div class="totrow" style="margin-top:8px"><span>Diferencia total (a favor / en contra del operador)</span><b class="num" id="lqAdelantosDif">$0.00</b></div>
     </div>
@@ -799,25 +827,22 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       </div>
     </div>
 
-    <!-- Validación de Seguridad: solo administrador -->
-    <div id="lqSeguridadBox" style="background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:12px">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <h3 style="margin:0">Validación de Seguridad</h3>
-        <span id="lqSeguridadEstado" class="mini" style="background:var(--bad);color:white;padding:4px 12px;border-radius:4px;font-weight:600">Pendiente de validación</span>
+    <!-- Incidencias del viaje: informativas, vienen solas del monitoreo -->
+    <div id="lqIncidenciasBox" style="background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:12px">
+      <h3 style="margin-bottom:8px">Incidencias del viaje</h3>
+      <div class="sub" style="margin-bottom:8px">Se toman solas de lo que el monitorista reportó en ruta. Solo son una nota: no bloquean la liquidación.</div>
+      <div class="mini" id="lqIncidencias"></div>
+    </div>
+
+    <!-- Evidencia del viaje, con fotografías -->
+    <div id="lqEvidenciaBox" style="background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:12px">
+      <h3 style="margin-bottom:8px">Evidencia del viaje</h3>
+      <div class="sub" style="margin-bottom:10px">Agrega las fotografías de la evidencia. Se reducen antes de subirlas y quedan guardadas junto al servicio.</div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+        <input type="file" id="lqFotos" accept="image/*" multiple style="max-width:340px">
+        <span class="mini" id="lqFotosInfo"></span>
       </div>
-      <div id="lqSeguridadForm" style="opacity:0.5;pointer-events:none">
-        <div class="grid g2" style="margin-bottom:12px">
-          <label style="display:flex;gap:10px;align-items:center;font-weight:normal"><input type="checkbox" id="lqSegIncidencias"> ¿Tuvo incidencias en ruta?</label>
-          <label style="display:flex;gap:10px;align-items:center;font-weight:normal"><input type="checkbox" id="lqSegTiempo" checked> ¿Llegó a tiempo?</label>
-        </div>
-        <div id="lqSegComentariosBox" style="display:none">
-          <label>Comentarios (cuando no llegó a tiempo)</label>
-          <textarea id="lqSegComentarios" rows="2" placeholder="Explica el motivo del retraso…" style="resize:vertical"></textarea>
-        </div>
-      </div>
-      <div id="lqSeguridadNoAdmin" class="mini" style="color:var(--bad);display:none;text-align:center;padding:12px">
-        Solo un administrador puede validar la seguridad del viaje.
-      </div>
+      <div id="lqGaleria" style="display:flex;gap:10px;flex-wrap:wrap"></div>
     </div>
 
     <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-top:12px">
@@ -844,7 +869,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 <section class="sec" id="sec-prenomina">
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
-      <h2 style="margin:0">Pre-nómina de operadores</h2>
+      <h2 style="margin:0">Hoja de servicio de operadores</h2>
       <label class="switch" title="Cambia al esquema de sueldo fijo: sin objetivo de kilómetros, sin objetivo de rendimiento y sin apoyo para viaje.">
         <input type="checkbox" id="pTipoPagoFijo"><span class="sw"></span>
         <span class="swtx">Pago de nómina fija</span>
@@ -883,6 +908,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 
       <div class="card">
         <h3>Objetivos de cumplimiento</h3>
+        <div class="sub" style="margin-bottom:10px">Se marcan a mano. Las incidencias del periodo aparecen abajo solo como información.</div>
         <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px">
           <label style="display:flex;gap:10px;align-items:center;font-size:14px;text-transform:none;letter-spacing:0"><input type="checkbox" id="ob1" style="width:auto"> Llegada en tiempo</label>
           <label style="display:flex;gap:10px;align-items:center;font-size:14px;text-transform:none;letter-spacing:0"><input type="checkbox" id="ob2" style="width:auto"> Evidencia en tiempo</label>
@@ -1011,6 +1037,25 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <div class="chartbox"><h3>KM cargados / vacíos / posicionamiento</h3><div class="cv"><canvas id="chCarga"></canvas></div></div>
     <div class="chartbox"><h3>Servicios por semana</h3><div class="cv"><canvas id="chSemana"></canvas></div></div>
   </div>
+
+  <div class="card" style="margin-top:16px">
+    <h2>Tiempos del proceso</h2>
+    <div class="sub">Cuánto se tarda la operación en cada paso, a partir de las fechas que va dejando cada servicio. Se cuenta de la fecha de un paso a la del siguiente.</div>
+    <div class="kpis" style="margin-top:14px">
+      <div class="kpi"><div class="v num" id="kTiempoCiclo">—</div><div class="l">Ciclo completo (promedio)</div></div>
+      <div class="kpi"><div class="v num" id="kTiempoAsig">—</div><div class="l">Asignar unidad</div></div>
+      <div class="kpi"><div class="v num" id="kTiempoDisp">—</div><div class="l">Dispersar gastos</div></div>
+      <div class="kpi"><div class="v num" id="kTiempoLiq">—</div><div class="l">Liquidar el viaje</div></div>
+    </div>
+    <div class="grid g2" style="margin-top:16px">
+      <div class="chartbox"><h3>Promedio por paso (días)</h3><div class="cv"><canvas id="chTiempos"></canvas></div></div>
+      <div class="chartbox"><h3>Ciclo completo por semana (días)</h3><div class="cv"><canvas id="chCiclo"></canvas></div></div>
+    </div>
+    <div class="twrap" style="margin-top:14px"><table>
+      <thead><tr><th>Paso</th><th class="right">Servicios</th><th class="right">Promedio</th><th class="right">Más rápido</th><th class="right">Más lento</th></tr></thead>
+      <tbody id="tbodyTiempos"></tbody>
+    </table></div>
+  </div>
 </section>
 
 <!-- ============ ADMINISTRACIÓN ============ -->
@@ -1033,7 +1078,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <div><label>% urea sobre litros de combustible</label><input id="cfgUreaPct" type="number" step="0.5"></div>
         <div><label>Folio inicial</label><input id="cfgFolio" type="number" step="1"></div>
       </div>
-      <h3 style="margin-top:18px">Pre-nómina</h3>
+      <h3 style="margin-top:18px">Hoja de servicio</h3>
       <div class="grid g4">
         <div><label>Pago fijo semanal por defecto ($)</label><input id="cfgSueldoFijo" type="number" step="100" title="Se usa solo cuando el operador no tiene capturado su propio Pago fijo en Administración → Operadores"></div>
         <div><label>% bono cumplimiento</label><input id="cfgBonoPct" type="number" step="1"></div>
@@ -1064,6 +1109,11 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <div><label>Utilitaria</label><input id="cfgORUtil" type="number" step="0.1"></div>
       </div>
       <div style="margin-top:16px"><button class="btn btn-p" id="btnGuardarCfg">Guardar parámetros</button></div>
+      <hr class="sep">
+      <label>URL del logo (opcional)</label>
+      <div class="sub" style="margin-bottom:8px">Liga directa a la imagen del logo de ADL. Si se deja vacía, se usa el logo dibujado en la propia app.</div>
+      <input id="cfgLogo" placeholder="https://…/logo-adl.png" style="margin-bottom:12px">
+      <button class="btn btn-s" id="btnGuardarLogo">Guardar logo</button>
       <hr class="sep">
       <label>ID del Google Sheet de la sábana (para escribir Liquidación en la hoja Transportadora)</label>
       <input id="cfgSabana" placeholder="Ej: 1a2b3c4d... (de la URL del Sheet)" style="margin-bottom:12px">
@@ -1283,9 +1333,9 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <tr>
       <td rowspan="2" style="width:18%;font-family:'Barlow Condensed';font-size:20px">ADL</td>
       <td style="width:56%">TRANSPORTE Y DISTRIBUCIÓN DE CARGA ADL</td>
-      <td style="width:26%">PRE-NÓMINA</td>
+      <td style="width:26%">HOJA DE SERVICIO</td>
     </tr>
-    <tr><td>PRE-NÓMINA DE OPERADORES</td><td id="pnPeriodo"></td></tr>
+    <tr><td>HOJA DE SERVICIO DE OPERADORES</td><td id="pnPeriodo"></td></tr>
   </table>
   <table class="prTable" style="margin-top:6px">
     <tr><td class="prLbl">OPERADOR</td><td id="pnOperador"></td><td class="prLbl">FECHA DE REALIZACIÓN</td><td id="pnFecha"></td></tr>
@@ -1348,7 +1398,7 @@ const TOLERANCIA_KM = 15;
 
 const DB = { UNIDADES:[], OPERADORES:[], EJECUTIVOS:[], REMOLQUES:[], CLIENTES:[], RUTAS:[], SOLICITUDES:[], NOMINAS:[], LIQUIDACION:[], CASETAS:[], USUARIOS:[], BITACORA:[], SOLICITUDES_CANCELADAS:[], PAGO_X_KM:[],
   SERVICIOS:[], TIPO_NEGOCIO:[], ADUANAS:[], ESTADOS:[], CIUDADES:[], PROVEEDORES:[],
-  TIPOS_INCIDENCIA:[], INCIDENCIAS:[], UBICACIONES:[], CONFIG:{} };
+  TIPOS_INCIDENCIA:[], INCIDENCIAS:[], UBICACIONES:[], EVIDENCIAS:[], CONFIG:{} };
 
 const $  = id => document.getElementById(id);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
@@ -1462,7 +1512,7 @@ function bitacora(accion, detalle){
 const HOJAS_APP = ['UNIDADES','OPERADORES','EJECUTIVOS','REMOLQUES','CLIENTES','RUTAS','SOLICITUDES',
   'NOMINAS','LIQUIDACION','CASETAS','USUARIOS','BITACORA','SOLICITUDES_CANCELADAS','PAGO_X_KM',
   'SERVICIOS','TIPO_NEGOCIO','ADUANAS','ESTADOS','CIUDADES','PROVEEDORES',
-  'TIPOS_INCIDENCIA','INCIDENCIAS','UBICACIONES'];
+  'TIPOS_INCIDENCIA','INCIDENCIAS','UBICACIONES','EVIDENCIAS'];
 const hojasPedidas = new Set();
 
 /* Refleja en memoria lo que el guardado acaba de escribir, sin esperar a que
@@ -1494,7 +1544,7 @@ function aplicarDatos(data, pintar){
 
 /* Hojas de archivo: bitácora y canceladas. Crecen sin tope, así que no viajan
    en la respuesta del guardado; se piden con esta lectura aparte. */
-const HOJAS_ARCHIVO = ['BITACORA','SOLICITUDES_CANCELADAS'];
+const HOJAS_ARCHIVO = ['BITACORA','SOLICITUDES_CANCELADAS','EVIDENCIAS'];
 
 async function traerHojas(hojas){
   const r = await fetch(WEBHOOK, { method:'POST', body: JSON.stringify({ action:'leerHoja', sheets:hojas, usuario: ctxUsuario() }) });
@@ -1521,7 +1571,8 @@ let archivoEnCurso = false, archivoPendiente = false;
 async function refrescarArchivo(){
   // Solo las que ya están cargadas: si nadie ha abierto la bitácora, no tiene
   // caso bajarla en segundo plano — se pide entera al abrir su pestaña.
-  const hojas = HOJAS_ARCHIVO.filter(h=>hojasPedidas.has(h));
+  // EVIDENCIAS queda fuera: son fotos, y lo que se sube ya se aplicó en local
+  const hojas = HOJAS_ARCHIVO.filter(h=>h!=='EVIDENCIAS' && hojasPedidas.has(h));
   if(!hojas.length) return;
   if(archivoEnCurso){ archivoPendiente = true; return; }
   archivoEnCurso = true;
@@ -1627,7 +1678,8 @@ document.querySelectorAll('.tab[data-sec]').forEach(b=>b.addEventListener('click
   $('sec-'+b.dataset.sec).classList.add('active');
   if(b.dataset.sec==='indicadores') pintarIndicadores();
   if(b.dataset.sec==='prenomina') pintarPrenomina();
-  if(b.dataset.sec==='liquidacion') pintarLiquidacion();
+  // Las fotos de evidencia pesan: se piden solo al entrar a Liquidación
+  if(b.dataset.sec==='liquidacion'){ pintarLiquidacion(); cargarHojaSiHaceFalta('EVIDENCIAS'); }
   if(b.dataset.sec==='dispersiones') pintarTablaDispersiones();
   if(b.dataset.sec==='rutas') pintarListaRutas();
   if(b.dataset.sec==='solicitud') pintarListaSol();
@@ -1916,6 +1968,17 @@ function ahoraTexto(){
   const d = new Date(), p = n=>String(n).padStart(2,'0');
   return `${p(d.getDate())}/${p(d.getMonth()+1)}/${d.getFullYear()} ${p(d.getHours())}:${p(d.getMinutes())}`;
 }
+/* La primera de las cartas porte de un texto ("401 - 402" → "401") */
+function primeraCP(txt){
+  return String(txt||'').split(/[,;\-\s]+/).map(x=>x.trim()).filter(Boolean)[0] || '';
+}
+/* ID generado en el navegador. Se usa cuando el registro pesa tanto que no
+   conviene que el backend lo devuelva (las fotos de evidencia): con el ID
+   puesto de este lado, la app lo aplica en local sin esperar respuesta. */
+function nuevoId(){
+  if(window.crypto && crypto.randomUUID) return crypto.randomUUID();
+  return 'x'+Date.now().toString(36)+Math.random().toString(36).slice(2,10);
+}
 
 /* Semana y mes salen SOLOS de la cita de carga */
 function alCambiarCitaCarga(){
@@ -2066,8 +2129,16 @@ $('nsModalidad').addEventListener('change', alCambiarModalidadServicio);
 $('nsCitaCarga').addEventListener('change', alCambiarCitaCarga);
 $('nsCitaCarga').addEventListener('input', alCambiarCitaCarga);
 
+/* Un servicio ya capturado solo lo modifica un líder o un administrador */
+function puedeEditarServicio(){ return esAdmin() || rolActual()==='SUP'; }
+
 function abrirServicio(id){
   const s = DB.SERVICIOS.find(x=>String(x.ID)===String(id)); if(!s) return;
+  if(!puedeEditarServicio()){
+    modal('Solo líder o administrador',
+      'Un servicio ya capturado únicamente lo puede modificar un usuario <b>líder</b> o <b>administrador</b>.', '🔒');
+    return;
+  }
   servicioEditando = id;
   $('nsEditando').innerHTML = 'Editando <b>'+esc(s.CP||s.ID)+'</b>';
   $('nsModalidad').checked = String(s.MODALIDAD).toUpperCase()==='FWD';
@@ -2121,12 +2192,14 @@ function filtrarServicios(modalidad, texto, estatus){
 }
 function pintarTablaServicios(tbody, filas, columnas, nCols){
   const tb=$(tbody); tb.innerHTML='';
+  // Editar solo para líder o administrador: a los demás ni siquiera se les pone
+  const editar = puedeEditarServicio();
   [...filas].reverse().forEach(s=>{
     const tr=document.createElement('tr');
     if(String(s.ESTATUS).toUpperCase()==='CANCELADO') tr.style.opacity='0.55';
     tr.innerHTML = columnas(s) + `<td>${etiquetaEtapa(s)}</td>
       <td style="white-space:nowrap">
-        <button class="btn btn-s btn-sm" data-sedserv="${s.ID}">Editar</button>
+        ${editar? `<button class="btn btn-s btn-sm" data-sedserv="${s.ID}">Editar</button>` : ''}
         <button class="btn btn-p btn-sm" data-verserv="${s.ID}">Ver detalle</button>
       </td>`;
     tb.appendChild(tr);
@@ -2222,10 +2295,14 @@ function etapaDe(s){
   return servicioDespachado(s)? 'ASIGNADO' : 'SOLICITADO';
 }
 function indiceEtapa(e){ const i=ETAPAS.indexOf(String(e||'').toUpperCase()); return i<0?0:i; }
+/* La etapa se guarda con el nombre de siempre en el Sheet; en pantalla la
+   novena se muestra como "Hoja de servicio". */
+const NOMBRE_ETAPA = { 'EN PRE-NÓMINA':'EN HOJA DE SERVICIO' };
+function textoEtapa(e){ return NOMBRE_ETAPA[e] || e; }
 function etiquetaEtapa(s){
   const e = etapaDe(s);
   const fin = indiceEtapa(e) >= indiceEtapa('LIQUIDADO');
-  return `<span class="tag${fin?' ok':''}">${PASO_DE_ETAPA[e]}. ${e}</span>`;
+  return `<span class="tag${fin?' ok':''}">${PASO_DE_ETAPA[e]}. ${textoEtapa(e)}</span>`;
 }
 
 /* ---------- Monitoreo ----------
@@ -2404,19 +2481,8 @@ $('btnMonGuardar').addEventListener('click', async ()=>{
   }
 });
 
-$('btnMonEvidencia').addEventListener('click', async ()=>{
-  const s = DB.SERVICIOS.find(x=>String(x.ID)===String(monEditando)); if(!s) return;
-  if(indiceEtapa(etapaDe(s)) < indiceEtapa('FINALIZADO')){
-    toast('Primero hay que finalizar el servicio.', true); return;
-  }
-  if(indiceEtapa(etapaDe(s)) >= indiceEtapa('EVIDENCIA ENTREGADA')){
-    toast('La evidencia ya estaba registrada.', true); return;
-  }
-  const reg = Object.assign({}, s, { ETAPA:'EVIDENCIA ENTREGADA', FECHA_EVIDENCIA: ahoraTexto() });
-  if(await apiEnviar({action:'upsert', sheet:'SERVICIOS', record:reg})){
-    toast('Evidencia registrada'); pintarMonitoreo();
-  }
-});
+/* La entrega de evidencia ya no se marca en el monitoreo: se registra en
+   Liquidación, junto con las fotografías (ver "Evidencia del viaje"). */
 
 /* Aviso de las citas de carga que caen dentro de las próximas 2 horas y
    todavía no tienen arribo registrado */
@@ -2445,7 +2511,7 @@ function avisoCitasProximas(servicios){
 function pintarMonitoreo(){
   const selF=$('monFiltro');
   if(selF.options.length<=2){
-    ETAPAS.forEach(e=>{ const o=document.createElement('option'); o.value=e; o.textContent=PASO_DE_ETAPA[e]+'. '+e; selF.appendChild(o); });
+    ETAPAS.forEach(e=>{ const o=document.createElement('option'); o.value=e; o.textContent=PASO_DE_ETAPA[e]+'. '+textoEtapa(e); selF.appendChild(o); });
   }
   const tdc = DB.SERVICIOS.filter(s=>String(s.MODALIDAD).toUpperCase()==='TDC' &&
                                      String(s.ESTATUS||'').toUpperCase()!=='CANCELADO');
@@ -2462,7 +2528,7 @@ function pintarMonitoreo(){
     c.className='tag'; c.style.cursor='pointer'; c.style.opacity = n? '1' : '.45';
     if(n && indiceEtapa(e)<indiceEtapa('LIQUIDADO')){ c.style.background='var(--accent)'; c.style.color='var(--accent-ink)'; }
     else if(n){ c.style.background='var(--ok)'; c.style.color='#fff'; }
-    c.textContent = PASO_DE_ETAPA[e]+'. '+e+' · '+n;
+    c.textContent = PASO_DE_ETAPA[e]+'. '+textoEtapa(e)+' · '+n;
     c.addEventListener('click',()=>{ selF.value = e; pintarMonitoreo(); });
     chips.appendChild(c);
   });
@@ -2606,7 +2672,7 @@ function abrirDetalleServicio(id){
   const etapas = ETAPAS.filter(e=>FECHA_DE_ETAPA[e]).map(e=>{
     const alcanzada = indiceEtapa(etapaDe(s)) >= indiceEtapa(e);
     const f = s[FECHA_DE_ETAPA[e]]||'';
-    return `<li class="${alcanzada?'hecho':''}"><div class="tlq">${PASO_DE_ETAPA[e]}. ${e}</div>
+    return `<li class="${alcanzada?'hecho':''}"><div class="tlq">${PASO_DE_ETAPA[e]}. ${textoEtapa(e)}</div>
       <div class="tlv">${f? esc(f) : (alcanzada? '—' : 'pendiente')}</div></li>`;
   }).join('');
 
@@ -3819,26 +3885,20 @@ function pintarPagoPorKm(esModoFijo, items, totalServicios, sueldo, diferencia, 
       : 'Los servicios no rebasan el sueldo fijo: se paga únicamente el sueldo, sin bono.';
 }
 
-/* "Llegada en tiempo" y "Sin incidencias en ruta" salen de lo que Seguridad
-   validó al liquidar cada viaje del periodo: se cumplen solo si TODOS los
-   viajes liquidados llegaron a tiempo / no tuvieron incidencias. Por eso no
-   se capturan a mano. "Evidencia en tiempo" sí sigue siendo manual. */
-function aplicarObjetivosDeSeguridad(serviciosLiq){
-  const validados = serviciosLiq.map(s=>liqDe(s.ID)).filter(l=>l && String(l.SEGURIDAD_ESTADO||'').toUpperCase()==='VALIDADO');
-  const hay = validados.length>0;
-  const enTiempo = hay && validados.every(l=>String(l.SEGURIDAD_TIEMPO||'').toUpperCase()==='SI');
-  const sinInc   = hay && validados.every(l=>String(l.SEGURIDAD_INCIDENCIAS||'').toUpperCase()!=='SI');
+/* Los tres objetivos se marcan a mano. Las incidencias del periodo se
+   muestran aquí abajo solo como información: no marcan ni desmarcan nada. */
+function pintarIncidenciasPrenomina(servicios){
+  const ids = new Set(servicios.map(s=>{
+    const srv = servicioDeSolicitud(s);
+    return srv? String(srv.ID) : '';
+  }).filter(Boolean));
+  const inc = (DB.INCIDENCIAS||[]).filter(i=>ids.has(String(i.SERVICIO_ID||'')))
+    .sort((a,b)=>String(a.FECHA_HORA).localeCompare(String(b.FECHA_HORA)));
 
-  const nota = hay
-    ? 'Lo determina la validación de Seguridad de los viajes liquidados del periodo.'
-    : 'Sin viajes con validación de Seguridad en el periodo.';
-  [['ob1',enTiempo],['ob3',sinInc]].forEach(([id,val])=>{
-    const el = $(id);
-    el.checked = val;
-    el.disabled = true;
-    el.title = nota;
-  });
-  $('pObjSegNota').textContent = nota;
+  $('pObjSegNota').innerHTML = inc.length
+    ? `<b style="color:var(--bad)">${inc.length} incidencia(s) reportada(s) en el periodo</b> — solo informativo:<br>`+
+      [...inc].reverse().map(i=>`· <b>${esc(i.TIPO)}</b> · ${esc(i.FECHA_HORA)}${i.CP? ' · CP '+esc(i.CP):''} — ${esc(i.DESCRIPCION)}`).join('<br>')
+    : 'Sin incidencias reportadas en el periodo.';
 }
 
 function calcularPrenomina(){
@@ -3846,7 +3906,7 @@ function calcularPrenomina(){
   $('pSemBox').style.display = $('pModo').value==='semana' ? '' : 'none';
   $('pMesBox').style.display = $('pModo').value==='mes' ? '' : 'none';
   const {op, servicios, serviciosLiq, etiqueta, semanasAuto} = serviciosPeriodo();
-  aplicarObjetivosDeSeguridad(serviciosLiq);
+  pintarIncidenciasPrenomina(servicios);
   if(!$('pSemanasN').dataset.manual) $('pSemanasN').value = semanasAuto;
   const semanas = Math.max(1, parseInt($('pSemanasN').value)||1);
   // Tipo de unidad predominante → objetivos por default (de todos los servicios)
@@ -4005,7 +4065,7 @@ function pagoFijoActivo(){ return $('pTipoPagoFijo').checked; }
 
 /* Sueldo del esquema de nómina fija: el del propio operador (Administración →
    Operadores). Si ese operador no lo tiene capturado, se cae al parámetro
-   general de Administración → Pre-nómina, para no dejar la nómina en cero. */
+   general de Administración → Hoja de servicio, para no dejar la nómina en cero. */
 function sueldoFijoDe(op){
   const propio = op? nf(op.SUELDO_FIJO_SEMANAL) : 0;
   return propio>0? propio : cfgNum('SUELDO_FIJO_SEMANAL',0);
@@ -4202,41 +4262,137 @@ function abrirLiq(id){
   $('lqAutorizaNota').value = '';
   calcOdometro();
   pintarCajaAclaracion(id, l);
-  pintarCajaSeguridadLiq(id, l);
+  pintarIncidenciasLiq(s);
+  pintarEvidenciaLiq(s);
   $('liqDetalle').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
-/* Caja de validación de seguridad: solo el administrador puede validar */
-function pintarCajaSeguridadLiq(id, l){
-  const admin = esAdmin();
-  const formDiv = $('lqSeguridadForm');
-  const estadoSpan = $('lqSeguridadEstado');
-  const validado = !!(l && String(l.SEGURIDAD_ESTADO||'').toUpperCase()==='VALIDADO');
-
-  $('lqSegIncidencias').checked = !!(l && String(l.SEGURIDAD_INCIDENCIAS||'').toUpperCase()==='SI');
-  $('lqSegTiempo').checked = l? String(l.SEGURIDAD_TIEMPO||'').toUpperCase()!=='NO' : true;
-  $('lqSegComentarios').value = (l && l.SEGURIDAD_COMENTARIOS) || '';
-
-  estadoSpan.textContent = validado? '✔ Validado' : 'Pendiente de validación';
-  estadoSpan.style.background = validado? 'var(--ok)' : 'var(--bad)';
-
-  // Solo el administrador captura. Los demás la ven en gris, de solo lectura.
-  formDiv.style.opacity = admin? '1' : '0.5';
-  formDiv.style.pointerEvents = admin? 'auto' : 'none';
-  formDiv.querySelectorAll('input,textarea').forEach(el=>{ el.disabled = !admin; });
-  $('lqSeguridadNoAdmin').style.display = admin? 'none' : '';
-
-  sincronizarComentariosSeguridad();
+/* ---------- Incidencias del viaje ----------
+   Ya no hay validación de seguridad que capturar: si el monitorista reportó
+   algo en ruta, aquí se muestra como nota y nada más. */
+function servicioDeSolicitud(s){
+  if(!s) return null;
+  if(s.SERVICIO_ID){
+    const porId = DB.SERVICIOS.find(x=>String(x.ID)===String(s.SERVICIO_ID));
+    if(porId) return porId;
+  }
+  return servicioPorCP(primeraCP(s.CARTAS_PORTE));
 }
-/* La caja de comentarios solo aplica cuando NO llegó a tiempo */
-function sincronizarComentariosSeguridad(){
-  $('lqSegComentariosBox').style.display = $('lqSegTiempo').checked? 'none' : '';
+function incidenciasDeSolicitud(s){
+  const srv = servicioDeSolicitud(s);
+  return srv? incidenciasDe(srv.ID) : [];
 }
-$('lqSegTiempo').addEventListener('change', sincronizarComentariosSeguridad);
+function listaIncidenciasHTML(inc){
+  if(!inc.length) return 'Sin incidencias reportadas en ruta.';
+  return [...inc].reverse().map(i=>`<div style="border-left:4px solid var(--bad);padding:6px 10px;margin-bottom:6px;background:var(--surface);border-radius:6px">
+      <b>${esc(i.TIPO)}</b> · ${esc(i.FECHA_HORA)}${i.CP? ' · CP '+esc(i.CP):''}<br>${esc(i.DESCRIPCION)}
+      <span class="mini">— reportó ${esc(i.REGISTRADO_POR)||'—'}</span></div>`).join('');
+}
+function pintarIncidenciasLiq(s){
+  $('lqIncidencias').innerHTML = listaIncidenciasHTML(incidenciasDeSolicitud(s));
+}
+
+/* ---------- Evidencia del viaje ----------
+   Las fotos se reducen en el navegador antes de subirlas: una celda del Sheet
+   no aguanta una foto de cámara completa. */
+const EVID_MAX_CHARS = 45000;
+function comprimirImagen(file){
+  return new Promise((resolve,reject)=>{
+    const fr = new FileReader();
+    fr.onerror = ()=>reject(new Error('No se pudo leer el archivo'));
+    fr.onload = ()=>{
+      const img = new Image();
+      img.onerror = ()=>reject(new Error('El archivo no es una imagen válida'));
+      img.onload = ()=>{
+        let ancho = img.width, alto = img.height;
+        const max = 1100;
+        if(Math.max(ancho,alto) > max){
+          const f = max/Math.max(ancho,alto);
+          ancho = Math.round(ancho*f); alto = Math.round(alto*f);
+        }
+        // Se baja calidad (y si hace falta, tamaño) hasta que quepa en la celda
+        for(let intento=0; intento<6; intento++){
+          const c = document.createElement('canvas');
+          c.width = ancho; c.height = alto;
+          c.getContext('2d').drawImage(img,0,0,ancho,alto);
+          const calidad = [0.72,0.6,0.5,0.42,0.35,0.3][intento];
+          const url = c.toDataURL('image/jpeg', calidad);
+          if(url.length <= EVID_MAX_CHARS) return resolve(url);
+          ancho = Math.round(ancho*0.8); alto = Math.round(alto*0.8);
+        }
+        reject(new Error('La imagen es demasiado grande'));
+      };
+      img.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  });
+}
+function evidenciasDeServicio(id){
+  return (DB.EVIDENCIAS||[]).filter(e=>String(e.SERVICIO_ID||'')===String(id))
+    .sort((a,b)=>String(a.FECHA_HORA).localeCompare(String(b.FECHA_HORA)));
+}
+function pintarEvidenciaLiq(s){
+  const srv = servicioDeSolicitud(s);
+  const fotos = srv? evidenciasDeServicio(srv.ID) : [];
+  const g = $('lqGaleria'); g.innerHTML='';
+  fotos.forEach(f=>{
+    const d = document.createElement('div');
+    d.style.cssText='position:relative;border:1px solid var(--line);border-radius:8px;overflow:hidden;background:var(--surface)';
+    d.innerHTML = `<img src="${esc(f.IMAGEN)}" alt="${esc(f.NOMBRE)}" style="height:110px;width:150px;object-fit:cover;display:block;cursor:zoom-in" data-verfoto="${f.ID}">
+      <button class="btn btn-d btn-sm" data-delfoto="${f.ID}" title="Quitar" style="position:absolute;top:4px;right:4px;padding:2px 7px">✕</button>
+      <div class="mini" style="padding:4px 6px">${esc(f.FECHA_HORA)}</div>`;
+    g.appendChild(d);
+  });
+  $('lqFotosInfo').textContent = fotos.length
+    ? fotos.length+' fotografía(s) de evidencia'
+    : 'Todavía no hay fotografías de evidencia.';
+  g.querySelectorAll('[data-verfoto]').forEach(el=>el.addEventListener('click',()=>{
+    const f = (DB.EVIDENCIAS||[]).find(x=>String(x.ID)===String(el.dataset.verfoto));
+    if(f) modal('Evidencia', `<img src="${esc(f.IMAGEN)}" style="max-width:100%;border-radius:8px">`, '📷');
+  }));
+  g.querySelectorAll('[data-delfoto]').forEach(el=>el.addEventListener('click',()=>borrarEvidencia(el.dataset.delfoto)));
+}
+async function borrarEvidencia(id){
+  if(await apiEnviar({action:'delete', sheet:'EVIDENCIAS', id})){
+    toast('Fotografía eliminada');
+    const s = DB.SOLICITUDES.find(x=>String(x.ID)===String(liqEditando));
+    if(s) pintarEvidenciaLiq(s);
+  }
+}
+$('lqFotos').addEventListener('change', async ()=>{
+  const s = DB.SOLICITUDES.find(x=>String(x.ID)===String(liqEditando));
+  const archivos = [...$('lqFotos').files];
+  if(!s || !archivos.length) return;
+  const srv = servicioDeSolicitud(s);
+  if(!srv){ toast('No se encontró el servicio de esta carta porte.', true); $('lqFotos').value=''; return; }
+  $('lqFotosInfo').textContent = 'Subiendo '+archivos.length+' fotografía(s)…';
+  let subidas = 0;
+  for(const f of archivos){
+    try{
+      const img = await comprimirImagen(f);
+      const ok = await apiEnviar({action:'upsert', sheet:'EVIDENCIAS', record:{
+        ID: nuevoId(), FECHA_HORA: ahoraTexto(), SERVICIO_ID: srv.ID, FOLIO: s.FOLIO,
+        CP: s.CARTAS_PORTE, OPERADOR: s.OPERADOR, NOMBRE: f.name,
+        IMAGEN: img, REGISTRADO_POR: nombreUsuario()
+      }});
+      if(ok) subidas++;
+    }catch(e){ toast(f.name+': '+e.message, true); }
+  }
+  $('lqFotos').value='';
+  if(subidas){
+    // Con evidencia cargada, el servicio ya pasó el paso 7 del proceso
+    if(indiceEtapa(etapaDe(srv)) < indiceEtapa('EVIDENCIA ENTREGADA')){
+      await apiEnviar({action:'upsert', sheet:'SERVICIOS',
+        record: Object.assign({}, srv, { ETAPA:'EVIDENCIA ENTREGADA', FECHA_EVIDENCIA: ahoraTexto() })});
+    }
+    toast(subidas+' fotografía(s) de evidencia guardadas');
+  }
+  pintarEvidenciaLiq(s);
+});
 
 /* Comprobación de los adelantos al operador (adelanto de nómina, pensión,
    hotel…) capturados en la solicitud. La diferencia entre lo asignado y lo
-   comprobado se descuenta (o se abona, si comprobó de más) en su Pre-Nómina. */
+   comprobado se descuenta (o se abona, si comprobó de más) en su Hoja de Servicio. */
 function pintarAdelantosLiq(s, l){
   let asignados=[];
   try{ asignados = JSON.parse(s.GASTOS_ADICIONALES_JSON||'[]'); }catch(e){ asignados=[]; }
@@ -4379,25 +4535,12 @@ function armarLiquidacion(){
   const adelantos = armarAdelantosLiq(s);
   const descuentoAdelantos = adelantos.reduce((a,g)=>a+nf(g.DIFERENCIA),0);
 
-  /* Seguridad: solo el administrador valida. Cualquier otro rol conserva lo
-     que Seguridad ya haya dejado registrado (o lo deja pendiente). */
-  const lPrev = liqDe(s.ID);
-  const yaValidado = !!(lPrev && String(lPrev.SEGURIDAD_ESTADO||'').toUpperCase()==='VALIDADO');
-  const validaAhora = esAdmin();
-  const seguridad = validaAhora
-    ? { ESTADO:'VALIDADO',
-        INCIDENCIAS: $('lqSegIncidencias').checked? 'SI' : 'NO',
-        TIEMPO: $('lqSegTiempo').checked? 'SI' : 'NO',
-        COMENTARIOS: $('lqSegTiempo').checked? '' : ($('lqSegComentarios').value||'').trim(),
-        POR: nombreUsuario(), FECHA: hoyISO() }
-    : { ESTADO: yaValidado? 'VALIDADO' : 'PENDIENTE',
-        INCIDENCIAS: (lPrev && lPrev.SEGURIDAD_INCIDENCIAS) || '',
-        TIEMPO: (lPrev && lPrev.SEGURIDAD_TIEMPO) || '',
-        COMENTARIOS: (lPrev && lPrev.SEGURIDAD_COMENTARIOS) || '',
-        POR: (lPrev && lPrev.SEGURIDAD_VALIDADO_POR) || '',
-        FECHA: (lPrev && lPrev.SEGURIDAD_FECHA_VALIDACION) || '' };
+  // Las incidencias del viaje se guardan como nota, tal como las reportó el
+  // monitorista. No se validan ni bloquean el cierre de la liquidación.
+  const inc = incidenciasDeSolicitud(s);
+  const notaInc = inc.map(i=>i.TIPO+' ('+i.FECHA_HORA+'): '+i.DESCRIPCION).join(' | ');
 
-  return { s, odo, seguridad, reg: {
+  return { s, odo, reg: {
     ID: s.ID, FOLIO: s.FOLIO, CARTAS_PORTE: s.CARTAS_PORTE,
     FECHA_CARGA: s.FECHA_SERVICIO, FECHA_FINALIZADO: $('lqFechaFin').value,
     RUTA: s.RUTA, CLIENTE: clienteDeSol(s), OPERADOR: s.OPERADOR,
@@ -4412,23 +4555,9 @@ function armarLiquidacion(){
     EVIDENCIA: 'SI',
     GASTOS_ADICIONALES_JSON: JSON.stringify(adelantos),
     DESCUENTO_GASTOS_ADICIONALES: r2(descuentoAdelantos),
-    SEGURIDAD_ESTADO: seguridad.ESTADO,
-    SEGURIDAD_INCIDENCIAS: seguridad.INCIDENCIAS,
-    SEGURIDAD_TIEMPO: seguridad.TIEMPO,
-    SEGURIDAD_COMENTARIOS: seguridad.COMENTARIOS,
-    SEGURIDAD_VALIDADO_POR: seguridad.POR,
-    SEGURIDAD_FECHA_VALIDACION: seguridad.FECHA
+    INCIDENCIAS_NOTA: notaInc,
+    N_INCIDENCIAS: inc.length
   }};
-}
-
-/* El proceso de liquidación no se cierra mientras Seguridad no valide.
-   Validar es exclusivo del administrador. */
-function seguridadValidada(reg){
-  if(String(reg.SEGURIDAD_ESTADO||'').toUpperCase()==='VALIDADO') return true;
-  modal('Falta la validación de Seguridad',
-    'Este viaje tiene la validación de Seguridad <b>pendiente</b>, así que no se puede cerrar la liquidación.<br><br>'+
-    'Un <b>administrador</b> debe entrar con su usuario, capturar si el operador tuvo incidencias en ruta y si llegó a tiempo, y liquidar desde ahí.', '🔒');
-  return false;
 }
 
 /* Liquidar: solo dentro de la tolerancia y si no está en aclaración */
@@ -4446,7 +4575,6 @@ $('btnLiquidar').addEventListener('click', async ()=>{
       `Este viaje no se puede liquidar: envíalo a <b>aclaración</b> con el botón de abajo.`, '⚑');
     return;
   }
-  if(!seguridadValidada(reg)) return;
 
   reg.ESTADO = 'LIQUIDADO';
   reg.FECHA_LIQUIDACION = hoyISO();
@@ -4486,7 +4614,6 @@ $('btnAutorizar').addEventListener('click', async ()=>{
 
   const nota = ($('lqAutorizaNota').value||'').trim();
   if(!nota){ toast('Escribe la nota de autorización.', true); $('lqAutorizaNota').focus(); return; }
-  if(!seguridadValidada(reg)) return;
   if(!confirm('¿Autorizar el viaje '+s.FOLIO+' y cambiar su estatus a LIQUIDADO?')) return;
 
   const previo = liqDe(s.ID) || {};
@@ -4567,9 +4694,14 @@ function pintarIndicadores(){
   $('kCasetas').textContent=money(casetas);
 
   const css = getComputedStyle(document.documentElement);
-  Chart.defaults.color = css.getPropertyValue('--ink').trim();
-  Chart.defaults.borderColor = css.getPropertyValue('--line').trim();
-  Chart.defaults.font.family = "'Barlow',sans-serif";
+  // Si la librería de gráficas no cargó (sin internet), los números y las
+  // tablas se siguen viendo: solo se quedan sin dibujo.
+  const hayChart = typeof Chart !== 'undefined';
+  if(hayChart){
+    Chart.defaults.color = css.getPropertyValue('--ink').trim();
+    Chart.defaults.borderColor = css.getPropertyValue('--line').trim();
+    Chart.defaults.font.family = "'Barlow',sans-serif";
+  }
   const acc = css.getPropertyValue('--accent').trim();
   const paleta = [acc,'#4C7DD9','#1E8E5A','#C43D3D','#8B5CD6','#3AA7A3','#D97E2B','#6B7A99'];
 
@@ -4579,6 +4711,7 @@ function pintarIndicadores(){
     return m;
   };
   const mkChart=(id, tipo, labels, valores, opts)=>{
+    if(!hayChart) return;
     if(charts[id]) charts[id].destroy();
     charts[id]=new Chart($(id), { type:tipo, data:{ labels, datasets:[{ data:valores, backgroundColor:labels.map((_,i)=>paleta[i%paleta.length]), borderWidth:0, borderRadius:6 }]},
       options:Object.assign({responsive:true,maintainAspectRatio:false,plugins:{legend:{display:tipo==='doughnut'}}},opts||{}) });
@@ -4596,8 +4729,114 @@ function pintarIndicadores(){
   mkChart('chCarga','doughnut',['KM cargados','KM vacíos','KM posicionamiento'],[kc,kv,kpz]);
   const sm = agg(s=>{const w=semanaNomina(s.FECHA_SERVICIO);return 'S'+String(w.week).padStart(2,'0');}, ()=>1);
   const keys=Object.keys(sm).sort();
+  if(hayChart){
   if(charts.chSemana) charts.chSemana.destroy();
   charts.chSemana=new Chart($('chSemana'),{type:'line',data:{labels:keys,datasets:[{data:keys.map(k=>sm[k]),borderColor:acc,backgroundColor:acc,tension:.3,fill:false,pointRadius:4}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{precision:0}}}}});
+  }
+
+  pintarTiemposProceso(mkChart, acc, hayChart);
+}
+
+/* ---------- Tiempos del proceso ----------
+   Cada paso se mide de la fecha en que el servicio entró a una etapa a la del
+   siguiente. Las fechas de etapa se guardan por día y los hitos del monitoreo
+   con hora, así que aFecha() entiende los dos y el resultado sale en días. */
+const PASOS_TIEMPO = [
+  { t:'Solicitud → Asignación',     de:'FECHA_SOLICITUD',   a:'FECHA_ASIGNACION' },
+  { t:'Asignación → Gasto',         de:'FECHA_ASIGNACION',  a:'FECHA_GASTO' },
+  { t:'Gasto → Dispersión',         de:'FECHA_GASTO',       a:'FECHA_DISPERSION' },
+  { t:'Dispersión → Salida',        de:'FECHA_DISPERSION',  a:'FECHA_SALIDA' },
+  { t:'Salida → Finalizado',        de:'FECHA_SALIDA',      a:'FECHA_FINALIZADO' },
+  { t:'Finalizado → Evidencia',     de:'FECHA_FINALIZADO',  a:'FECHA_EVIDENCIA' },
+  { t:'Evidencia → Liquidación',    de:'FECHA_EVIDENCIA',   a:'FECHA_LIQUIDACION' },
+  { t:'Liquidación → Pago',         de:'FECHA_LIQUIDACION', a:'FECHA_PAGO' }
+];
+/* Días entre dos fechas del servicio; null si falta alguna o va al revés */
+function diasEntre(a, b){
+  const d1 = aFecha(a), d2 = aFecha(b);
+  if(!d1 || !d2) return null;
+  const dias = (d2.getTime() - d1.getTime())/86400000;
+  return dias < 0? null : dias;
+}
+function textoDias(d){
+  if(d===null || d===undefined) return '—';
+  if(d < 1) return Math.round(d*24)+' h';
+  return (Math.round(d*10)/10)+' d';
+}
+function serviciosDeIndicadores(){
+  let srv = DB.SERVICIOS.filter(s=>String(s.ESTATUS||'').toUpperCase()!=='CANCELADO');
+  if($('iPeriodo').value==='mes'){
+    const m = $('iMes').value || hoyISO().slice(0,7);
+    srv = srv.filter(s=>{
+      const f = aFecha(s.CITA_CARGA) || aFecha(s.FECHA_SOLICITUD);
+      if(!f) return false;
+      const p = n=>String(n).padStart(2,'0');
+      return f.getFullYear()+'-'+p(f.getMonth()+1) === m;
+    });
+  }
+  return srv;
+}
+function pintarTiemposProceso(mkChart, acc, hayChart){
+  const srv = serviciosDeIndicadores();
+
+  const medidas = PASOS_TIEMPO.map(p=>{
+    const vals = srv.map(s=>diasEntre(s[p.de], s[p.a])).filter(v=>v!==null);
+    const prom = vals.length? vals.reduce((a,b)=>a+b,0)/vals.length : null;
+    return { paso:p.t, n:vals.length, prom,
+             min: vals.length? Math.min(...vals) : null,
+             max: vals.length? Math.max(...vals) : null };
+  });
+
+  // Ciclo completo: de la solicitud al pago (o al último paso que ya tenga)
+  const ciclos = srv.map(s=>({ s, d: diasEntre(s.FECHA_SOLICITUD, s.FECHA_PAGO) }))
+                    .filter(x=>x.d!==null);
+  const promCiclo = ciclos.length? ciclos.reduce((a,x)=>a+x.d,0)/ciclos.length : null;
+  const promDe = t => { const m = medidas.find(x=>x.paso===t); return m? m.prom : null; };
+  $('kTiempoCiclo').textContent = textoDias(promCiclo);
+  $('kTiempoAsig').textContent  = textoDias(promDe('Solicitud → Asignación'));
+  $('kTiempoDisp').textContent  = textoDias(promDe('Gasto → Dispersión'));
+  $('kTiempoLiq').textContent   = textoDias(promDe('Evidencia → Liquidación'));
+
+  const tb = $('tbodyTiempos'); tb.innerHTML='';
+  medidas.forEach(m=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${esc(m.paso)}</td><td class="right">${m.n}</td>
+      <td class="right"><b>${textoDias(m.prom)}</b></td>
+      <td class="right">${textoDias(m.min)}</td><td class="right">${textoDias(m.max)}</td>`;
+    tb.appendChild(tr);
+  });
+  const tr = document.createElement('tr');
+  tr.innerHTML = `<td><b>Ciclo completo (solicitud → pago)</b></td><td class="right">${ciclos.length}</td>
+    <td class="right"><b>${textoDias(promCiclo)}</b></td>
+    <td class="right">${textoDias(ciclos.length? Math.min(...ciclos.map(x=>x.d)) : null)}</td>
+    <td class="right">${textoDias(ciclos.length? Math.max(...ciclos.map(x=>x.d)) : null)}</td>`;
+  tb.appendChild(tr);
+
+  // Gráficas: promedio por paso y ciclo completo por semana
+  const conDato = medidas.filter(m=>m.prom!==null);
+  mkChart('chTiempos','bar',
+    conDato.map(m=>m.paso),
+    conDato.map(m=>Math.round(m.prom*100)/100),
+    {indexAxis:'y', scales:{x:{beginAtZero:true, title:{display:true, text:'días'}}}});
+
+  const porSemana = {};
+  ciclos.forEach(({s,d})=>{
+    const f = s.CITA_CARGA || s.FECHA_SOLICITUD;
+    const w = semanaNomina(String(f).slice(0,10));
+    const k = 'S'+String(w.week).padStart(2,'0');
+    (porSemana[k] = porSemana[k] || []).push(d);
+  });
+  const semanas = Object.keys(porSemana).sort();
+  if(!hayChart) return;
+  if(charts.chCiclo) charts.chCiclo.destroy();
+  charts.chCiclo = new Chart($('chCiclo'), {
+    type:'line',
+    data:{ labels:semanas, datasets:[{ data:semanas.map(k=>{
+      const v=porSemana[k]; return Math.round(v.reduce((a,b)=>a+b,0)/v.length*100)/100;
+    }), borderColor:acc, backgroundColor:acc, tension:.3, fill:false, pointRadius:4 }]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+             scales:{y:{beginAtZero:true, title:{display:true, text:'días'}}}}
+  });
 }
 
 /* =====================================================
@@ -4675,7 +4914,7 @@ let adminOk=false;
 const SECCIONES_INFO = {
   nuevoservicio:'Nuevo Servicio', asignacion:'Asignación de Unidad', tdc:'TDC', fwd:'FWD',
   solicitud:'Solicitud de Gasto', dispersiones:'Dispersiones', monitoreo:'Monitoreo',
-  liquidacion:'Liquidación', prenomina:'Pre-Nómina', indicadores:'Indicadores', rutas:'Rutas'
+  liquidacion:'Liquidación', prenomina:'Hoja de Servicio', indicadores:'Indicadores', rutas:'Rutas'
 };
 const TODAS_LAS_SECCIONES = Object.keys(SECCIONES_INFO);
 const SECCIONES_AUDITOR = ['dispersiones','monitoreo','liquidacion','prenomina','indicadores'];
@@ -4728,7 +4967,33 @@ function cargarConfigAdmin(){
   CFG_MAP.forEach(([clave,id,def])=>{ $(id).value=cfgNum(clave,def); });
   $('cfgUrl').value=WEBHOOK;
   $('cfgSabana').value = DB.CONFIG.SABANA_SHEET_ID || '';
+  $('cfgLogo').value = DB.CONFIG.LOGO_URL || '';
 }
+/* Si hay una URL de logo capturada, sustituye el dibujo por esa imagen; si la
+   imagen no carga, se queda el dibujo. */
+function pintarLogo(){
+  const url = String(DB.CONFIG.LOGO_URL||'').trim();
+  ['logoHeader','logoLogin'].forEach(id=>{
+    const cont = $(id); if(!cont) return;
+    const svg = cont.querySelector('.adlmark');
+    const img = cont.querySelector('.logoimg');
+    if(!url){ if(img) img.remove(); if(svg) svg.style.display=''; return; }
+    if(svg) svg.style.display='none';
+    if(img){ if(img.src!==url) img.src=url; return; }
+    const nuevo = document.createElement('img');
+    nuevo.className='logoimg'; nuevo.alt='ADL';
+    nuevo.onerror = ()=>{ nuevo.remove(); if(svg) svg.style.display=''; };
+    nuevo.src = url;
+    cont.prepend(nuevo);
+  });
+}
+$('btnGuardarLogo').addEventListener('click', async ()=>{
+  const v = $('cfgLogo').value.trim();
+  if(await apiEnviar({action:'setConfig', clave:'LOGO_URL', valor:v})){
+    pintarLogo();
+    toast(v? 'Logo guardado' : 'Se volvió al logo de la app');
+  }
+});
 $('btnGuardarCfg').addEventListener('click', async ()=>{
   for(const [clave,id] of CFG_MAP){ await apiEnviar({action:'setConfig', clave, valor: nf($(id).value)}); }
   toast('Parámetros guardados');
@@ -5018,6 +5283,7 @@ function restaurarSesion(){
    REFRESCO GLOBAL E INICIO
 ===================================================== */
 function refrescarTodo(){
+  pintarLogo();
   const dl=$('dlClientes'); dl.innerHTML='';
   const nombres=new Set(DB.CLIENTES.map(c=>c.NOMBRE).filter(Boolean));
   DB.RUTAS.forEach(r=>{ if(r.CLIENTE) nombres.add(r.CLIENTE); });

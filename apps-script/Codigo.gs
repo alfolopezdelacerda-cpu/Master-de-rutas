@@ -1,5 +1,5 @@
 /**
- * Master de Ruta · ADL Transportes
+ * Tracking ADL (Sábana) · ADL Distribución & Transporte
  * Backend en Google Apps Script para el Sheet de datos.
  *
  * INSTALACIÓN
@@ -60,6 +60,13 @@ var HOJAS = {
   /* Bitácora de ubicaciones reportadas a mano durante el viaje */
   UBICACIONES: ['ID','FECHA_HORA','SERVICIO_ID','CP','ECONOMICO','OPERADOR',
                 'UBICACION','REGISTRADO_POR'],
+
+  /* Fotografías de la evidencia del viaje, capturadas al liquidar. IMAGEN
+     guarda la foto ya reducida como data URL (la app la comprime antes de
+     mandarla para no pasarse del límite de una celda). Como pesa, esta hoja
+     NO viaja en la carga general: se pide aparte al abrir Liquidación. */
+  EVIDENCIAS: ['ID','FECHA_HORA','SERVICIO_ID','FOLIO','CP','OPERADOR',
+               'NOMBRE','IMAGEN','REGISTRADO_POR'],
 
   /* Alta de servicios. MODALIDAD: TDC | FWD — define a qué hoja de la sábana
      pertenece el servicio (TDC → Transportadora, FWD → Reexpedidora). Ese
@@ -146,6 +153,11 @@ var HOJAS = {
                 'MOTIVO_ACLARACION','ACLARACION_POR','ACLARACION_FECHA',
                 'AUTORIZADO_POR','FECHA_AUTORIZACION','NOTA_AUTORIZACION',
                 'GASTOS_ADICIONALES_JSON','DESCUENTO_GASTOS_ADICIONALES',
+                /* Las incidencias del viaje quedan como NOTA: se copian de lo
+                   que el monitorista reportó en ruta, sin validar nada. Las
+                   columnas SEGURIDAD_* son de la validación anterior; se
+                   conservan por el histórico, ya no se escriben. */
+                'INCIDENCIAS_NOTA','N_INCIDENCIAS',
                 'SEGURIDAD_ESTADO','SEGURIDAD_INCIDENCIAS','SEGURIDAD_TIEMPO','SEGURIDAD_COMENTARIOS',
                 'SEGURIDAD_VALIDADO_POR','SEGURIDAD_FECHA_VALIDACION',
                 'DISPERSION','DISPERSADO_POR','FECHA_DISPERSION'],
@@ -493,7 +505,10 @@ function leerConfig() {
    No se devuelven al guardar (ver leerTodo) porque arrastrarlas en cada POST
    era el grueso del tiempo de respuesta: la bitácora sola puede traer 10 000
    renglones. Se piden aparte con la acción 'leerHoja'. */
-var HOJAS_ARCHIVO = [HOJA_BITACORA, HOJA_CANCELADAS];
+/* Hojas que NO viajan en la carga general porque crecen sin tope o pesan
+   mucho. Se piden aparte con leerHoja cuando la pantalla que las usa las
+   necesita. */
+var HOJAS_ARCHIVO = [HOJA_BITACORA, HOJA_CANCELADAS, 'EVIDENCIAS'];
 
 /**
  * Lee las hojas que la app necesita.
@@ -523,6 +538,9 @@ function datosDeRespuesta(p) {
 
   var data = {};
   hojas.forEach(function (n) {
+    // Las fotos de evidencia pesan demasiado para devolverlas en cada
+    // guardado: la app aplica en local lo que acaba de subir.
+    if (n === 'EVIDENCIAS') return;
     if (n && HOJAS[n]) data[n] = leerHoja(n);
   });
   // Los parámetros son chicos y varias pantallas dependen de ellos
@@ -1076,7 +1094,7 @@ function cpPrincipal(cartasPorte) {
 
 /**
  * Diagnóstico de la conexión con la sábana. Se corre desde el menú
- * "Master de Ruta → Probar sábana" y dice exactamente qué encuentra y dónde
+ * "Tracking ADL → Probar sábana" y dice exactamente qué encuentra y dónde
  * escribiría el odómetro, sin modificar nada.
  */
 function probarSabana() {
@@ -1176,7 +1194,7 @@ function letraAColumna(letra) {
 
 function onOpen() {
   SpreadsheetApp.getUi()
-    .createMenu('Master de Ruta')
+    .createMenu('Tracking ADL')
     .addItem('Configurar hojas', 'configurarHojas')
     .addItem('Asignar IDs faltantes', 'asignarIdsFaltantes')
     .addItem('Probar sábana', 'probarSabana')
