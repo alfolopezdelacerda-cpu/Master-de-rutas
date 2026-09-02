@@ -75,13 +75,14 @@ Se puede llenar a mano en el Sheet, o desde **Administración → Casetas**
 |----|---------|--------|----------|-----|--------|----------|
 
 - `ACTIVO` — `SI` / `NO`
-- `ROL` — uno de cuatro:
+- `ROL` — uno de cinco:
 
 | Rol | Administración | Objetivos y parámetros | Autoriza aclaraciones y cancelaciones | Confirma dispersión | Revierte dispersión | Pestañas por defecto |
 |---|---|---|---|---|---|---|
 | `ADMIN` | sí | sí | sí | no | sí | todas |
 | `SUP` | no | no | sí | no | no | todas menos Administración |
 | `AUDITOR` | no | no | no | sí | no | solo Dispersiones, Liquidación, Hoja de Servicio, Indicadores |
+| `EJECUTIVO` | no | no | no | no | no | solo Nuevo Servicio, TDC, FWD, Monitoreo, Indicadores — **y solo de sus clientes** |
 | `OPERATIVO` | no | no | no | no | no | todas menos Administración |
 
 Mientras la hoja `USUARIOS` esté vacía, la app permite entrar con **admin /
@@ -166,7 +167,8 @@ Las dos las escribe el monitoreo y las dos son solo de consulta en la app.
 |---|---|
 | `INCIDENCIAS` | `ID`, `FECHA_HORA`, `SERVICIO_ID`, `CP`, `CLIENTE`, `ECONOMICO`, `OPERADOR`, `TIPO`, `DESCRIPCION`, `REGISTRADO_POR` |
 | `UBICACIONES` | `ID`, `FECHA_HORA`, `SERVICIO_ID`, `CP`, `ECONOMICO`, `OPERADOR`, `UBICACION`, `REGISTRADO_POR` |
-| `EVIDENCIAS` | `ID`, `FECHA_HORA`, `SERVICIO_ID`, `FOLIO`, `CP`, `OPERADOR`, `NOMBRE`, `IMAGEN`, `REGISTRADO_POR` |
+| `EVIDENCIAS` | `ID`, `FECHA_HORA`, `SERVICIO_ID`, `FOLIO`, `CP`, `OPERADOR`, `CLASE`, `GASTO_ID`, `NOMBRE`, `IMAGEN`, `REGISTRADO_POR` |
+| `GASTOS_EXTRA` | `ID`, `FOLIO`, `SOLICITUD_ID`, `SERVICIO_ID`, `CARTAS_PORTE`, `OPERADOR`, `ECONOMICO`, `FECHA_SOLICITUD`, `TIPO`, `MONTO`, `MOTIVO`, `SOLICITADO_POR`, `DISPERSION`, `DISPERSADO_POR`, `FECHA_DISPERSION`, `COMPROBANTE_ID` |
 
 `INCIDENCIAS` guarda lo que se reporta en ruta contra el servicio y su
 operador; `UBICACIONES` es el histórico de ubicaciones capturadas a mano. La
@@ -357,7 +359,19 @@ Y al **asignarle una unidad** a un servicio, esa unidad pasa sola a
 
 ## Nuevo Servicio
 
-Alta del servicio, en su propia pestaña. Arriba a la derecha, un interruptor
+El formulario va en el orden en que se captura de verdad:
+
+1. **Fechas y control** — fecha de solicitud (sola), **fecha y hora de
+   aceptación**, cita de carga, semana y mes (solos), cita de entrega,
+   ejecutivo y estatus. Un servicio nuevo nace en **Pendiente por despachar**.
+2. **Negocio** — cliente, tipo de negocio, aduana/puerto, RF/Seco, OW/RT,
+   línea transportista, **tipo de unidad** (con una **segunda caja** que solo
+   se habilita cuando es Full) y tipo de mercancía.
+3. **Servicio y carga** — cartas porte y contenedores.
+4. **Origen y destino**.
+5. **Referencias** — booking y PO, hasta abajo.
+
+Arriba a la derecha, un interruptor
 **TDC / FWD** define la modalidad, y con ella a qué hoja de la sábana
 pertenece el servicio: TDC → **Transportadora**, FWD → **Reexpedidora**. La
 pantalla lo dice en todo momento. Ese **vínculo con la sábana todavía no está
@@ -846,6 +860,59 @@ Ve únicamente las pestañas **Dispersiones**, **Liquidación**, **Hoja de Servi
 función es revisar que los montos de la solicitud sean correctos antes de
 confirmar la dispersión. En Hoja de Servicio tiene los mismos candados que un
 operativo o supervisor: no modifica objetivos, sueldo ni montos.
+
+## Gastos extra
+
+Una solicitud **ya dispersada** no se modifica: ni un peso. Pero en ruta salen
+costos, y para eso está **Solicitar adicional**, el botón que aparece en
+*Solicitudes recientes* únicamente en los renglones ya dispersados.
+
+Se captura el **tipo** —Maniobra, Talacha, Gasto operativo, Hotel, Pensión,
+Estacionamiento u Otro—, la **cantidad** y el **motivo**; los tres son
+obligatorios. Cada extra es su **propio renglón** en la hoja `GASTOS_EXTRA`,
+ligado a la solicitud y al servicio, y nace como **pendiente de dispersión de
+gasto extra**.
+
+De ahí en adelante camina solo:
+
+- Aparece en **Dispersiones**, en su propia tarjeta, y lo dispersa el
+  **auditor** uno por uno (los demás roles ven el botón bloqueado). Un extra
+  pendiente también cuenta en el contador de pendientes.
+- Aparece en **Liquidación**, en *Comprobantes de gastos extra*, donde se le
+  sube su **comprobante** (una foto, comprimida igual que la evidencia). El
+  comprobante vive en `EVIDENCIAS` con `CLASE = COMPROBANTE` y el `GASTO_ID`
+  del gasto que comprueba, así que no se mezcla con las fotos del viaje.
+
+Mientras no se disperse se puede eliminar; una vez dispersado, ya no.
+
+## Automatizaciones por cliente y por ejecutivo
+
+**El cliente manda.** Al elegir el cliente en Nuevo Servicio, los selectores de
+**estado de origen** y **ciudad destino** se reagrupan: arriba, bajo *Del
+cliente*, lo que esa cuenta ya ha usado antes; abajo, el resto del catálogo,
+para no cerrarle la puerta a un destino nuevo. Debajo del título se listan las
+**rutas dadas de alta para ese cliente**.
+
+**La ruta se pone sola.** Al pedir el gasto desde un servicio, el buscador de
+rutas pone al frente las del cliente del servicio, y la ruta se selecciona sola
+cuando hay una que va de ese origen a ese destino (o cuando el cliente tiene
+una sola ruta). Con ella se llenan tipo de servicio, tipo de viaje, KM y
+casetas.
+
+**La unidad manda.** El catálogo de `UNIDADES` guarda de planta el
+`OPERADOR_ASIGNADO`, `REMOLQUE1`, `REMOLQUE2` y `DOLLY` de cada económico, y
+esa concatenación se ve en el propio listado (`T-01 · FULL · JUAN PÉREZ ·
+P-100 · P-200 · D-01`). Al elegir el económico en **Asignación de unidad** se
+llenan solos operador, medio de comunicación, placas y equipo de arrastre —dos
+portacontenedores y dolly cuando es Full, uno cuando no—, y todo eso viaja al
+servicio y de ahí a la **Solicitud de Gasto**, que ya no se captura a mano.
+
+**El ejecutivo ve lo suyo.** El rol `EJECUTIVO` se asigna en Usuarios, y los
+clientes se le reparten en **Administración → Clientes**, columna *Ejecutivo de
+la cuenta*. Un usuario con ese rol solo ve —en TDC, FWD, Asignación, Monitoreo
+e Indicadores— los servicios de sus clientes, y en Nuevo Servicio solo puede
+capturar para ellos. Un servicio también le pertenece si trae su nombre en la
+columna `EJECUTIVO`.
 
 ## Tiempos del proceso (Indicadores)
 

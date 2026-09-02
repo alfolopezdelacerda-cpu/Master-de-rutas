@@ -26,6 +26,11 @@ var HOJAS = {
      (Disponible, Programado, Despachado, En servicio, Vacío, Descanso,
      Mantenimiento, Falla mecánica, Sin GPS). */
   UNIDADES: ['ID','ECONOMICO','PLACAS','TIPO_UNIDAD','MODELO','ANIO','COMBUSTIBLE','RENDIMIENTO','UREA',
+             /* Tripulación y equipo de arrastre de planta de esa unidad: al
+                elegir el económico en Asignación, todo esto se llena solo.
+                Un Full lleva sus dos portacontenedores en REMOLQUE1 y
+                REMOLQUE2 más el DOLLY. */
+             'OPERADOR_ASIGNADO','REMOLQUE1','REMOLQUE2','DOLLY',
              'ESTATUS_OPERATIVO','NOTA_OPERATIVA','ESTATUS_ACTUALIZADO',
              /* Última ubicación reportada a mano por el monitorista. El
                 histórico completo vive en la hoja UBICACIONES. */
@@ -40,7 +45,9 @@ var HOJAS = {
 
   REMOLQUES: ['ID','ECONOMICO','PLACAS','TIPO'],
 
-  CLIENTES: ['ID','NOMBRE'],
+  /* EJECUTIVO: de quién es la cuenta. Un usuario con rol EJECUTIVO solo ve
+     los servicios de los clientes que trae asignados aquí. */
+  CLIENTES: ['ID','NOMBRE','EJECUTIVO'],
 
   /* Catálogos del alta de servicios (Nuevo Servicio) */
   TIPO_NEGOCIO: ['ID','NOMBRE'],
@@ -66,7 +73,17 @@ var HOJAS = {
      mandarla para no pasarse del límite de una celda). Como pesa, esta hoja
      NO viaja en la carga general: se pide aparte al abrir Liquidación. */
   EVIDENCIAS: ['ID','FECHA_HORA','SERVICIO_ID','FOLIO','CP','OPERADOR',
-               'NOMBRE','IMAGEN','REGISTRADO_POR'],
+               /* CLASE: EVIDENCIA (fotos del viaje) o COMPROBANTE (el ticket
+                  de un gasto extra). GASTO_ID liga el comprobante con su
+                  renglón de GASTOS_EXTRA. */
+               'CLASE','GASTO_ID','NOMBRE','IMAGEN','REGISTRADO_POR'],
+
+  /* Gastos extra que se piden CUANDO LA SOLICITUD YA SE DISPERSÓ. La solicitud
+     original ya no se toca: cada extra es su propio renglón, entra como
+     pendiente de dispersión y al liquidar se le sube su comprobante. */
+  GASTOS_EXTRA: ['ID','FOLIO','SOLICITUD_ID','SERVICIO_ID','CARTAS_PORTE','OPERADOR','ECONOMICO',
+                 'FECHA_SOLICITUD','TIPO','MONTO','MOTIVO','SOLICITADO_POR',
+                 'DISPERSION','DISPERSADO_POR','FECHA_DISPERSION','COMPROBANTE_ID'],
 
   /* Alta de servicios. MODALIDAD: TDC | FWD — define a qué hoja de la sábana
      pertenece el servicio (TDC → Transportadora, FWD → Reexpedidora). Ese
@@ -78,9 +95,14 @@ var HOJAS = {
               'CLIENTE','CITA_ENTREGA','ESTATUS','CP','CONTENEDORES',
               'TIPO_MERCANCIA','BOOKING','PO','ESTADO_ORIGEN','PUNTO_CARGA',
               'CIUDAD_DESTINO','PUNTO_DESCARGA','LINEA_TRANSPORTISTA','TIPO_UNIDAD',
+              /* Segunda caja cuando el servicio va en Full */
+              'TIPO_UNIDAD_2',
               /* Despacho: un servicio TDC nace PENDIENTE POR DESPACHAR y pasa a
                  ASIGNADO cuando se le captura unidad y operador. */
               'ECONOMICO','PLACAS','OPERADOR','MEDIO_COMUNICACION',
+              /* Equipo de arrastre que trae la unidad asignada. Sale solo del
+                 catálogo de UNIDADES y de aquí lo toma la Solicitud de Gasto. */
+              'REMOLQUE1','REMOLQUE2','DOLLY',
               'ASIGNADO_POR','FECHA_ASIGNACION',
               /* ETAPA: en qué punto del proceso operativo va el servicio.
                  Es la columna vertebral: la mueven solas las pantallas de
@@ -99,7 +121,9 @@ var HOJAS = {
   /* Catálogo de casetas: un costo por categoría de ejes */
   CASETAS: ['ID','NOMBRE','CARRETERA','COSTO_2E','COSTO_5E','COSTO_9E'],
 
-  /* Acceso a la app. ROL: ADMIN | SUP | AUDITOR | OPERATIVO — ACTIVO: SI | NO.
+  /* Acceso a la app. ROL: ADMIN | SUP | AUDITOR | EJECUTIVO | OPERATIVO —
+     ACTIVO: SI | NO. Un EJECUTIVO solo ve los servicios de los clientes que
+     traiga su nombre en CLIENTES.EJECUTIVO.
      PESTANAS: lista de pestañas separadas por coma que puede ver este usuario
      (rutas,solicitud,dispersiones,liquidacion,prenomina,indicadores). Vacío
      = se usan las pestañas por defecto de su rol. Administración es aparte:

@@ -163,14 +163,14 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 .userchip{font-size:12px;font-weight:600;padding:5px 12px;border-radius:99px;background:rgba(255,255,255,.12);white-space:nowrap}
 
 /* Modal de aviso */
-#modalWrap,#cancelWrap,#permWrap,#detWrap,#incWrap{position:fixed;inset:0;z-index:210;background:rgba(9,14,24,.55);display:none;align-items:center;justify-content:center;padding:20px}
-#modalWrap.show,#cancelWrap.show,#permWrap.show,#detWrap.show,#incWrap.show{display:flex}
+#modalWrap,#cancelWrap,#permWrap,#detWrap,#incWrap,#extraWrap{position:fixed;inset:0;z-index:210;background:rgba(9,14,24,.55);display:none;align-items:center;justify-content:center;padding:20px}
+#modalWrap.show,#cancelWrap.show,#permWrap.show,#detWrap.show,#incWrap.show,#extraWrap.show{display:flex}
 #cancelWrap,#permWrap{z-index:220}
 #cancelWrap .mbox,#permWrap .mbox{max-height:92vh;overflow-y:auto}
-#detWrap,#incWrap{z-index:230}
-#detWrap .mbox,#incWrap .mbox{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.3);padding:24px;max-height:92vh;overflow-y:auto}
+#detWrap,#incWrap,#extraWrap{z-index:230}
+#detWrap .mbox,#incWrap .mbox,#extraWrap .mbox{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.3);padding:24px;max-height:92vh;overflow-y:auto}
 #detWrap .mbox{max-width:900px}
-#incWrap .mbox{max-width:520px}
+#incWrap .mbox,#extraWrap .mbox{max-width:520px}
 /* Línea de tiempo de la bitácora del viaje */
 .tl{list-style:none;margin:0;padding:0}
 .tl li{position:relative;padding:0 0 14px 26px;border-left:2px solid var(--line)}
@@ -349,7 +349,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <h3>Fechas y control</h3>
     <div class="grid g5" style="margin-bottom:14px">
       <div><label>Fecha de solicitud</label><input id="nsFechaSol" readonly title="Se pone sola con la fecha y hora del alta"></div>
-      <div><label>Fecha de aceptación</label><input id="nsFechaAcep" type="date"></div>
+      <div><label>Fecha y hora de aceptación</label><input id="nsFechaAcep" type="datetime-local"></div>
       <div><label>Cita de carga</label><input id="nsCitaCarga" type="datetime-local"></div>
       <div><label>Semana</label><input id="nsSemana" readonly title="Se calcula sola con la cita de carga"></div>
       <div><label>Mes</label><input id="nsMes" readonly title="Se calcula solo con la cita de carga"></div>
@@ -360,9 +360,9 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 
     <h3>Negocio</h3>
     <div class="grid g5" style="margin-bottom:14px">
+      <div><label>Cliente</label><select id="nsCliente"></select></div>
       <div><label>Tipo de negocio</label><select id="nsTipoNegocio"></select></div>
       <div><label>Aduana / puerto</label><select id="nsAduana"></select></div>
-      <div><label>Cliente</label><select id="nsCliente"></select></div>
       <div>
         <label>RF / Seco</label>
         <div class="opcpar">
@@ -377,6 +377,15 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
           <label><input type="checkbox" id="nsRT" data-par="owrt" value="RT"> RT</label>
         </div>
       </div>
+      <div>
+        <label>Línea transportista</label>
+        <input id="nsLineaFija" readonly value="ADL" title="En TDC la línea siempre es ADL">
+        <select id="nsLineaSel" style="display:none"></select>
+      </div>
+      <div><label>Tipo de unidad</label><select id="nsTipoUnidad"></select></div>
+      <div id="nsTipoU2Box"><label>Segunda caja (Full)</label>
+        <select id="nsTipoUnidad2" disabled title="Se habilita cuando el tipo de unidad es Full"></select></div>
+      <div><label>Tipo de mercancía</label><input id="nsMercancia"></div>
     </div>
 
     <h3>Servicio y carga</h3>
@@ -388,12 +397,10 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <div id="nsCpWrap" class="grid g5" style="margin-bottom:14px"></div>
     <div class="grid g5" style="margin-bottom:14px">
       <div><label>Contenedores</label><input id="nsContenedores"></div>
-      <div><label>Tipo de mercancía</label><input id="nsMercancia"></div>
-      <div><label>Booking</label><input id="nsBooking"></div>
-      <div><label>PO</label><input id="nsPO"></div>
     </div>
 
     <h3>Origen y destino</h3>
+    <div class="mini" id="nsRutasCliente" style="margin-bottom:10px;color:var(--ink2)"></div>
     <div class="grid g5" style="margin-bottom:14px">
       <div><label>Estado de origen</label><select id="nsEstadoOrigen"></select></div>
       <div><label>Punto de carga</label><input id="nsPuntoCarga"></div>
@@ -401,14 +408,10 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       <div><label>Punto de descarga</label><input id="nsPuntoDescarga"></div>
     </div>
 
-    <h3>Transporte</h3>
+    <h3>Referencias</h3>
     <div class="grid g5" style="margin-bottom:14px">
-      <div>
-        <label>Línea transportista</label>
-        <input id="nsLineaFija" readonly value="ADL" title="En TDC la línea siempre es ADL">
-        <select id="nsLineaSel" style="display:none"></select>
-      </div>
-      <div><label>Tipo de unidad</label><select id="nsTipoUnidad"></select></div>
+      <div><label>Booking</label><input id="nsBooking"></div>
+      <div><label>PO</label><input id="nsPO"></div>
     </div>
 
     <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:6px">
@@ -432,8 +435,15 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       <div class="grid g4" style="margin-bottom:12px">
         <div><label>Económico</label><select id="despEco"></select></div>
         <div><label>Placas (automático)</label><input id="despPlacas" readonly></div>
-        <div><label>Operador</label><select id="despOperador"></select></div>
+        <div><label>Operador (automático)</label><select id="despOperador"></select></div>
         <div><label>Medio de comunicación (automático)</label><input id="despMedio" readonly></div>
+      </div>
+      <div class="sub" style="margin-bottom:8px">El equipo de arrastre sale del catálogo de la unidad. Si en este viaje va con otro, cámbialo aquí.</div>
+      <div class="grid g4" style="margin-bottom:12px">
+        <div><label id="lblDespRem1">Remolque / porta 1</label><select id="despRem1"></select></div>
+        <div><label id="lblDespRem2">Remolque / porta 2</label><select id="despRem2"></select></div>
+        <div><label>Dolly</label><select id="despDolly"></select></div>
+        <div><label>Equipo de la unidad</label><input id="despArrastre" readonly title="Lo que trae asignado el económico en el catálogo"></div>
       </div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <button class="btn btn-p" id="btnAsignarDesp">✔ Asignar unidad y operador</button>
@@ -609,13 +619,45 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 
   <div class="card">
     <h2>Solicitudes recientes</h2>
-    <div class="sub">Haz clic en un renglón para abrirla y modificarla, mientras siga pendiente de dispersión.</div>
+    <div class="sub">Haz clic en un renglón para abrirla y modificarla, mientras siga pendiente de dispersión. Una vez dispersada ya no se toca, pero se le puede pedir un <b>gasto extra</b>.</div>
     <div class="twrap" style="max-height:420px;overflow-y:auto"><table>
       <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr><th>Folio</th><th>Fecha serv.</th><th>Ruta</th><th>Operador</th><th>Económico</th><th class="right">KM</th><th class="right">Total</th><th>Dispersión</th><th></th></tr></thead>
       <tbody id="tbodySol"></tbody>
     </table></div>
   </div>
+
+  <div class="card">
+    <h2>Gastos extra solicitados</h2>
+    <div class="sub">Costos que salieron en ruta, ya dispersada la solicitud. Cada uno entra por su cuenta como <b>pendiente de dispersión</b> y su comprobante se sube al liquidar.</div>
+    <div class="twrap" style="max-height:360px;overflow-y:auto"><table>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
+        <th>Folio</th><th>Fecha</th><th>Tipo</th><th>Operador</th><th>Motivo</th>
+        <th class="right">Monto</th><th>Dispersión</th><th>Comprobante</th><th></th>
+      </tr></thead>
+      <tbody id="tbodyExtras"></tbody>
+    </table></div>
+  </div>
 </section>
+
+<!-- ============ SOLICITAR GASTO EXTRA ============ -->
+<div id="extraWrap">
+  <div class="mbox">
+    <h3 style="margin-bottom:4px">Solicitar gasto extra</h3>
+    <div class="mini" id="extraInfo" style="margin-bottom:14px"></div>
+    <div class="grid g2" style="margin-bottom:12px">
+      <div><label>Tipo de gasto</label><select id="extraTipo"></select></div>
+      <div><label>Cantidad ($)</label><input id="extraMonto" type="number" min="0" step="0.01" placeholder="0.00"></div>
+    </div>
+    <div style="margin-bottom:14px">
+      <label>Motivo</label>
+      <textarea id="extraMotivo" rows="3" placeholder="Por qué se necesita este gasto…"></textarea>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-p" id="extraGuardar">Solicitar</button>
+      <button class="btn btn-s" id="extraCerrar">Cancelar</button>
+    </div>
+  </div>
+</div>
 
 <!-- ============ DISPERSIONES ============ -->
 <section class="sec" id="sec-dispersiones">
@@ -676,6 +718,18 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <th>Folio</th><th>Fecha serv.</th><th>Operador</th><th>Económico</th><th>Ruta</th><th class="right">Total</th><th>Estado</th><th></th>
       </tr></thead>
       <tbody id="tbodyDisp"></tbody>
+    </table></div>
+  </div>
+
+  <div class="card">
+    <h2>Gastos extra</h2>
+    <div class="sub">Costos que salieron en ruta con la solicitud ya dispersada. Se dispersan uno por uno; el comprobante se sube al liquidar.</div>
+    <div class="twrap" style="max-height:400px;overflow-y:auto"><table>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
+        <th>Folio</th><th>Fecha</th><th>Tipo</th><th>Operador</th><th>Económico</th><th>Motivo</th>
+        <th class="right">Monto</th><th>Estado</th><th></th>
+      </tr></thead>
+      <tbody id="tbodyDispExtras"></tbody>
     </table></div>
   </div>
 </section>
@@ -832,6 +886,16 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       <h3 style="margin-bottom:8px">Incidencias del viaje</h3>
       <div class="sub" style="margin-bottom:8px">Se toman solas de lo que el monitorista reportó en ruta. Solo son una nota: no bloquean la liquidación.</div>
       <div class="mini" id="lqIncidencias"></div>
+    </div>
+
+    <!-- Comprobantes de los gastos extra del viaje -->
+    <div id="lqExtrasBox" style="background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:14px;margin-top:12px;display:none">
+      <h3 style="margin-bottom:8px">Comprobantes de gastos extra</h3>
+      <div class="sub" style="margin-bottom:10px">Los gastos que se pidieron aparte durante el viaje. Cada uno necesita su comprobante.</div>
+      <div class="twrap"><table>
+        <thead><tr><th>Tipo</th><th>Motivo</th><th class="right">Monto</th><th>Dispersión</th><th>Comprobante</th></tr></thead>
+        <tbody id="tbodyLqExtras"></tbody>
+      </table></div>
     </div>
 
     <!-- Evidencia del viaje, con fotografías -->
@@ -1398,7 +1462,7 @@ const TOLERANCIA_KM = 15;
 
 const DB = { UNIDADES:[], OPERADORES:[], EJECUTIVOS:[], REMOLQUES:[], CLIENTES:[], RUTAS:[], SOLICITUDES:[], NOMINAS:[], LIQUIDACION:[], CASETAS:[], USUARIOS:[], BITACORA:[], SOLICITUDES_CANCELADAS:[], PAGO_X_KM:[],
   SERVICIOS:[], TIPO_NEGOCIO:[], ADUANAS:[], ESTADOS:[], CIUDADES:[], PROVEEDORES:[],
-  TIPOS_INCIDENCIA:[], INCIDENCIAS:[], UBICACIONES:[], EVIDENCIAS:[], CONFIG:{} };
+  TIPOS_INCIDENCIA:[], INCIDENCIAS:[], UBICACIONES:[], EVIDENCIAS:[], GASTOS_EXTRA:[], CONFIG:{} };
 
 const $  = id => document.getElementById(id);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
@@ -1512,7 +1576,7 @@ function bitacora(accion, detalle){
 const HOJAS_APP = ['UNIDADES','OPERADORES','EJECUTIVOS','REMOLQUES','CLIENTES','RUTAS','SOLICITUDES',
   'NOMINAS','LIQUIDACION','CASETAS','USUARIOS','BITACORA','SOLICITUDES_CANCELADAS','PAGO_X_KM',
   'SERVICIOS','TIPO_NEGOCIO','ADUANAS','ESTADOS','CIUDADES','PROVEEDORES',
-  'TIPOS_INCIDENCIA','INCIDENCIAS','UBICACIONES','EVIDENCIAS'];
+  'TIPOS_INCIDENCIA','INCIDENCIAS','UBICACIONES','EVIDENCIAS','GASTOS_EXTRA'];
 const hojasPedidas = new Set();
 
 /* Refleja en memoria lo que el guardado acaba de escribir, sin esperar a que
@@ -2022,16 +2086,73 @@ function pintarSelectsServicio(){
   const porNombre = arr => [...arr].sort((a,b)=>String(a.NOMBRE||'').localeCompare(String(b.NOMBRE||'')));
   llenarSelect('nsTipoNegocio',   porNombre(DB.TIPO_NEGOCIO), x=>x.NOMBRE);
   llenarSelect('nsAduana',        porNombre(DB.ADUANAS),      x=>x.NOMBRE);
-  llenarSelect('nsCliente',       porNombre(DB.CLIENTES),     x=>x.NOMBRE);
+  llenarSelect('nsCliente',       porNombre(clientesVisibles()), x=>x.NOMBRE);
   llenarSelect('nsEstadoOrigen',  porNombre(DB.ESTADOS),      x=>x.NOMBRE);
   llenarSelect('nsCiudadDestino', porNombre(DB.CIUDADES),     x=>x.NOMBRE);
   llenarSelect('nsLineaSel',      porNombre(DB.PROVEEDORES),  x=>x.NOMBRE);
-  const su = $('nsTipoUnidad');
-  if(!su.options.length){
+  [['nsTipoUnidad',TIPOS_UNIDAD_SERVICIO],['nsTipoUnidad2',TIPOS_UNIDAD_SERVICIO]].forEach(([id,lista])=>{
+    const su = $(id);
+    if(su.options.length) return;
     const o0=document.createElement('option'); o0.value=''; o0.textContent='— Selecciona —'; su.appendChild(o0);
-    TIPOS_UNIDAD_SERVICIO.forEach(t=>{ const o=document.createElement('option'); o.textContent=t; su.appendChild(o); });
-  }
+    lista.forEach(t=>{ const o=document.createElement('option'); o.textContent=t; su.appendChild(o); });
+  });
+  aplicarFullServicio();
+  filtrarPorCliente();
 }
+
+/* Un Full lleva dos cajas: la segunda solo se pide cuando aplica */
+function aplicarFullServicio(){
+  const esFull = String($('nsTipoUnidad').value||'').toUpperCase()==='FULL';
+  const s2 = $('nsTipoUnidad2');
+  s2.disabled = !esFull;
+  if(!esFull) s2.value='';
+  $('nsTipoU2Box').style.opacity = esFull? '1' : '.5';
+}
+$('nsTipoUnidad').addEventListener('change', aplicarFullServicio);
+
+/* ---------- Todo lo que el cliente ya trae ----------
+   Al elegir un cliente, sus orígenes, destinos y rutas se ponen primero: son
+   los que de verdad se usan con esa cuenta. Lo demás sigue disponible, más
+   abajo, para no cerrarle la puerta a un destino nuevo. */
+function serviciosDeCliente(cliente){
+  const c = String(cliente||'').trim().toUpperCase();
+  if(!c) return [];
+  return DB.SERVICIOS.filter(s=>String(s.CLIENTE||'').trim().toUpperCase()===c);
+}
+function rutasDeCliente(cliente){
+  const c = String(cliente||'').trim().toUpperCase();
+  if(!c) return [];
+  return DB.RUTAS.filter(r=>String(r.CLIENTE||'').trim().toUpperCase()===c);
+}
+/* Reordena un select de catálogo dejando arriba, en su grupo, lo que ya se ha
+   usado con ese cliente. Conserva el valor elegido. */
+function agruparPorCliente(sel, catalogo, usados){
+  const el = $(sel), valor = el.value;
+  const lista = [...DB[catalogo]].sort((a,b)=>String(a.NOMBRE||'').localeCompare(String(b.NOMBRE||'')));
+  const enCliente = n => usados.has(String(n||'').trim().toUpperCase());
+  const opcion = x => `<option value="${esc(x.ID)}">${esc(x.NOMBRE)}</option>`;
+  const dentro = lista.filter(x=>enCliente(x.NOMBRE)), fuera = lista.filter(x=>!enCliente(x.NOMBRE));
+  el.innerHTML = '<option value="">— Selecciona —</option>'+
+    (dentro.length? `<optgroup label="Del cliente">${dentro.map(opcion).join('')}</optgroup>` : '')+
+    (fuera.length? `<optgroup label="${dentro.length? 'Otros' : 'Todos'}">${fuera.map(opcion).join('')}</optgroup>` : '');
+  el.value = valor;
+}
+function filtrarPorCliente(){
+  const cliente = nombreDeSelect('nsCliente','CLIENTES');
+  const srv = serviciosDeCliente(cliente);
+  const rutas = rutasDeCliente(cliente);
+  const origenes = new Set(srv.map(x=>String(x.ESTADO_ORIGEN||'').trim().toUpperCase()).filter(Boolean));
+  const destinos = new Set(srv.map(x=>String(x.CIUDAD_DESTINO||'').trim().toUpperCase()).filter(Boolean));
+  agruparPorCliente('nsEstadoOrigen','ESTADOS', origenes);
+  agruparPorCliente('nsCiudadDestino','CIUDADES', destinos);
+  $('nsRutasCliente').innerHTML = !cliente
+    ? 'Elige un cliente para ver sus orígenes, destinos y rutas.'
+    : (rutas.length || srv.length)
+      ? `<b>${esc(cliente)}</b>: ${srv.length} servicio(s) previos · rutas dadas de alta: `+
+        (rutas.length? rutas.map(r=>esc(r.RUTA)).join(' · ') : 'ninguna todavía')
+      : `<b>${esc(cliente)}</b> todavía no tiene servicios ni rutas registradas: se listan todos los catálogos.`;
+}
+$('nsCliente').addEventListener('change', filtrarPorCliente);
 
 /* Los catálogos se guardan por nombre, no por ID: la sábana necesita el
    texto y así el registro no depende de que el catálogo no cambie. */
@@ -2053,14 +2174,17 @@ function limpiarServicio(){
   ['nsFechaAcep','nsCitaCarga','nsCitaEntrega','nsContenedores',
    'nsMercancia','nsBooking','nsPO','nsPuntoCarga','nsPuntoDescarga'].forEach(id=>$(id).value='');
   cpServicio=['']; pintarCpServicio();
-  ['nsTipoNegocio','nsAduana','nsCliente','nsEstadoOrigen','nsCiudadDestino','nsLineaSel','nsTipoUnidad']
-    .forEach(id=>$(id).value='');
+  ['nsTipoNegocio','nsAduana','nsCliente','nsEstadoOrigen','nsCiudadDestino','nsLineaSel',
+   'nsTipoUnidad','nsTipoUnidad2'].forEach(id=>$(id).value='');
+  // Un servicio nuevo nace pendiente por despachar
   $('nsEstatus').value=EST_PENDIENTE;
   marcarPar('rfseco',''); marcarPar('owrt','');
   $('nsModalidad').checked = false;
   $('nsEjecutivo').value = nombreUsuario();
   alCambiarModalidadServicio();
   alCambiarCitaCarga();
+  aplicarFullServicio();
+  filtrarPorCliente();
 }
 
 function armarServicio(){
@@ -2102,6 +2226,7 @@ function armarServicio(){
     PUNTO_DESCARGA: $('nsPuntoDescarga').value.trim(),
     LINEA_TRANSPORTISTA: m==='FWD'? nombreDeSelect('nsLineaSel','PROVEEDORES') : 'ADL',
     TIPO_UNIDAD: $('nsTipoUnidad').value,
+    TIPO_UNIDAD_2: String($('nsTipoUnidad').value||'').toUpperCase()==='FULL'? $('nsTipoUnidad2').value : '',
     // El despacho se captura aparte (Solicitud de Gasto → Pendientes de
     // despacho); aquí solo se conserva lo que ya se haya asignado.
     ECONOMICO: (prev && prev.ECONOMICO) || '',
@@ -2153,6 +2278,8 @@ function abrirServicio(id){
   seleccionarPorNombre('nsTipoNegocio','TIPO_NEGOCIO', s.TIPO_NEGOCIO);
   seleccionarPorNombre('nsAduana','ADUANAS', s.ADUANA_PUERTO);
   seleccionarPorNombre('nsCliente','CLIENTES', s.CLIENTE);
+  // Con el cliente puesto se reagrupan orígenes y destinos antes de elegirlos
+  filtrarPorCliente();
   seleccionarPorNombre('nsEstadoOrigen','ESTADOS', s.ESTADO_ORIGEN);
   seleccionarPorNombre('nsCiudadDestino','CIUDADES', s.CIUDAD_DESTINO);
   seleccionarPorNombre('nsLineaSel','PROVEEDORES', s.LINEA_TRANSPORTISTA);
@@ -2163,6 +2290,8 @@ function abrirServicio(id){
   $('nsBooking').value = s.BOOKING||''; $('nsPO').value = s.PO||'';
   $('nsPuntoCarga').value = s.PUNTO_CARGA||''; $('nsPuntoDescarga').value = s.PUNTO_DESCARGA||'';
   $('nsTipoUnidad').value = s.TIPO_UNIDAD||'';
+  aplicarFullServicio();
+  $('nsTipoUnidad2').value = s.TIPO_UNIDAD_2||'';
   $('sec-nuevoservicio').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
@@ -2182,7 +2311,7 @@ function etiquetaEstatus(e){
 }
 function filtrarServicios(modalidad, texto, estatus){
   const q = String(texto||'').trim().toUpperCase();
-  return DB.SERVICIOS.filter(s=>{
+  return serviciosVisibles().filter(s=>{
     if(String(s.MODALIDAD).toUpperCase()!==modalidad) return false;
     if(estatus && estatus!=='todos' && String(s.ESTATUS||'').toUpperCase()!==estatus) return false;
     if(!q) return true;
@@ -2246,7 +2375,7 @@ function servicioDespachado(s){ return !!(s && String(s.ECONOMICO||'').trim() &&
 function pintarDespacho(){
   const q = ($('despBusca').value||'').trim().toUpperCase();
   const filtro = $('despFiltro').value;
-  const filas = DB.SERVICIOS.filter(s=>{
+  const filas = serviciosVisibles().filter(s=>{
     if(String(s.MODALIDAD).toUpperCase()!=='TDC') return false;
     const est = String(s.ESTATUS||'').toUpperCase();
     if(filtro==='todos'){ if(est==='CANCELADO') return false; }
@@ -2513,7 +2642,7 @@ function pintarMonitoreo(){
   if(selF.options.length<=2){
     ETAPAS.forEach(e=>{ const o=document.createElement('option'); o.value=e; o.textContent=PASO_DE_ETAPA[e]+'. '+textoEtapa(e); selF.appendChild(o); });
   }
-  const tdc = DB.SERVICIOS.filter(s=>String(s.MODALIDAD).toUpperCase()==='TDC' &&
+  const tdc = serviciosVisibles().filter(s=>String(s.MODALIDAD).toUpperCase()==='TDC' &&
                                      String(s.ESTATUS||'').toUpperCase()!=='CANCELADO');
 
   // Recordatorio de citas próximas, sobre los viajes que aún no llegan a cargar
@@ -2844,22 +2973,62 @@ function abrirDespacho(id){
   $('despTit').textContent = s.CP || s.ID;
   $('despInfo').innerHTML = `Cartas porte <b>${esc(s.CP)}</b> · Cliente <b>${esc(s.CLIENTE)}</b> · `+
     `${esc(s.ESTADO_ORIGEN)} → ${esc(s.CIUDAD_DESTINO)} · Unidad solicitada: <b>${esc(s.TIPO_UNIDAD||'—')}</b>`;
-  llenarSelect('despEco', DB.UNIDADES, u=>`${u.ECONOMICO} · ${u.TIPO_UNIDAD}`);
+  llenarSelect('despEco', DB.UNIDADES, u=>textoUnidad(u));
   llenarSelect('despOperador', DB.OPERADORES.filter(o=>String(o.ACTIVO).toUpperCase()!=='NO'), o=>o.NOMBRE);
+  ['despRem1','despRem2','despDolly'].forEach(id=>
+    llenarSelect(id, DB.REMOLQUES, r=>`${r.ECONOMICO}${r.TIPO?' · '+r.TIPO:''}`, '— Ninguno —'));
   // Al reasignar se precarga lo que ya tenía
   const u = DB.UNIDADES.find(x=>String(x.ECONOMICO||'').toUpperCase()===String(s.ECONOMICO||'').toUpperCase());
-  const o = DB.OPERADORES.find(x=>String(x.NOMBRE||'').toUpperCase()===String(s.OPERADOR||'').toUpperCase());
   $('despEco').value = u? u.ID : '';
-  $('despOperador').value = o? o.ID : '';
-  $('despPlacas').value = u? (u.PLACAS||'') : '';
-  $('despMedio').value = o? (o.MEDIO_COMUNICACION||'') : '';
+  alCambiarEconomicoDespacho();          // llena operador y equipo de la unidad
+  // Lo que ya traía este servicio manda sobre lo de planta de la unidad
+  if(s.OPERADOR) seleccionarPorNombre('despOperador','OPERADORES', s.OPERADOR);
+  if(s.OPERADOR){
+    const o = DB.OPERADORES.find(x=>String(x.NOMBRE||'').toUpperCase()===String(s.OPERADOR||'').toUpperCase());
+    $('despMedio').value = o? (o.MEDIO_COMUNICACION||'') : '';
+  }
+  [['despRem1',s.REMOLQUE1],['despRem2',s.REMOLQUE2],['despDolly',s.DOLLY]].forEach(([id,val])=>{
+    if(val) seleccionarRemolque(id, val);
+  });
   $('despDetalle').scrollIntoView({behavior:'smooth',block:'center'});
 }
-/* Placas y medio de comunicación salen solos de los catálogos */
-$('despEco').addEventListener('change',()=>{
+/* Cómo se lee una unidad en los listados: económico, tipo y lo que trae */
+function textoUnidad(u){
+  const eq = [u.OPERADOR_ASIGNADO, u.REMOLQUE1, u.REMOLQUE2, u.DOLLY].filter(Boolean).join(' · ');
+  return `${u.ECONOMICO} · ${u.TIPO_UNIDAD}${eq? ' · '+eq : ''}`;
+}
+function seleccionarRemolque(sel, economico){
+  const r = DB.REMOLQUES.find(x=>String(x.ECONOMICO||'').trim().toUpperCase()===String(economico||'').trim().toUpperCase());
+  if(r) $(sel).value = r.ID;
+}
+/* Al elegir el económico se llena solo TODO lo que trae esa unidad: placas,
+   operador (con su medio de comunicación) y equipo de arrastre. Un Full pide
+   sus dos portacontenedores; los demás, uno. */
+function alCambiarEconomicoDespacho(){
   const u = DB.UNIDADES.find(x=>String(x.ID)===$('despEco').value);
   $('despPlacas').value = u? (u.PLACAS||'') : '';
-});
+  const esFull = !!u && String(u.TIPO_UNIDAD||'').toUpperCase()==='FULL';
+  $('lblDespRem1').textContent = esFull? 'Portacontenedor 1' : 'Remolque / porta';
+  $('lblDespRem2').textContent = esFull? 'Portacontenedor 2' : 'Remolque / porta 2 (solo Full)';
+  $('despRem2').disabled = !esFull;
+  $('despDolly').disabled = !esFull;
+  if(!u){
+    ['despRem1','despRem2','despDolly'].forEach(id=>$(id).value='');
+    $('despOperador').value=''; $('despMedio').value=''; $('despArrastre').value='';
+    return;
+  }
+  if(u.OPERADOR_ASIGNADO){
+    seleccionarPorNombre('despOperador','OPERADORES', u.OPERADOR_ASIGNADO);
+    const o = DB.OPERADORES.find(x=>String(x.NOMBRE||'').toUpperCase()===String(u.OPERADOR_ASIGNADO||'').toUpperCase());
+    $('despMedio').value = o? (o.MEDIO_COMUNICACION||'') : '';
+  }
+  seleccionarRemolque('despRem1', u.REMOLQUE1);
+  if(esFull){ seleccionarRemolque('despRem2', u.REMOLQUE2); seleccionarRemolque('despDolly', u.DOLLY); }
+  else { $('despRem2').value=''; $('despDolly').value=''; }
+  const eq = [u.REMOLQUE1, u.REMOLQUE2, u.DOLLY].filter(Boolean).join(' · ');
+  $('despArrastre').value = eq || 'sin equipo capturado';
+}
+$('despEco').addEventListener('change', alCambiarEconomicoDespacho);
 $('despOperador').addEventListener('change',()=>{
   const o = DB.OPERADORES.find(x=>String(x.ID)===$('despOperador').value);
   $('despMedio').value = o? (o.MEDIO_COMUNICACION||'') : '';
@@ -2874,9 +3043,13 @@ $('btnAsignarDesp').addEventListener('click', async ()=>{
   if(!u){ toast('Selecciona el económico.', true); $('despEco').focus(); return; }
   if(!o){ toast('Selecciona el operador.', true); $('despOperador').focus(); return; }
 
+  const nomRem = id => { const r = DB.REMOLQUES.find(x=>String(x.ID)===String(id)); return r? (r.ECONOMICO||'') : ''; };
   const reg = Object.assign({}, s, {
     ECONOMICO: u.ECONOMICO, PLACAS: u.PLACAS||'',
     OPERADOR: o.NOMBRE, MEDIO_COMUNICACION: o.MEDIO_COMUNICACION||'',
+    REMOLQUE1: nomRem($('despRem1').value),
+    REMOLQUE2: nomRem($('despRem2').value),
+    DOLLY: nomRem($('despDolly').value),
     ESTATUS: 'ASIGNADO', ASIGNADO_POR: nombreUsuario(), FECHA_ASIGNACION: hoyISO(),
     ETAPA: 'ASIGNADO'                      // paso 2 del proceso
   });
@@ -2965,6 +3138,26 @@ $('btnAddCP').addEventListener('click',()=>{ cartasPorte.push(''); pintarCP(); }
 
 /* Con la carta porte se ubica el servicio ya asignado y se prellena la
    solicitud con lo que se capturó en el despacho, para no recapturarlo. */
+/* Cliente del servicio que se está cotizando: ordena las rutas del buscador */
+let clienteSolicitud = '';
+
+/* De las rutas del cliente, la que va del origen al destino del servicio.
+   Si solo hay una ruta de ese cliente, esa. */
+function rutaDeServicio(s){
+  const candidatas = rutasDeCliente(s.CLIENTE);
+  if(!candidatas.length) return null;
+  const norm = t => String(t||'').trim().toUpperCase();
+  const org = norm(s.ESTADO_ORIGEN), dst = norm(s.CIUDAD_DESTINO);
+  const exacta = candidatas.find(r=>{
+    const t = norm(r.RUTA);
+    return org && dst && t.includes(org) && t.includes(dst);
+  });
+  if(exacta) return exacta;
+  const porDestino = candidatas.filter(r=>dst && norm(r.RUTA).includes(dst));
+  if(porDestino.length===1) return porDestino[0];
+  return candidatas.length===1? candidatas[0] : null;
+}
+
 function prellenarDesdeServicio(cp){
   const s = servicioPorCP(cp);
   if(!s) return;
@@ -2978,6 +3171,10 @@ function prellenarDesdeServicio(cp){
     return;
   }
 
+  // Las rutas del cliente del servicio pasan al frente del buscador
+  clienteSolicitud = s.CLIENTE || '';
+  pintarSelectsSolicitud();
+
   const u = DB.UNIDADES.find(x=>String(x.ECONOMICO||'').toUpperCase()===String(s.ECONOMICO||'').toUpperCase());
   if(u){ $('sEco').value = u.ID; alCambiarUnidad(); }
   const o = DB.OPERADORES.find(x=>String(x.NOMBRE||'').toUpperCase()===String(s.OPERADOR||'').toUpperCase());
@@ -2989,14 +3186,39 @@ function prellenarDesdeServicio(cp){
     $('sTipoUnidad').value = s.TIPO_UNIDAD;
   }
   aplicarTipoUnidad();
+  // Equipo de arrastre: el que quedó en la asignación (o el de planta de la unidad)
+  const arr = {
+    REMOLQUE1: s.REMOLQUE1 || (u && u.REMOLQUE1) || '',
+    REMOLQUE2: s.REMOLQUE2 || (u && u.REMOLQUE2) || '',
+    DOLLY:     s.DOLLY     || (u && u.DOLLY)     || ''
+  };
+  const esFull = $('sTipoUnidad').value==='FULL';
+  if(arr.REMOLQUE1) seleccionarRemolque('sRem1', arr.REMOLQUE1);
+  if(esFull){
+    if(arr.REMOLQUE2) seleccionarRemolque('sRem2', arr.REMOLQUE2);
+    if(arr.DOLLY)     seleccionarRemolque('sDolly', arr.DOLLY);
+  }
+  if(s.EJECUTIVO) seleccionarPorNombre('sEjecutivo','EJECUTIVOS', s.EJECUTIVO);
   if(s.CITA_CARGA){
     const f = String(s.CITA_CARGA).slice(0,10);
     if(f >= $('sFechaServ').min) $('sFechaServ').value = f;
   }
+
+  // Ruta: si el cliente solo tiene una, o hay una que va de ese origen a ese
+  // destino, se pone sola
+  const r = rutaDeServicio(s);
+  if(r){
+    $('sRuta').value = r.ID;
+    $('sRutaBusca').value = `${r.RUTA}${r.CLIENTE?' ('+r.CLIENTE+')':''}`;
+    alCambiarRuta();
+  }
   recalcularSolicitud();
+  const faltaRuta = r? '' : ' Falta elegir la ruta.';
   avisoServicio(`Prellenado con el servicio <b>${esc(s.CP)}</b> · Cliente <b>${esc(s.CLIENTE)}</b> · `+
     `${esc(s.ESTADO_ORIGEN)} → ${esc(s.CIUDAD_DESTINO)} · Unidad <b>${esc(s.ECONOMICO)}</b> · `+
-    `Operador <b>${esc(s.OPERADOR)}</b>. Falta elegir la ruta.`, false);
+    `Operador <b>${esc(s.OPERADOR)}</b>`+
+    (arr.REMOLQUE1? ` · Arrastre <b>${esc([arr.REMOLQUE1,arr.REMOLQUE2,arr.DOLLY].filter(Boolean).join(' · '))}</b>` : '')+
+    (r? ` · Ruta <b>${esc(r.RUTA)}</b>.` : '.')+faltaRuta, false);
 }
 function avisoServicio(html, malo){
   const el = $('sAvisoServicio');
@@ -3012,15 +3234,21 @@ function llenarSelect(sel, arr, texto, vacio){
   if([...s.options].some(o=>o.value===antes)) s.value=antes;
 }
 function pintarSelectsSolicitud(){
-  llenarSelect('sEco', DB.UNIDADES, u=>`${u.ECONOMICO} · ${u.TIPO_UNIDAD}`);
+  llenarSelect('sEco', DB.UNIDADES, u=>textoUnidad(u));
   llenarSelect('sOperador', DB.OPERADORES.filter(o=>String(o.ACTIVO).toUpperCase()!=='NO'), o=>o.NOMBRE);
   llenarSelect('sRem1', DB.REMOLQUES, r=>`${r.ECONOMICO}${r.TIPO?' · '+r.TIPO:''}`);
   llenarSelect('sRem2', DB.REMOLQUES, r=>`${r.ECONOMICO}${r.TIPO?' · '+r.TIPO:''}`);
   llenarSelect('sDolly', DB.REMOLQUES, r=>`${r.ECONOMICO}${r.TIPO?' · '+r.TIPO:''}`);
-  // Ruta buscable via datalist
+  // Ruta buscable via datalist. Cuando la solicitud viene de un servicio, las
+  // rutas de ESE cliente van primero: son las que se van a usar.
   const dlR=$('dlRutas'); dlR.innerHTML='';
   const antesR=$('sRuta').value;
-  DB.RUTAS.forEach(r=>{
+  const cli = String(clienteSolicitud||'').trim().toUpperCase();
+  const esDelCliente = r => cli && String(r.CLIENTE||'').trim().toUpperCase()===cli;
+  const rutasOrdenadas = cli
+    ? [...DB.RUTAS.filter(esDelCliente), ...DB.RUTAS.filter(r=>!esDelCliente(r))]
+    : DB.RUTAS;
+  rutasOrdenadas.forEach(r=>{
     const o=document.createElement('option');
     o.value=`${r.RUTA}${r.CLIENTE?' ('+r.CLIENTE+')':''}`;
     o.dataset.id=r.ID;
@@ -3358,11 +3586,93 @@ function pintarListaSol(){
     tr.innerHTML=`<td><b>${esc(s.FOLIO)}</b></td><td>${fmtFecha(s.FECHA_SERVICIO)}</td><td>${esc(s.RUTA)}</td><td>${esc(s.OPERADOR)}</td><td>${esc(s.ECONOMICO)}</td>
       <td class="right num">${num(s.KM,1)}</td><td class="right num">${money(s.TOTAL)}</td>
       <td>${etiquetaDispersionSol(s.ID)}</td>
-      <td><button class="btn btn-d btn-sm" data-srm="${s.ID}" title="Cancelar la solicitud">✕</button></td>`;
+      <td style="white-space:nowrap">
+        ${dispersadoSol(s.ID)? `<button class="btn btn-s btn-sm" data-sextra="${s.ID}" title="Pedir un gasto extra sobre esta solicitud">＋ Solicitar adicional</button>` : ''}
+        <button class="btn btn-d btn-sm" data-srm="${s.ID}" title="Cancelar la solicitud">✕</button></td>`;
     tb.appendChild(tr);
   });
   tb.querySelectorAll('[data-srm]').forEach(b=>b.addEventListener('click',e=>{ e.stopPropagation(); abrirCancelacion(b.dataset.srm); }));
+  tb.querySelectorAll('[data-sextra]').forEach(b=>b.addEventListener('click',e=>{ e.stopPropagation(); abrirGastoExtra(b.dataset.sextra); }));
   tb.querySelectorAll('[data-sedit]').forEach(tr=>tr.addEventListener('click',()=>cargarSolicitudEnFormulario(tr.dataset.sedit)));
+  pintarGastosExtra();
+}
+
+/* =====================================================
+   GASTOS EXTRA
+   Cuando la solicitud YA se dispersó no se le mueve un peso: si en ruta sale
+   un costo nuevo, se pide aparte. Cada extra es su propio renglón, nace
+   pendiente de dispersión y al liquidar se le sube el comprobante.
+===================================================== */
+const TIPOS_GASTO_EXTRA = ['Maniobra','Talacha','Gasto operativo','Hotel','Pensión','Estacionamiento','Otro'];
+let extraSolicitud = null;
+
+function extrasDeSolicitud(solId){
+  return (DB.GASTOS_EXTRA||[]).filter(g=>String(g.SOLICITUD_ID||'')===String(solId));
+}
+function dispersadoExtra(g){ return String(g.DISPERSION||'').toUpperCase()==='SI'; }
+function extrasPendientes(){ return (DB.GASTOS_EXTRA||[]).filter(g=>!dispersadoExtra(g)); }
+
+function abrirGastoExtra(solId){
+  const s = DB.SOLICITUDES.find(x=>String(x.ID)===String(solId)); if(!s) return;
+  if(!dispersadoSol(solId)){
+    modal('Todavía no hace falta',
+      'Esta solicitud sigue <b>pendiente de dispersión</b>: el gasto se agrega en la solicitud misma. '+
+      'Los gastos extra son para cuando ya se dispersó.', 'ℹ');
+    return;
+  }
+  extraSolicitud = solId;
+  $('extraInfo').innerHTML = `Folio <b>${esc(s.FOLIO)}</b> · ${esc(s.RUTA)} · Operador <b>${esc(s.OPERADOR)}</b> · `+
+    `Unidad <b>${esc(s.ECONOMICO)}</b>`;
+  $('extraTipo').innerHTML = '<option value="">— Elige el tipo —</option>'+
+    TIPOS_GASTO_EXTRA.map(t=>`<option>${esc(t)}</option>`).join('');
+  $('extraMonto').value = '';
+  $('extraMotivo').value = '';
+  $('extraWrap').classList.add('show');
+}
+$('extraCerrar').addEventListener('click',()=>{ $('extraWrap').classList.remove('show'); extraSolicitud=null; });
+$('extraWrap').addEventListener('click',e=>{ if(e.target===$('extraWrap')) $('extraCerrar').click(); });
+
+$('extraGuardar').addEventListener('click', async ()=>{
+  const s = DB.SOLICITUDES.find(x=>String(x.ID)===String(extraSolicitud)); if(!s) return;
+  const tipo = $('extraTipo').value, monto = nf($('extraMonto').value), motivo = $('extraMotivo').value.trim();
+  if(!tipo){ toast('Elige el tipo de gasto.', true); return; }
+  if(!(monto>0)){ toast('Captura la cantidad.', true); $('extraMonto').focus(); return; }
+  if(!motivo){ toast('Escribe el motivo.', true); $('extraMotivo').focus(); return; }
+  const srv = servicioDeSolicitud(s);
+  const ok = await apiEnviar({action:'upsert', sheet:'GASTOS_EXTRA', record:{
+    FOLIO: s.FOLIO, SOLICITUD_ID: s.ID, SERVICIO_ID: srv? srv.ID : '',
+    CARTAS_PORTE: s.CARTAS_PORTE, OPERADOR: s.OPERADOR, ECONOMICO: s.ECONOMICO,
+    FECHA_SOLICITUD: ahoraTexto(), TIPO: tipo, MONTO: r2(monto), MOTIVO: motivo,
+    SOLICITADO_POR: nombreUsuario(), DISPERSION: 'NO'
+  }});
+  if(!ok) return;
+  $('extraWrap').classList.remove('show');
+  toast('Gasto extra solicitado: queda pendiente de dispersión');
+  pintarGastosExtra(); pintarResumenDispersion();
+  if(document.querySelector('#sec-dispersiones.active')) pintarTablaDispersiones();
+});
+
+function pintarGastosExtra(){
+  const tb = $('tbodyExtras'); if(!tb) return;
+  tb.innerHTML='';
+  const filas = [...(DB.GASTOS_EXTRA||[])].reverse().slice(0,60);
+  filas.forEach(g=>{
+    const disp = dispersadoExtra(g);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><b>${esc(g.FOLIO)}</b></td><td>${esc(g.FECHA_SOLICITUD)}</td><td>${esc(g.TIPO)}</td>
+      <td>${esc(g.OPERADOR)}</td><td>${esc(g.MOTIVO)}</td>
+      <td class="right num">${money(g.MONTO)}</td>
+      <td>${disp? '<span class="tag ok-disp">Dispersado</span>' : '<span class="tag pend-disp">Pendiente de gasto extra</span>'}</td>
+      <td>${g.COMPROBANTE_ID? '<span class="tag ok">Subido</span>' : '<span class="mini">—</span>'}</td>
+      <td>${disp? '' : `<button class="btn btn-d btn-sm" data-xrm="${g.ID}" title="Quitar la solicitud del gasto extra">✕</button>`}</td>`;
+    tb.appendChild(tr);
+  });
+  if(!filas.length) tb.innerHTML='<tr><td colspan="9" class="mini">Sin gastos extra.</td></tr>';
+  tb.querySelectorAll('[data-xrm]').forEach(b=>b.addEventListener('click', async ()=>{
+    if(await apiEnviar({action:'delete', sheet:'GASTOS_EXTRA', id:b.dataset.xrm})){
+      toast('Gasto extra eliminado'); pintarGastosExtra(); pintarResumenDispersion();
+    }
+  }));
 }
 
 /* =====================================================
@@ -3392,7 +3702,48 @@ function pintarTablaDispersiones(){
   });
   if(!filas.length) tb.innerHTML='<tr><td colspan="8" class="mini">Sin solicitudes que coincidan.</td></tr>';
   tb.querySelectorAll('[data-xdisp]').forEach(b=>b.addEventListener('click',()=>abrirDispersion(b.dataset.xdisp)));
+  pintarDispersionExtras();
   pintarResumenDispersion();
+}
+
+/* Los gastos extra se dispersan por su cuenta, igual que una solicitud */
+function pintarDispersionExtras(){
+  const tb = $('tbodyDispExtras'); if(!tb) return;
+  const filtro = ($('dxBusca').value||'').toUpperCase();
+  const estado = $('dxEstado').value;
+  tb.innerHTML='';
+  const filas = [...(DB.GASTOS_EXTRA||[])].reverse().filter(g=>{
+    const disp = dispersadoExtra(g);
+    if(estado==='pendientes' && disp) return false;
+    if(estado==='dispersados' && !disp) return false;
+    if(!filtro) return true;
+    return [g.FOLIO,g.OPERADOR,g.TIPO,g.MOTIVO].some(v=>String(v).toUpperCase().includes(filtro));
+  });
+  filas.forEach(g=>{
+    const disp = dispersadoExtra(g);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><b>${esc(g.FOLIO)}</b></td><td>${esc(g.FECHA_SOLICITUD)}</td><td>${esc(g.TIPO)}</td>
+      <td>${esc(g.OPERADOR)}</td><td>${esc(g.ECONOMICO)}</td><td>${esc(g.MOTIVO)}</td>
+      <td class="right num">${money(g.MONTO)}</td>
+      <td>${disp
+        ? `<span class="tag ok-disp">Dispersado</span> <span class="mini">${esc(g.FECHA_DISPERSION)}</span>`
+        : '<span class="tag pend-disp">Pendiente de gasto extra</span>'}</td>
+      <td>${disp? '' : `<button class="btn btn-p btn-sm" data-xdext="${g.ID}"${puedeDispersar()?'':' disabled title="Solo un usuario auditor puede dispersar"'}>Dispersar</button>`}</td>`;
+    tb.appendChild(tr);
+  });
+  if(!filas.length) tb.innerHTML='<tr><td colspan="9" class="mini">Sin gastos extra en este filtro.</td></tr>';
+  tb.querySelectorAll('[data-xdext]').forEach(b=>b.addEventListener('click',()=>dispersarExtra(b.dataset.xdext)));
+}
+async function dispersarExtra(id){
+  if(!puedeDispersar()){ modal('Sin permiso','Solo un usuario <b>auditor</b> puede confirmar la dispersión.','🔒'); return; }
+  const g = (DB.GASTOS_EXTRA||[]).find(x=>String(x.ID)===String(id)); if(!g) return;
+  const reg = Object.assign({}, g, {
+    DISPERSION:'SI', DISPERSADO_POR: nombreUsuario(), FECHA_DISPERSION: ahoraTexto()
+  });
+  if(await apiEnviar({action:'upsert', sheet:'GASTOS_EXTRA', record:reg})){
+    toast('Gasto extra dispersado: '+money(g.MONTO));
+    pintarTablaDispersiones(); pintarGastosExtra();
+  }
 }
 $('dxBusca').addEventListener('input', pintarTablaDispersiones);
 $('dxEstado').addEventListener('change', pintarTablaDispersiones);
@@ -4189,6 +4540,27 @@ function estadoLiq(solId){ const l=liqDe(solId); return l? String(l.ESTADO||'').
 function estaLiquidado(solId){ return estadoLiq(solId)==='LIQUIDADO'; }
 function enAclaracion(solId){ return estadoLiq(solId)==='ACLARACION'; }
 function rolActual(){ return usuarioActual? String(usuarioActual.ROL||'').toUpperCase() : ''; }
+function esEjecutivo(){ return rolActual()==='EJECUTIVO'; }
+
+/* ---------- Cartera del ejecutivo ----------
+   Un usuario con rol EJECUTIVO solo ve lo de SUS clientes: los que traen su
+   nombre en CLIENTES.EJECUTIVO. Los demás roles lo ven todo. */
+function clientesDelUsuario(){
+  const yo = String(nombreUsuario()||'').trim().toUpperCase();
+  return DB.CLIENTES.filter(c=>String(c.EJECUTIVO||'').trim().toUpperCase()===yo);
+}
+function clientesVisibles(){
+  return esEjecutivo()? clientesDelUsuario() : DB.CLIENTES;
+}
+/* ¿Este servicio es de la cartera de quien está viendo? */
+function servicioVisible(s){
+  if(!esEjecutivo()) return true;
+  const yo = String(nombreUsuario()||'').trim().toUpperCase();
+  if(String((s&&s.EJECUTIVO)||'').trim().toUpperCase()===yo) return true;
+  const mios = new Set(clientesDelUsuario().map(c=>String(c.NOMBRE||'').trim().toUpperCase()));
+  return mios.has(String((s&&s.CLIENTE)||'').trim().toUpperCase());
+}
+function serviciosVisibles(){ return DB.SERVICIOS.filter(servicioVisible); }
 function esAdmin(){ return rolActual()==='ADMIN'; }
 function esAuditor(){ return rolActual()==='AUDITOR'; }
 /* SUP: no toca objetivos ni parámetros, pero autoriza cancelaciones y aclaraciones */
@@ -4200,7 +4572,8 @@ function puedeDispersar(){ return rolActual()==='AUDITOR'; }
 function puedeRevertirDispersion(){ return rolActual()==='ADMIN'; }
 function etiquetaRol(rol){
   const r = String(rol||'').toUpperCase();
-  return r==='ADMIN'? 'ADMINISTRADOR' : r==='SUP'? 'SUPERVISOR' : r==='AUDITOR'? 'AUDITOR' : 'OPERATIVO';
+  return r==='ADMIN'? 'ADMINISTRADOR' : r==='SUP'? 'SUPERVISOR' : r==='AUDITOR'? 'AUDITOR'
+       : r==='EJECUTIVO'? 'EJECUTIVO' : 'OPERATIVO';
 }
 function etiquetaEstadoLiq(solId){
   const e = estadoLiq(solId);
@@ -4217,7 +4590,7 @@ function etiquetaDispersionSol(solId){
     : '<span class="tag pend-disp">Pendiente</span>';
 }
 function pendientesDispersion(){
-  return DB.SOLICITUDES.filter(s=>String(s.DISPERSION).toUpperCase()!=='SI').length;
+  return DB.SOLICITUDES.filter(s=>String(s.DISPERSION).toUpperCase()!=='SI').length + extrasPendientes().length;
 }
 function pintarResumenDispersion(){
   const n = pendientesDispersion();
@@ -4264,6 +4637,7 @@ function abrirLiq(id){
   pintarCajaAclaracion(id, l);
   pintarIncidenciasLiq(s);
   pintarEvidenciaLiq(s);
+  pintarExtrasLiq(s);
   $('liqDetalle').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
@@ -4328,7 +4702,9 @@ function comprimirImagen(file){
   });
 }
 function evidenciasDeServicio(id){
-  return (DB.EVIDENCIAS||[]).filter(e=>String(e.SERVICIO_ID||'')===String(id))
+  // Solo las fotos del viaje: los comprobantes de gastos extra van aparte
+  return (DB.EVIDENCIAS||[]).filter(e=>String(e.SERVICIO_ID||'')===String(id) &&
+                                       String(e.CLASE||'EVIDENCIA')!=='COMPROBANTE')
     .sort((a,b)=>String(a.FECHA_HORA).localeCompare(String(b.FECHA_HORA)));
 }
 function pintarEvidenciaLiq(s){
@@ -4359,6 +4735,66 @@ async function borrarEvidencia(id){
     if(s) pintarEvidenciaLiq(s);
   }
 }
+/* ---------- Comprobantes de los gastos extra ----------
+   Cada gasto extra del viaje se comprueba con su foto. Van a la misma hoja
+   EVIDENCIAS, marcados como COMPROBANTE y ligados al gasto. */
+function comprobanteDe(gastoId){
+  return (DB.EVIDENCIAS||[]).find(e=>String(e.CLASE||'')==='COMPROBANTE' &&
+                                     String(e.GASTO_ID||'')===String(gastoId)) || null;
+}
+function pintarExtrasLiq(s){
+  const extras = extrasDeSolicitud(s.ID);
+  $('lqExtrasBox').style.display = extras.length? '' : 'none';
+  const tb = $('tbodyLqExtras'); tb.innerHTML='';
+  extras.forEach(g=>{
+    const c = comprobanteDe(g.ID);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td>${esc(g.TIPO)}</td><td>${esc(g.MOTIVO)}</td>
+      <td class="right num">${money(g.MONTO)}</td>
+      <td>${dispersadoExtra(g)? '<span class="tag ok-disp">Dispersado</span>' : '<span class="tag pend-disp">Pendiente</span>'}</td>
+      <td>${c
+        ? `<img src="${esc(c.IMAGEN)}" data-vercomp="${c.ID}" style="height:54px;border-radius:6px;cursor:zoom-in;vertical-align:middle">
+           <button class="btn btn-d btn-sm" data-delcomp="${c.ID}" title="Quitar">✕</button>`
+        : `<input type="file" accept="image/*" data-comp="${g.ID}" style="max-width:230px">`}</td>`;
+    tb.appendChild(tr);
+  });
+  tb.querySelectorAll('[data-vercomp]').forEach(el=>el.addEventListener('click',()=>{
+    const c = (DB.EVIDENCIAS||[]).find(x=>String(x.ID)===String(el.dataset.vercomp));
+    if(c) modal('Comprobante', `<img src="${esc(c.IMAGEN)}" style="max-width:100%;border-radius:8px">`, '🧾');
+  }));
+  tb.querySelectorAll('[data-delcomp]').forEach(b=>b.addEventListener('click',()=>borrarComprobante(b.dataset.delcomp)));
+  tb.querySelectorAll('[data-comp]').forEach(inp=>inp.addEventListener('change',()=>subirComprobante(inp)));
+}
+async function subirComprobante(inp){
+  const g = (DB.GASTOS_EXTRA||[]).find(x=>String(x.ID)===String(inp.dataset.comp));
+  const f = inp.files && inp.files[0];
+  if(!g || !f) return;
+  const s = DB.SOLICITUDES.find(x=>String(x.ID)===String(liqEditando));
+  try{
+    const img = await comprimirImagen(f);
+    const compId = nuevoId();
+    const ok = await apiEnviar({action:'upsert', sheet:'EVIDENCIAS', record:{
+      ID: compId, FECHA_HORA: ahoraTexto(), SERVICIO_ID: g.SERVICIO_ID||'', FOLIO: g.FOLIO,
+      CP: g.CARTAS_PORTE, OPERADOR: g.OPERADOR, CLASE:'COMPROBANTE', GASTO_ID: g.ID,
+      NOMBRE: f.name, IMAGEN: img, REGISTRADO_POR: nombreUsuario()
+    }});
+    if(!ok) return;
+    await apiEnviar({action:'upsert', sheet:'GASTOS_EXTRA',
+      record: Object.assign({}, g, { COMPROBANTE_ID: compId })});
+    toast('Comprobante de '+g.TIPO+' guardado');
+    if(s){ pintarExtrasLiq(s); }
+  }catch(e){ toast(f.name+': '+e.message, true); }
+}
+async function borrarComprobante(id){
+  const c = (DB.EVIDENCIAS||[]).find(x=>String(x.ID)===String(id)); if(!c) return;
+  if(!await apiEnviar({action:'delete', sheet:'EVIDENCIAS', id})) return;
+  const g = (DB.GASTOS_EXTRA||[]).find(x=>String(x.ID)===String(c.GASTO_ID||''));
+  if(g) await apiEnviar({action:'upsert', sheet:'GASTOS_EXTRA', record: Object.assign({}, g, { COMPROBANTE_ID:'' })});
+  toast('Comprobante eliminado');
+  const s = DB.SOLICITUDES.find(x=>String(x.ID)===String(liqEditando));
+  if(s) pintarExtrasLiq(s);
+}
+
 $('lqFotos').addEventListener('change', async ()=>{
   const s = DB.SOLICITUDES.find(x=>String(x.ID)===String(liqEditando));
   const archivos = [...$('lqFotos').files];
@@ -4372,8 +4808,8 @@ $('lqFotos').addEventListener('change', async ()=>{
       const img = await comprimirImagen(f);
       const ok = await apiEnviar({action:'upsert', sheet:'EVIDENCIAS', record:{
         ID: nuevoId(), FECHA_HORA: ahoraTexto(), SERVICIO_ID: srv.ID, FOLIO: s.FOLIO,
-        CP: s.CARTAS_PORTE, OPERADOR: s.OPERADOR, NOMBRE: f.name,
-        IMAGEN: img, REGISTRADO_POR: nombreUsuario()
+        CP: s.CARTAS_PORTE, OPERADOR: s.OPERADOR, CLASE:'EVIDENCIA', GASTO_ID:'',
+        NOMBRE: f.name, IMAGEN: img, REGISTRADO_POR: nombreUsuario()
       }});
       if(ok) subidas++;
     }catch(e){ toast(f.name+': '+e.message, true); }
@@ -4677,7 +5113,10 @@ $('iPeriodo').addEventListener('change',()=>{ $('iMesBox').style.display=$('iPer
 $('iMes').addEventListener('change',pintarIndicadores);
 
 function pintarIndicadores(){
-  let data = DB.SOLICITUDES;
+  // Un ejecutivo solo ve el movimiento de su cartera
+  let data = esEjecutivo()
+    ? DB.SOLICITUDES.filter(s=>servicioVisible(servicioDeSolicitud(s) || {CLIENTE:s.CLIENTE}))
+    : DB.SOLICITUDES;
   if($('iPeriodo').value==='mes'){
     const m=$('iMes').value || hoyISO().slice(0,7);
     if(!$('iMes').value) $('iMes').value=m;
@@ -4764,7 +5203,7 @@ function textoDias(d){
   return (Math.round(d*10)/10)+' d';
 }
 function serviciosDeIndicadores(){
-  let srv = DB.SERVICIOS.filter(s=>String(s.ESTATUS||'').toUpperCase()!=='CANCELADO');
+  let srv = serviciosVisibles().filter(s=>String(s.ESTATUS||'').toUpperCase()!=='CANCELADO');
   if($('iPeriodo').value==='mes'){
     const m = $('iMes').value || hoyISO().slice(0,7);
     srv = srv.filter(s=>{
@@ -4854,7 +5293,7 @@ const ADMIN = {
     csv:'NOMBRE, CARRETERA, COSTO_2E, COSTO_5E, COSTO_9E' },
   USUARIOS:{ cols:[
       {k:'USUARIO',raw:true},{k:'NOMBRE'},{k:'PASSWORD',raw:true},
-      {k:'ROL',opts:['OPERATIVO','SUP','AUDITOR','ADMIN']},{k:'ACTIVO',opts:['SI','NO']},
+      {k:'ROL',opts:['OPERATIVO','EJECUTIVO','SUP','AUDITOR','ADMIN']},{k:'ACTIVO',opts:['SI','NO']},
       {k:'PESTANAS',tipo:'permisos'}] },
   /* Un sueldo semanal por esquema de pre-nómina */
   OPERADORES:{ cols:[{k:'NOMBRE'},
@@ -4866,7 +5305,7 @@ const ADMIN = {
   EJECUTIVOS:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
   REMOLQUES:{ cols:[{k:'ECONOMICO'},{k:'PLACAS'},{k:'TIPO',opts:['REMOLQUE','PORTACONTENEDOR','DOLLY']}],
     csv:'ECONOMICO, PLACAS, TIPO' },
-  CLIENTES:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
+  CLIENTES:{ cols:[{k:'NOMBRE'},{k:'EJECUTIVO',t:'Ejecutivo de la cuenta'}], csv:'NOMBRE, EJECUTIVO' },
   /* Catálogos que alimentan el alta de Nuevo Servicio */
   PROVEEDORES:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
   TIPO_NEGOCIO:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
@@ -4918,8 +5357,14 @@ const SECCIONES_INFO = {
 };
 const TODAS_LAS_SECCIONES = Object.keys(SECCIONES_INFO);
 const SECCIONES_AUDITOR = ['dispersiones','monitoreo','liquidacion','prenomina','indicadores'];
+/* El ejecutivo trabaja su cartera: da de alta servicios, los sigue y los ve
+   en TDC/FWD. Todo filtrado a SUS clientes (ver clientesDelUsuario). */
+const SECCIONES_EJECUTIVO = ['nuevoservicio','tdc','fwd','monitoreo','indicadores'];
 function seccionesPorDefecto(rol){
-  return String(rol||'').toUpperCase()==='AUDITOR' ? SECCIONES_AUDITOR : TODAS_LAS_SECCIONES;
+  const r = String(rol||'').toUpperCase();
+  if(r==='AUDITOR')   return SECCIONES_AUDITOR;
+  if(r==='EJECUTIVO') return SECCIONES_EJECUTIVO;
+  return TODAS_LAS_SECCIONES;
 }
 function seccionesPermitidas(usuario){
   usuario = usuario || usuarioActual;
