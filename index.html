@@ -262,6 +262,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
   <button class="tab" data-sec="solicitud">Solicitud de Gasto</button>
   <button class="tab" data-sec="dispersiones">Dispersiones</button>
   <button class="tab" data-sec="monitoreo">Monitoreo</button>
+  <button class="tab" data-sec="calidad">Calidad</button>
   <button class="tab" data-sec="liquidacion">Liquidación</button>
   <button class="tab" data-sec="prenomina">Hoja de Servicio</button>
   <button class="tab" data-sec="indicadores">Indicadores</button>
@@ -383,8 +384,6 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <select id="nsLineaSel" style="display:none"></select>
       </div>
       <div><label>Tipo de unidad</label><select id="nsTipoUnidad"></select></div>
-      <div id="nsTipoU2Box"><label>Segunda caja (Full)</label>
-        <select id="nsTipoUnidad2" disabled title="Se habilita cuando el tipo de unidad es Full"></select></div>
       <div><label>Tipo de mercancía</label><input id="nsMercancia"></div>
     </div>
 
@@ -395,8 +394,10 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       <span class="mini" style="color:var(--ink2)">Todas las que agregues quedan ligadas a este servicio</span>
     </div>
     <div id="nsCpWrap" class="grid g5" style="margin-bottom:14px"></div>
+    <div class="mini" id="nsContAviso" style="margin-bottom:8px;color:var(--ink2)"></div>
     <div class="grid g5" style="margin-bottom:14px">
-      <div><label>Contenedores</label><input id="nsContenedores"></div>
+      <div><label id="lblCont1">Contenedor</label><input id="nsCont1" disabled></div>
+      <div id="nsCont2Box"><label>Contenedor 2</label><input id="nsCont2" disabled title="Se habilita cuando el tipo de unidad es Full"></div>
     </div>
 
     <h3>Origen y destino</h3>
@@ -404,6 +405,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <div class="grid g5" style="margin-bottom:14px">
       <div><label>Estado de origen</label><select id="nsEstadoOrigen"></select></div>
       <div><label>Punto de carga</label><input id="nsPuntoCarga"></div>
+      <div><label>Estado destino</label><select id="nsEstadoDestino"></select></div>
       <div><label>Ciudad destino</label><select id="nsCiudadDestino"></select></div>
       <div><label>Punto de descarga</label><input id="nsPuntoDescarga"></div>
     </div>
@@ -772,8 +774,46 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       <div><label>Cumplimiento de descarga</label><input id="monCumpleDescarga" readonly></div>
     </div>
 
+    <h3>Datos del servicio</h3>
+    <div class="grid g4" style="margin-bottom:14px">
+      <div><label>Booking</label><input id="monBooking" readonly></div>
+      <div><label>Contenedores</label><input id="monContenedores" readonly></div>
+      <div><label>PO</label><input id="monPO" readonly></div>
+      <div><label>Tipo de mercancía</label><input id="monMercancia" readonly></div>
+      <div><label>Tipo de unidad</label><input id="monTipoUnidad" readonly></div>
+      <div><label>Equipo de arrastre</label><input id="monArrastre" readonly></div>
+      <div><label>Punto de carga</label><input id="monPuntoCarga" readonly></div>
+      <div><label>Punto de descarga</label><input id="monPuntoDescarga" readonly></div>
+      <div><label>Aduana / puerto</label><input id="monAduana" readonly></div>
+      <div><label>Tipo de negocio</label><input id="monNegocio" readonly></div>
+      <div><label>Ejecutivo</label><input id="monEjecutivo" readonly></div>
+      <div><label>Línea transportista</label><input id="monLinea" readonly></div>
+    </div>
+
+    <h3>Rastreo</h3>
+    <div class="sub" style="margin-bottom:10px">Cuentas espejo del viaje. Los accesos de la plataforma del proveedor salen del catálogo; en un servicio de <b>ADL</b> no aplican.</div>
+    <div class="grid g2" style="margin-bottom:10px">
+      <div><label>Enlace de cuenta espejo · unidad</label><input id="monEspejoUnidad" placeholder="https://…"></div>
+      <div><label>Enlace de cuenta espejo · portas</label><input id="monEspejoPortas" placeholder="https://…"></div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+      <button class="btn btn-p btn-sm" id="btnMonEspejo">💾 Guardar enlaces</button>
+      <a class="btn btn-s btn-sm" id="lnkEspejoUnidad" target="_blank" rel="noopener" style="display:none">🔗 Abrir espejo de la unidad</a>
+      <a class="btn btn-s btn-sm" id="lnkEspejoPortas" target="_blank" rel="noopener" style="display:none">🔗 Abrir espejo de los portas</a>
+    </div>
+    <div id="monProveedorBox" style="display:none;background:var(--surface2);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:14px">
+      <div class="mini" style="margin-bottom:8px">Plataforma de <b id="monProvNombre"></b></div>
+      <div class="grid g3">
+        <div><label>Usuario</label><input id="monProvUsuario" readonly></div>
+        <div><label>Contraseña</label><input id="monProvPass" readonly></div>
+        <div style="display:flex;align-items:flex-end">
+          <a class="btn btn-p btn-sm" id="monProvEnlace" target="_blank" rel="noopener" style="width:100%">🔗 Abrir plataforma</a>
+        </div>
+      </div>
+    </div>
+
     <h3>Horarios del viaje</h3>
-    <div class="sub" style="margin-bottom:10px">Cada botón sella la fecha y hora del momento en que se pulsa. Se registran en orden, y el servicio no se puede finalizar si falta alguno.</div>
+    <div class="sub" style="margin-bottom:10px">Cada botón sella la fecha y hora del momento en que se pulsa. Se registran en orden, y el servicio no se puede finalizar si falta alguno. Una vez sellado, el horario queda <b>abierto</b>: se puede corregir a mano.</div>
     <div id="monHitos" class="grid g4" style="margin-bottom:14px"></div>
 
     <div class="grid g3" style="margin-bottom:12px">
@@ -787,15 +827,88 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     </div>
 
     <h3 style="margin-top:18px">Ubicación de la unidad</h3>
-    <div class="sub" style="margin-bottom:10px">Captura a mano dónde va la unidad. Queda con fecha y hora, se guarda el histórico y la última se ve en el tablero operativo.</div>
+    <div class="sub" style="margin-bottom:10px">Escríbela y pulsa <b>Enter</b>: queda con fecha y hora, se guarda el histórico y la última se ve en el tablero operativo.</div>
     <div class="grid g3" style="margin-bottom:10px">
-      <div style="grid-column:1/3"><label>Ubicación actual</label><input id="monUbicacion" placeholder="Caseta, tramo carretero, ciudad, patio…"></div>
-      <div style="display:flex;align-items:flex-end"><button class="btn btn-p btn-sm" id="btnMonUbicacion" style="width:100%">📍 Registrar ubicación</button></div>
+      <div style="grid-column:1/3"><label>Ubicación actual</label>
+        <input id="monUbicacion" placeholder="Caseta, tramo carretero, ciudad, patio… y Enter para guardar"></div>
     </div>
     <div class="mini" id="monUbicHist" style="margin-bottom:14px"></div>
 
     <h3>Incidencias reportadas</h3>
     <div id="monIncidencias" class="mini" style="margin-top:6px"></div>
+  </div>
+</section>
+
+<!-- ============ CALIDAD ============ -->
+<section class="sec" id="sec-calidad">
+  <div class="card">
+    <h2>Calidad</h2>
+    <div class="sub">Tickets de seguimiento del área de calidad: desviaciones del proceso, quejas del cliente, hallazgos. Cada uno se levanta con su responsable y su fecha compromiso, se le van agregando notas de seguimiento y se cierra con la acción correctiva.</div>
+    <div id="calChips" style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0"></div>
+    <div class="grid g4" style="margin-bottom:12px">
+      <div style="grid-column:1/3"><label>Buscar</label><input id="calBusca" placeholder="🔍 Folio, título, carta porte, responsable…"></div>
+      <div><label>Estado</label><select id="calEstado">
+        <option value="abiertos">Abiertos</option><option value="todos">Todos</option>
+        <option>ABIERTO</option><option>EN PROCESO</option><option>EN VERIFICACIÓN</option><option>CERRADO</option>
+      </select></div>
+      <div style="display:flex;align-items:flex-end">
+        <button class="btn btn-p" id="btnCalNuevo" style="width:100%">＋ Nuevo ticket</button>
+      </div>
+    </div>
+    <div class="twrap" style="max-height:480px;overflow-y:auto"><table>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
+        <th>Folio</th><th>Fecha</th><th>Tipo</th><th>Título</th><th>CP / servicio</th>
+        <th>Responsable</th><th>Compromiso</th><th>Prioridad</th><th>Estado</th><th></th>
+      </tr></thead>
+      <tbody id="tbodyCalidad"></tbody>
+    </table></div>
+  </div>
+
+  <!-- Alta / detalle del ticket -->
+  <div class="card" id="calDetalle" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+      <div>
+        <h3 style="margin-bottom:4px">Ticket de calidad · <span id="calTit">nuevo</span></h3>
+        <div class="mini" id="calInfo"></div>
+      </div>
+      <button class="btn btn-s btn-sm" id="btnCalCerrarPanel">Cerrar</button>
+    </div>
+
+    <div class="grid g4" style="margin:14px 0">
+      <div><label>Tipo</label><select id="calTipo"></select></div>
+      <div><label>Prioridad</label><select id="calPrioridad"><option>ALTA</option><option selected>MEDIA</option><option>BAJA</option></select></div>
+      <div><label>Área responsable</label><select id="calArea"></select></div>
+      <div><label>Responsable</label><input id="calResponsable" placeholder="Quién lo atiende"></div>
+      <div><label>Carta porte (opcional)</label><input id="calCP" placeholder="Liga el ticket a un servicio"></div>
+      <div><label>Fecha compromiso</label><input id="calCompromiso" type="date"></div>
+      <div style="grid-column:3/5"><label>Título</label><input id="calTitulo" placeholder="En una línea, qué pasó"></div>
+    </div>
+    <div style="margin-bottom:12px">
+      <label>Descripción</label>
+      <textarea id="calDescripcion" rows="3" placeholder="Qué se detectó, dónde y con qué impacto…"></textarea>
+    </div>
+    <div class="grid g2" style="margin-bottom:12px">
+      <div><label>Causa raíz</label><textarea id="calCausa" rows="2" placeholder="Se llena conforme se investiga…"></textarea></div>
+      <div><label>Acción correctiva</label><textarea id="calAccion" rows="2" placeholder="Qué se hizo para que no vuelva a pasar…"></textarea></div>
+    </div>
+    <div class="mini" id="calAvisoServicio" style="margin-bottom:12px;color:var(--ink2)"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-p" id="btnCalGuardar">💾 Guardar ticket</button>
+      <button class="btn btn-s" id="btnCalCancelar">Cancelar</button>
+    </div>
+
+    <div id="calSeguimientoBox" style="display:none;margin-top:20px">
+      <h3>Seguimiento</h3>
+      <div class="sub" style="margin-bottom:10px">Cada nota queda con su fecha, su autor y el estado en que dejó el ticket.</div>
+      <div class="grid g4" style="margin-bottom:10px">
+        <div style="grid-column:1/3"><label>Nota de seguimiento</label><input id="calNota" placeholder="Qué avanzó… y Enter para agregarla"></div>
+        <div><label>Deja el ticket en</label><select id="calNuevoEstado">
+          <option>ABIERTO</option><option>EN PROCESO</option><option>EN VERIFICACIÓN</option><option>CERRADO</option>
+        </select></div>
+        <div style="display:flex;align-items:flex-end"><button class="btn btn-p btn-sm" id="btnCalNota" style="width:100%">Agregar seguimiento</button></div>
+      </div>
+      <div id="calHistorial" class="mini"></div>
+    </div>
   </div>
 </section>
 
@@ -1211,6 +1324,8 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <button class="tab atab" data-adm="PAGO_X_KM">Pago x KM</button>
         <button class="tab atab" data-adm="NOMINAS">Nóminas</button>
         <button class="tab atab" data-adm="LIQUIDACION">Liquidación</button>
+        <button class="tab atab" data-adm="TICKETS_CALIDAD">Calidad</button>
+        <button class="tab atab" data-adm="SEGUIMIENTOS_CALIDAD">Seguimiento de calidad</button>
         <button class="tab atab" data-adm="INCIDENCIAS">Incidencias</button>
         <button class="tab atab" data-adm="UBICACIONES">Ubicaciones</button>
         <button class="tab atab" data-adm="CANCELADAS">Canceladas</button>
@@ -1462,7 +1577,8 @@ const TOLERANCIA_KM = 15;
 
 const DB = { UNIDADES:[], OPERADORES:[], EJECUTIVOS:[], REMOLQUES:[], CLIENTES:[], RUTAS:[], SOLICITUDES:[], NOMINAS:[], LIQUIDACION:[], CASETAS:[], USUARIOS:[], BITACORA:[], SOLICITUDES_CANCELADAS:[], PAGO_X_KM:[],
   SERVICIOS:[], TIPO_NEGOCIO:[], ADUANAS:[], ESTADOS:[], CIUDADES:[], PROVEEDORES:[],
-  TIPOS_INCIDENCIA:[], INCIDENCIAS:[], UBICACIONES:[], EVIDENCIAS:[], GASTOS_EXTRA:[], CONFIG:{} };
+  TIPOS_INCIDENCIA:[], INCIDENCIAS:[], UBICACIONES:[], EVIDENCIAS:[], GASTOS_EXTRA:[],
+  TICKETS_CALIDAD:[], SEGUIMIENTOS_CALIDAD:[], CONFIG:{} };
 
 const $  = id => document.getElementById(id);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
@@ -1576,7 +1692,8 @@ function bitacora(accion, detalle){
 const HOJAS_APP = ['UNIDADES','OPERADORES','EJECUTIVOS','REMOLQUES','CLIENTES','RUTAS','SOLICITUDES',
   'NOMINAS','LIQUIDACION','CASETAS','USUARIOS','BITACORA','SOLICITUDES_CANCELADAS','PAGO_X_KM',
   'SERVICIOS','TIPO_NEGOCIO','ADUANAS','ESTADOS','CIUDADES','PROVEEDORES',
-  'TIPOS_INCIDENCIA','INCIDENCIAS','UBICACIONES','EVIDENCIAS','GASTOS_EXTRA'];
+  'TIPOS_INCIDENCIA','INCIDENCIAS','UBICACIONES','EVIDENCIAS','GASTOS_EXTRA',
+  'TICKETS_CALIDAD','SEGUIMIENTOS_CALIDAD'];
 const hojasPedidas = new Set();
 
 /* Refleja en memoria lo que el guardado acaba de escribir, sin esperar a que
@@ -1749,6 +1866,7 @@ document.querySelectorAll('.tab[data-sec]').forEach(b=>b.addEventListener('click
   if(b.dataset.sec==='solicitud') pintarListaSol();
   if(b.dataset.sec==='asignacion'){ pintarDespacho(); pintarTablero(); }
   if(b.dataset.sec==='monitoreo') pintarMonitoreo();
+  if(b.dataset.sec==='calidad') pintarCalidad();
   if(b.dataset.sec==='nuevoservicio') pintarServicios();
   if(b.dataset.sec==='tdc') pintarTdc();
   if(b.dataset.sec==='fwd') pintarFwd();
@@ -2090,25 +2208,66 @@ function pintarSelectsServicio(){
   llenarSelect('nsEstadoOrigen',  porNombre(DB.ESTADOS),      x=>x.NOMBRE);
   llenarSelect('nsCiudadDestino', porNombre(DB.CIUDADES),     x=>x.NOMBRE);
   llenarSelect('nsLineaSel',      porNombre(DB.PROVEEDORES),  x=>x.NOMBRE);
-  [['nsTipoUnidad',TIPOS_UNIDAD_SERVICIO],['nsTipoUnidad2',TIPOS_UNIDAD_SERVICIO]].forEach(([id,lista])=>{
-    const su = $(id);
-    if(su.options.length) return;
+  llenarSelect('nsEstadoDestino', porNombre(DB.ESTADOS), x=>x.NOMBRE, '— Todos —');
+  const su = $('nsTipoUnidad');
+  if(!su.options.length){
     const o0=document.createElement('option'); o0.value=''; o0.textContent='— Selecciona —'; su.appendChild(o0);
-    lista.forEach(t=>{ const o=document.createElement('option'); o.textContent=t; su.appendChild(o); });
-  });
+    TIPOS_UNIDAD_SERVICIO.forEach(t=>{ const o=document.createElement('option'); o.textContent=t; su.appendChild(o); });
+  }
   aplicarFullServicio();
   filtrarPorCliente();
 }
 
-/* Un Full lleva dos cajas: la segunda solo se pide cuando aplica */
+/* Cuántos contenedores pide el servicio según el tipo de unidad:
+   Full → dos · Sencillo → uno · cualquier otro → no aplica. */
+function contenedoresDeTipo(tipo){
+  const t = String(tipo||'').toUpperCase();
+  if(t==='FULL') return 2;
+  if(t==='SENCILLO') return 1;
+  return 0;
+}
 function aplicarFullServicio(){
-  const esFull = String($('nsTipoUnidad').value||'').toUpperCase()==='FULL';
-  const s2 = $('nsTipoUnidad2');
-  s2.disabled = !esFull;
-  if(!esFull) s2.value='';
-  $('nsTipoU2Box').style.opacity = esFull? '1' : '.5';
+  const n = contenedoresDeTipo($('nsTipoUnidad').value);
+  $('lblCont1').textContent = n===2? 'Contenedor 1' : 'Contenedor';
+  $('nsCont1').disabled = n < 1;
+  $('nsCont2').disabled = n < 2;
+  if(n < 1) $('nsCont1').value='';
+  if(n < 2) $('nsCont2').value='';
+  $('nsCont2Box').style.opacity = n===2? '1' : '.5';
+  $('nsContAviso').textContent = n===2
+    ? 'Un Full lleva dos contenedores.'
+    : n===1? 'Un Sencillo lleva un contenedor.'
+    : 'Elige el tipo de unidad: los contenedores solo aplican para Full (dos) y Sencillo (uno).';
 }
 $('nsTipoUnidad').addEventListener('change', aplicarFullServicio);
+
+/* ---------- Estado → ciudades ----------
+   Cada ciudad trae su estado en el catálogo. Al elegir un estado, el selector
+   de ciudades deja solo las de ese estado (las que no tengan estado capturado
+   siempre se ofrecen, para no perderlas). */
+function ciudadesDeEstado(estado){
+  const e = String(estado||'').trim().toUpperCase();
+  if(!e) return DB.CIUDADES;
+  return DB.CIUDADES.filter(c=>{
+    const ce = String(c.ESTADO||'').trim().toUpperCase();
+    return !ce || ce===e;
+  });
+}
+function alCambiarEstadoDestino(){
+  const estado = nombreDeSelect('nsEstadoDestino','ESTADOS');
+  const antes = $('nsCiudadDestino').value;
+  const lista = [...ciudadesDeEstado(estado)].sort((a,b)=>String(a.NOMBRE||'').localeCompare(String(b.NOMBRE||'')));
+  $('nsCiudadDestino').innerHTML = '<option value="">— Selecciona —</option>'+
+    lista.map(c=>`<option value="${esc(c.ID)}">${esc(c.NOMBRE)}</option>`).join('');
+  if(lista.some(c=>String(c.ID)===antes)) $('nsCiudadDestino').value = antes;
+  $('nsCiudadDestino').title = estado? 'Ciudades de '+estado : 'Todas las ciudades del catálogo';
+}
+$('nsEstadoDestino').addEventListener('change', alCambiarEstadoDestino);
+/* Al elegir la ciudad, si trae estado y no había ninguno puesto, se pone solo */
+$('nsCiudadDestino').addEventListener('change',()=>{
+  const c = DB.CIUDADES.find(x=>String(x.ID)===$('nsCiudadDestino').value);
+  if(c && c.ESTADO && !$('nsEstadoDestino').value) seleccionarPorNombre('nsEstadoDestino','ESTADOS', c.ESTADO);
+});
 
 /* ---------- Todo lo que el cliente ya trae ----------
    Al elegir un cliente, sus orígenes, destinos y rutas se ponen primero: son
@@ -2126,9 +2285,9 @@ function rutasDeCliente(cliente){
 }
 /* Reordena un select de catálogo dejando arriba, en su grupo, lo que ya se ha
    usado con ese cliente. Conserva el valor elegido. */
-function agruparPorCliente(sel, catalogo, usados){
+function agruparPorCliente(sel, catalogo, usados, universo){
   const el = $(sel), valor = el.value;
-  const lista = [...DB[catalogo]].sort((a,b)=>String(a.NOMBRE||'').localeCompare(String(b.NOMBRE||'')));
+  const lista = [...(universo || DB[catalogo])].sort((a,b)=>String(a.NOMBRE||'').localeCompare(String(b.NOMBRE||'')));
   const enCliente = n => usados.has(String(n||'').trim().toUpperCase());
   const opcion = x => `<option value="${esc(x.ID)}">${esc(x.NOMBRE)}</option>`;
   const dentro = lista.filter(x=>enCliente(x.NOMBRE)), fuera = lista.filter(x=>!enCliente(x.NOMBRE));
@@ -2144,7 +2303,7 @@ function filtrarPorCliente(){
   const origenes = new Set(srv.map(x=>String(x.ESTADO_ORIGEN||'').trim().toUpperCase()).filter(Boolean));
   const destinos = new Set(srv.map(x=>String(x.CIUDAD_DESTINO||'').trim().toUpperCase()).filter(Boolean));
   agruparPorCliente('nsEstadoOrigen','ESTADOS', origenes);
-  agruparPorCliente('nsCiudadDestino','CIUDADES', destinos);
+  agruparPorCliente('nsCiudadDestino','CIUDADES', destinos, ciudadesDeEstado(nombreDeSelect('nsEstadoDestino','ESTADOS')));
   $('nsRutasCliente').innerHTML = !cliente
     ? 'Elige un cliente para ver sus orígenes, destinos y rutas.'
     : (rutas.length || srv.length)
@@ -2171,11 +2330,12 @@ function limpiarServicio(){
   servicioEditando = null;
   $('nsEditando').textContent = '';
   $('nsFechaSol').value = ahoraTexto();
-  ['nsFechaAcep','nsCitaCarga','nsCitaEntrega','nsContenedores',
+  ['nsFechaAcep','nsCitaCarga','nsCitaEntrega',
    'nsMercancia','nsBooking','nsPO','nsPuntoCarga','nsPuntoDescarga'].forEach(id=>$(id).value='');
   cpServicio=['']; pintarCpServicio();
-  ['nsTipoNegocio','nsAduana','nsCliente','nsEstadoOrigen','nsCiudadDestino','nsLineaSel',
-   'nsTipoUnidad','nsTipoUnidad2'].forEach(id=>$(id).value='');
+  ['nsTipoNegocio','nsAduana','nsCliente','nsEstadoOrigen','nsEstadoDestino','nsCiudadDestino',
+   'nsLineaSel','nsTipoUnidad'].forEach(id=>$(id).value='');
+  $('nsCont1').value=''; $('nsCont2').value='';
   // Un servicio nuevo nace pendiente por despachar
   $('nsEstatus').value=EST_PENDIENTE;
   marcarPar('rfseco',''); marcarPar('owrt','');
@@ -2217,16 +2377,19 @@ function armarServicio(){
     CITA_ENTREGA: $('nsCitaEntrega').value,
     ESTATUS: $('nsEstatus').value,
     CP: cps.join(', '),
-    CONTENEDORES: $('nsContenedores').value.trim(),
+    CONTENEDOR_1: $('nsCont1').value.trim(),
+    CONTENEDOR_2: $('nsCont2').value.trim(),
+    // Se conserva la columna de siempre con los dos juntos
+    CONTENEDORES: [$('nsCont1').value.trim(), $('nsCont2').value.trim()].filter(Boolean).join(', '),
     TIPO_MERCANCIA: $('nsMercancia').value.trim(),
     BOOKING: $('nsBooking').value.trim(), PO: $('nsPO').value.trim(),
     ESTADO_ORIGEN: nombreDeSelect('nsEstadoOrigen','ESTADOS'),
     PUNTO_CARGA: $('nsPuntoCarga').value.trim(),
+    ESTADO_DESTINO: nombreDeSelect('nsEstadoDestino','ESTADOS'),
     CIUDAD_DESTINO: nombreDeSelect('nsCiudadDestino','CIUDADES'),
     PUNTO_DESCARGA: $('nsPuntoDescarga').value.trim(),
     LINEA_TRANSPORTISTA: m==='FWD'? nombreDeSelect('nsLineaSel','PROVEEDORES') : 'ADL',
     TIPO_UNIDAD: $('nsTipoUnidad').value,
-    TIPO_UNIDAD_2: String($('nsTipoUnidad').value||'').toUpperCase()==='FULL'? $('nsTipoUnidad2').value : '',
     // El despacho se captura aparte (Solicitud de Gasto → Pendientes de
     // despacho); aquí solo se conserva lo que ya se haya asignado.
     ECONOMICO: (prev && prev.ECONOMICO) || '',
@@ -2281,17 +2444,24 @@ function abrirServicio(id){
   // Con el cliente puesto se reagrupan orígenes y destinos antes de elegirlos
   filtrarPorCliente();
   seleccionarPorNombre('nsEstadoOrigen','ESTADOS', s.ESTADO_ORIGEN);
+  seleccionarPorNombre('nsEstadoDestino','ESTADOS', s.ESTADO_DESTINO);
+  alCambiarEstadoDestino();
   seleccionarPorNombre('nsCiudadDestino','CIUDADES', s.CIUDAD_DESTINO);
   seleccionarPorNombre('nsLineaSel','PROVEEDORES', s.LINEA_TRANSPORTISTA);
   marcarPar('rfseco', s.RF_SECO); marcarPar('owrt', s.OW_RT);
   cpServicio = cpsDeServicio(s); if(!cpServicio.length) cpServicio=[''];
   pintarCpServicio();
-  $('nsContenedores').value = s.CONTENEDORES||''; $('nsMercancia').value = s.TIPO_MERCANCIA||'';
+  $('nsMercancia').value = s.TIPO_MERCANCIA||'';
   $('nsBooking').value = s.BOOKING||''; $('nsPO').value = s.PO||'';
   $('nsPuntoCarga').value = s.PUNTO_CARGA||''; $('nsPuntoDescarga').value = s.PUNTO_DESCARGA||'';
   $('nsTipoUnidad').value = s.TIPO_UNIDAD||'';
   aplicarFullServicio();
-  $('nsTipoUnidad2').value = s.TIPO_UNIDAD_2||'';
+  // Contenedores: los guardados por separado y, si son de antes, los de la
+  // columna CONTENEDORES separados por coma
+  const conts = [s.CONTENEDOR_1, s.CONTENEDOR_2].filter(x=>x!==undefined && x!=='');
+  const viejos = String(s.CONTENEDORES||'').split(/[,;]+/).map(x=>x.trim()).filter(Boolean);
+  $('nsCont1').value = s.CONTENEDOR_1 || viejos[0] || '';
+  $('nsCont2').value = s.CONTENEDOR_2 || viejos[1] || '';
   $('sec-nuevoservicio').scrollIntoView({behavior:'smooth',block:'start'});
 }
 
@@ -2519,10 +2689,70 @@ function abrirMonitoreo(id){
   selE.value = estatusMonitoreoDe(s);
   pintarColorEstatus();
   $('monNota').value = s.NOTA_MONITOREO || '';
+  pintarDatosServicioMon(s);
+  pintarRastreoMon(s);
   pintarHitos(s);
   pintarIncidenciasYUbicaciones(s);
   $('monDetalle').scrollIntoView({behavior:'smooth',block:'start'});
 }
+/* Lo que el monitorista necesita tener a la vista del servicio */
+function pintarDatosServicioMon(s){
+  const arrastre = [s.REMOLQUE1, s.REMOLQUE2, s.DOLLY].filter(Boolean).join(' · ');
+  const conts = [s.CONTENEDOR_1, s.CONTENEDOR_2].filter(Boolean).join(', ') || (s.CONTENEDORES||'');
+  const v = (id, val) => { $(id).value = val || '—'; };
+  v('monBooking', s.BOOKING);
+  v('monContenedores', conts);
+  v('monPO', s.PO);
+  v('monMercancia', s.TIPO_MERCANCIA);
+  v('monTipoUnidad', s.TIPO_UNIDAD);
+  v('monArrastre', arrastre);
+  v('monPuntoCarga', s.PUNTO_CARGA);
+  v('monPuntoDescarga', s.PUNTO_DESCARGA);
+  v('monAduana', s.ADUANA_PUERTO);
+  v('monNegocio', s.TIPO_NEGOCIO);
+  v('monEjecutivo', s.EJECUTIVO);
+  v('monLinea', s.LINEA_TRANSPORTISTA);
+}
+
+/* Rastreo: enlaces espejo del viaje y, si va con un proveedor, sus accesos.
+   Un servicio de ADL no trae plataforma de tercero, así que no se muestra. */
+function proveedorDeServicio(s){
+  const linea = String((s&&s.LINEA_TRANSPORTISTA)||'').trim().toUpperCase();
+  if(!linea || linea==='ADL') return null;
+  return DB.PROVEEDORES.find(p=>String(p.NOMBRE||'').trim().toUpperCase()===linea) || null;
+}
+function pintarRastreoMon(s){
+  $('monEspejoUnidad').value = s.ESPEJO_UNIDAD || '';
+  $('monEspejoPortas').value = s.ESPEJO_PORTAS || '';
+  [['lnkEspejoUnidad', s.ESPEJO_UNIDAD], ['lnkEspejoPortas', s.ESPEJO_PORTAS]].forEach(([id,url])=>{
+    const a = $(id);
+    a.style.display = url? '' : 'none';
+    if(url) a.href = url;
+  });
+
+  const p = proveedorDeServicio(s);
+  const box = $('monProveedorBox');
+  if(!p){ box.style.display='none'; return; }
+  box.style.display='';
+  $('monProvNombre').textContent = p.NOMBRE || '';
+  $('monProvUsuario').value = p.PLATAFORMA_USUARIO || '—';
+  $('monProvPass').value = p.PLATAFORMA_PASSWORD || '—';
+  const enlace = $('monProvEnlace');
+  if(p.PLATAFORMA_ENLACE){ enlace.href = p.PLATAFORMA_ENLACE; enlace.style.display=''; }
+  else enlace.style.display='none';
+}
+$('btnMonEspejo').addEventListener('click', async ()=>{
+  const s = DB.SERVICIOS.find(x=>String(x.ID)===String(monEditando)); if(!s) return;
+  const reg = Object.assign({}, s, {
+    ESPEJO_UNIDAD: $('monEspejoUnidad').value.trim(),
+    ESPEJO_PORTAS: $('monEspejoPortas').value.trim()
+  });
+  if(await apiEnviar({action:'upsert', sheet:'SERVICIOS', record:reg})){
+    toast('Enlaces de rastreo guardados');
+    pintarRastreoMon(reg);
+  }
+});
+
 function pintarColorEstatus(){
   const c = COLOR_MONITOREO[$('monEstatus').value];
   $('monEstatus').style.borderLeft = c? '5px solid '+c : '';
@@ -2541,9 +2771,12 @@ function pintarHitos(s){
     const faltan = HITOS.slice(0,-1).filter(x=>!s[x.campo]);
     const puede = !val && previoListo && (!esFinal || !faltan.length);
     const d=document.createElement('div');
+    // Ya registrado: se queda abierto para corregirlo a mano
     d.innerHTML = `<label>${i+1}. ${h.texto}</label>`+
       (val
-        ? `<input readonly value="${esc(val)}" style="border-left:5px solid var(--ok)">`
+        ? `<input value="${esc(val)}" data-monedit="${h.campo}" placeholder="dd/mm/aaaa hh:mm"
+                  title="Corrige la fecha y hora a mano; se guarda al salir del campo"
+                  style="border-left:5px solid var(--ok)">`
         : `<button class="btn btn-${puede?'p':'s'} btn-sm" style="width:100%" data-monhito="${h.campo}"${puede?'':' disabled'}>Registrar</button>`);
     w.appendChild(d);
   });
@@ -2554,6 +2787,31 @@ function pintarHitos(s){
       ? `<span style="color:var(--bad)">No se puede finalizar el servicio: faltan ${faltan.length} horario(s) — ${faltan.map(x=>x.texto).join(', ')}.</span>`
       : 'Todos los horarios previos están registrados: ya se puede finalizar el servicio.';
   w.querySelectorAll('[data-monhito]').forEach(b=>b.addEventListener('click',()=>registrarHito(b.dataset.monhito)));
+  w.querySelectorAll('[data-monedit]').forEach(el=>{
+    el.addEventListener('change',()=>corregirHito(el.dataset.monedit, el.value));
+    el.addEventListener('keydown',e=>{ if(e.key==='Enter') el.blur(); });
+  });
+}
+
+/* Corregir a mano un horario ya sellado. Se acepta "dd/mm/aaaa hh:mm" (lo que
+   pone la app) o lo que el navegador entienda; vaciarlo lo borra. */
+async function corregirHito(campo, texto){
+  const s = DB.SERVICIOS.find(x=>String(x.ID)===String(monEditando)); if(!s) return;
+  const t = String(texto||'').trim();
+  if(t === String(s[campo]||'')) return;
+  if(t && !aFecha(t)){
+    toast('Fecha no válida. Usa dd/mm/aaaa hh:mm', true);
+    abrirMonitoreo(monEditando);
+    return;
+  }
+  const reg = Object.assign({}, s);
+  reg[campo] = t;
+  reg.CUMPLIMIENTO_CARGA    = cumplimiento(reg.HITO_ARRIBO_CARGA,   reg.CITA_CARGA);
+  reg.CUMPLIMIENTO_DESCARGA = cumplimiento(reg.HITO_ARRIBO_DESTINO, reg.CITA_ENTREGA);
+  if(await apiEnviar({action:'upsert', sheet:'SERVICIOS', record:reg})){
+    toast(t? 'Horario corregido' : 'Horario borrado');
+    abrirMonitoreo(monEditando); pintarMonitoreo();
+  }
 }
 
 async function registrarHito(campo){
@@ -2743,7 +3001,9 @@ $('incGuardar').addEventListener('click', async ()=>{
 $('btnMonIncidencia').addEventListener('click',()=>{ if(monEditando) abrirIncidencia(monEditando); });
 
 /* Ubicación capturada a mano desde la bitácora del viaje */
-$('btnMonUbicacion').addEventListener('click', async ()=>{
+/* La ubicación se guarda con Enter, sin botón de por medio */
+$('monUbicacion').addEventListener('keydown', e=>{ if(e.key==='Enter') registrarUbicacionMon(); });
+async function registrarUbicacionMon(){
   const s = DB.SERVICIOS.find(x=>String(x.ID)===String(monEditando)); if(!s) return;
   const donde = $('monUbicacion').value.trim();
   if(!donde){ toast('Escribe dónde va la unidad.', true); return; }
@@ -2760,7 +3020,7 @@ $('btnMonUbicacion').addEventListener('click', async ()=>{
     record: Object.assign({}, u, { UBICACION_ACTUAL: donde, UBICACION_ACTUALIZADA: ahora })});
   toast('Ubicación registrada');
   abrirMonitoreo(monEditando);
-});
+}
 
 /* Lo que se ve dentro de la bitácora: histórico de ubicaciones e incidencias */
 function pintarIncidenciasYUbicaciones(s){
@@ -2841,6 +3101,216 @@ function abrirDetalleServicio(id){
 }
 $('detCerrar').addEventListener('click',()=>$('detWrap').classList.remove('show'));
 $('detWrap').addEventListener('click',e=>{ if(e.target===$('detWrap')) $('detWrap').classList.remove('show'); });
+
+/* =====================================================
+   CALIDAD
+   Tickets de seguimiento: se levantan desde cualquier área, se le van
+   agregando notas y se cierran con su acción correctiva. Si el ticket trae
+   carta porte, queda ligado al servicio y se ve su información.
+===================================================== */
+const TIPOS_CALIDAD = ['Desviación del proceso','Queja del cliente','Retraso en el servicio',
+  'Daño a la carga','Falla de la unidad','Incumplimiento documental','Incidencia de seguridad',
+  'Hallazgo de auditoría','Sugerencia de mejora','Otro'];
+const AREAS_CALIDAD = ['Operaciones','Monitoreo','Tráfico','Mantenimiento','Administración',
+  'Seguridad','Comercial','Calidad'];
+const ESTADOS_CALIDAD = ['ABIERTO','EN PROCESO','EN VERIFICACIÓN','CERRADO'];
+const COLOR_CALIDAD = { 'ABIERTO':'var(--bad)', 'EN PROCESO':'var(--accent)',
+                        'EN VERIFICACIÓN':'var(--road)', 'CERRADO':'var(--ok)' };
+let calEditando = null;
+
+function estadoTicket(t){
+  const v = String((t&&t.ESTADO)||'').trim().toUpperCase();
+  return ESTADOS_CALIDAD.includes(v)? v : 'ABIERTO';
+}
+function ticketAbierto(t){ return estadoTicket(t)!=='CERRADO'; }
+function seguimientosDe(id){
+  return (DB.SEGUIMIENTOS_CALIDAD||[]).filter(x=>String(x.TICKET_ID||'')===String(id))
+    .sort((a,b)=>String(a.FECHA_HORA).localeCompare(String(b.FECHA_HORA)));
+}
+function folioCalidad(){
+  const nums = (DB.TICKETS_CALIDAD||[]).map(t=>parseInt(String(t.FOLIO||'').replace(/\D/g,''),10)||0);
+  return 'CAL-'+String((nums.length? Math.max(...nums):0)+1).padStart(4,'0');
+}
+/* Un ticket es de la cartera de quien lo ve si lo es su servicio; los que no
+   traen servicio los ve cualquiera. */
+function ticketVisible(t){
+  if(!esEjecutivo()) return true;
+  if(!t.SERVICIO_ID) return true;
+  const srv = DB.SERVICIOS.find(x=>String(x.ID)===String(t.SERVICIO_ID));
+  return srv? servicioVisible(srv) : true;
+}
+
+function abrirTicket(id){
+  const t = id? (DB.TICKETS_CALIDAD||[]).find(x=>String(x.ID)===String(id)) : null;
+  calEditando = t? t.ID : null;
+  $('calDetalle').style.display='';
+  $('calTit').textContent = t? (t.FOLIO||t.ID) : 'nuevo';
+  $('calTipo').innerHTML = TIPOS_CALIDAD.map(x=>`<option>${esc(x)}</option>`).join('');
+  $('calArea').innerHTML = AREAS_CALIDAD.map(x=>`<option>${esc(x)}</option>`).join('');
+  $('calTipo').value        = (t && t.TIPO) || TIPOS_CALIDAD[0];
+  $('calArea').value        = (t && t.AREA) || AREAS_CALIDAD[0];
+  $('calPrioridad').value   = (t && t.PRIORIDAD) || 'MEDIA';
+  $('calResponsable').value = (t && t.RESPONSABLE) || '';
+  $('calCP').value          = (t && t.CP) || '';
+  $('calCompromiso').value  = (t && t.FECHA_COMPROMISO) || '';
+  $('calTitulo').value      = (t && t.TITULO) || '';
+  $('calDescripcion').value = (t && t.DESCRIPCION) || '';
+  $('calCausa').value       = (t && t.CAUSA_RAIZ) || '';
+  $('calAccion').value      = (t && t.ACCION_CORRECTIVA) || '';
+  $('calInfo').innerHTML = t
+    ? `Levantado por <b>${esc(t.LEVANTADO_POR)}</b> el ${esc(t.FECHA_ALTA)} · `+
+      `Estado <b>${esc(estadoTicket(t))}</b>`+(t.FECHA_CIERRE? ` · Cerrado el ${esc(t.FECHA_CIERRE)}` : '')
+    : 'Se le asigna folio al guardarlo.';
+  $('calSeguimientoBox').style.display = t? '' : 'none';
+  if(t){ $('calNuevoEstado').value = estadoTicket(t); pintarHistorialTicket(t.ID); }
+  avisoServicioCalidad();
+  $('calDetalle').scrollIntoView({behavior:'smooth',block:'start'});
+}
+/* Al escribir la carta porte se dice de qué servicio se trata */
+function avisoServicioCalidad(){
+  const cp = $('calCP').value.trim();
+  const srv = cp? servicioPorCP(cp) : null;
+  $('calAvisoServicio').innerHTML = !cp
+    ? 'Sin carta porte, el ticket queda como un tema general del proceso.'
+    : srv
+      ? `Ligado al servicio <b>${esc(srv.CP)}</b> · Cliente <b>${esc(srv.CLIENTE)}</b> · `+
+        `Unidad <b>${esc(srv.ECONOMICO)||'—'}</b> · Operador <b>${esc(srv.OPERADOR)||'—'}</b>`
+      : `<span style="color:var(--bad)">No hay ningún servicio con esa carta porte.</span>`;
+}
+$('calCP').addEventListener('input', avisoServicioCalidad);
+$('btnCalNuevo').addEventListener('click',()=>abrirTicket(null));
+$('btnCalCerrarPanel').addEventListener('click',()=>{ $('calDetalle').style.display='none'; calEditando=null; });
+$('btnCalCancelar').addEventListener('click',()=>{ $('calDetalle').style.display='none'; calEditando=null; });
+
+$('btnCalGuardar').addEventListener('click', async ()=>{
+  const titulo = $('calTitulo').value.trim();
+  if(!titulo){ toast('Ponle un título al ticket.', true); $('calTitulo').focus(); return; }
+  if(!$('calDescripcion').value.trim()){ toast('Describe qué pasó.', true); $('calDescripcion').focus(); return; }
+  const prev = calEditando? (DB.TICKETS_CALIDAD||[]).find(x=>String(x.ID)===String(calEditando)) : null;
+  const cp = $('calCP').value.trim();
+  const srv = cp? servicioPorCP(cp) : null;
+  const reg = {
+    ID: prev? prev.ID : undefined,
+    FOLIO: prev? prev.FOLIO : folioCalidad(),
+    FECHA_ALTA: prev? prev.FECHA_ALTA : ahoraTexto(),
+    TIPO: $('calTipo').value, PRIORIDAD: $('calPrioridad').value,
+    ESTADO: prev? estadoTicket(prev) : 'ABIERTO',
+    AREA: $('calArea').value,
+    SERVICIO_ID: srv? srv.ID : '', CP: cp,
+    CLIENTE: srv? srv.CLIENTE : '', OPERADOR: srv? srv.OPERADOR : '', ECONOMICO: srv? srv.ECONOMICO : '',
+    TITULO: titulo, DESCRIPCION: $('calDescripcion').value.trim(),
+    RESPONSABLE: $('calResponsable').value.trim(),
+    LEVANTADO_POR: prev? prev.LEVANTADO_POR : nombreUsuario(),
+    FECHA_COMPROMISO: $('calCompromiso').value,
+    ACCION_CORRECTIVA: $('calAccion').value.trim(),
+    CAUSA_RAIZ: $('calCausa').value.trim(),
+    FECHA_CIERRE: prev? (prev.FECHA_CIERRE||'') : '',
+    CERRADO_POR: prev? (prev.CERRADO_POR||'') : ''
+  };
+  if(reg.ID===undefined) delete reg.ID;
+  if(await apiEnviar({action:'upsert', sheet:'TICKETS_CALIDAD', record:reg})){
+    toast(prev? 'Ticket actualizado' : 'Ticket '+reg.FOLIO+' levantado');
+    pintarCalidad();
+    // Al crearlo, se reabre ya con su folio para poder darle seguimiento
+    if(!prev){
+      const nuevo = (DB.TICKETS_CALIDAD||[]).find(x=>String(x.FOLIO)===String(reg.FOLIO));
+      if(nuevo) abrirTicket(nuevo.ID); else $('calDetalle').style.display='none';
+    } else abrirTicket(prev.ID);
+  }
+});
+
+/* Seguimiento: cada nota deja el ticket en el estado que se elija */
+$('calNota').addEventListener('keydown', e=>{ if(e.key==='Enter') agregarSeguimiento(); });
+$('btnCalNota').addEventListener('click', agregarSeguimiento);
+async function agregarSeguimiento(){
+  const t = (DB.TICKETS_CALIDAD||[]).find(x=>String(x.ID)===String(calEditando)); if(!t) return;
+  const nota = $('calNota').value.trim();
+  if(!nota){ toast('Escribe la nota de seguimiento.', true); return; }
+  const estado = $('calNuevoEstado').value;
+  const ok = await apiEnviar({action:'upsert', sheet:'SEGUIMIENTOS_CALIDAD', record:{
+    TICKET_ID: t.ID, FECHA_HORA: ahoraTexto(), ESTADO: estado,
+    NOTA: nota, REGISTRADO_POR: nombreUsuario()
+  }});
+  if(!ok) return;
+  if(estado !== estadoTicket(t) || estado==='CERRADO'){
+    const cierra = estado==='CERRADO';
+    await apiEnviar({action:'upsert', sheet:'TICKETS_CALIDAD', record: Object.assign({}, t, {
+      ESTADO: estado,
+      FECHA_CIERRE: cierra? ahoraTexto() : '',
+      CERRADO_POR: cierra? nombreUsuario() : ''
+    })});
+  }
+  $('calNota').value='';
+  toast(estado==='CERRADO'? 'Ticket cerrado' : 'Seguimiento agregado');
+  pintarCalidad(); abrirTicket(t.ID);
+}
+function pintarHistorialTicket(id){
+  const notas = seguimientosDe(id);
+  $('calHistorial').innerHTML = notas.length
+    ? [...notas].reverse().map(n=>`<div style="border-left:4px solid ${COLOR_CALIDAD[String(n.ESTADO||'').toUpperCase()]||'var(--line)'};padding:6px 10px;margin-bottom:6px;background:var(--surface2);border-radius:6px">
+        <b>${esc(n.FECHA_HORA)}</b> · ${esc(n.ESTADO)} — ${esc(n.NOTA)}
+        <span class="mini">(${esc(n.REGISTRADO_POR)||'—'})</span></div>`).join('')
+    : 'Todavía sin notas de seguimiento.';
+}
+
+function pintarCalidad(){
+  const todos = (DB.TICKETS_CALIDAD||[]).filter(ticketVisible);
+
+  // Resumen por estado, que además filtra
+  const cuenta = {};
+  todos.forEach(t=>{ const e=estadoTicket(t); cuenta[e]=(cuenta[e]||0)+1; });
+  const chips = $('calChips'); chips.innerHTML='';
+  const total = document.createElement('span');
+  total.className='tag'; total.textContent = todos.length+' ticket(s)';
+  chips.appendChild(total);
+  ESTADOS_CALIDAD.forEach(e=>{
+    if(!cuenta[e]) return;
+    const c=document.createElement('span');
+    c.className='tag'; c.style.background=COLOR_CALIDAD[e]; c.style.color='#fff';
+    c.style.cursor='pointer'; c.textContent = e+' · '+cuenta[e];
+    c.addEventListener('click',()=>{ $('calEstado').value=e; pintarCalidad(); });
+    chips.appendChild(c);
+  });
+  // Vencidos: con fecha compromiso pasada y todavía abiertos
+  const hoy = hoyISO();
+  const vencidos = todos.filter(t=>ticketAbierto(t) && t.FECHA_COMPROMISO && t.FECHA_COMPROMISO < hoy);
+  if(vencidos.length){
+    const c=document.createElement('span');
+    c.className='tag'; c.style.background='var(--bad)'; c.style.color='#fff';
+    c.textContent = '⚠ '+vencidos.length+' fuera de fecha compromiso';
+    chips.appendChild(c);
+  }
+
+  const q = ($('calBusca').value||'').trim().toUpperCase();
+  const filtro = $('calEstado').value;
+  const filas = todos.filter(t=>{
+    const e = estadoTicket(t);
+    if(filtro==='abiertos'){ if(e==='CERRADO') return false; }
+    else if(filtro!=='todos' && e!==filtro) return false;
+    if(!q) return true;
+    return [t.FOLIO,t.TITULO,t.CP,t.RESPONSABLE,t.TIPO,t.CLIENTE,t.DESCRIPCION]
+      .some(v=>String(v||'').toUpperCase().includes(q));
+  });
+
+  const tb=$('tbodyCalidad'); tb.innerHTML='';
+  [...filas].reverse().forEach(t=>{
+    const e = estadoTicket(t);
+    const tarde = ticketAbierto(t) && t.FECHA_COMPROMISO && t.FECHA_COMPROMISO < hoy;
+    const tr=document.createElement('tr');
+    tr.innerHTML = `<td><b>${esc(t.FOLIO)}</b></td><td>${esc(t.FECHA_ALTA)}</td><td>${esc(t.TIPO)}</td>
+      <td>${esc(t.TITULO)}</td><td>${esc(t.CP)||'<span class="mini">general</span>'}</td>
+      <td>${esc(t.RESPONSABLE)||'—'}</td>
+      <td${tarde? ' style="color:var(--bad);font-weight:700"':''}>${esc(t.FECHA_COMPROMISO)||'—'}</td>
+      <td>${esc(t.PRIORIDAD)||'MEDIA'}</td>
+      <td><span class="tag" style="background:${COLOR_CALIDAD[e]};color:#fff">${e}</span></td>
+      <td><button class="btn btn-p btn-sm" data-calver="${t.ID}">Abrir</button></td>`;
+    tb.appendChild(tr);
+  });
+  if(!filas.length) tb.innerHTML='<tr><td colspan="10" class="mini">Sin tickets en este filtro.</td></tr>';
+  tb.querySelectorAll('[data-calver]').forEach(b=>b.addEventListener('click',()=>abrirTicket(b.dataset.calver)));
+}
+['calBusca','calEstado'].forEach(id=>$(id).addEventListener('input', pintarCalidad));
+$('calEstado').addEventListener('change', pintarCalidad);
 
 /* ---------- Tablero operativo ----------
    El estado de cada unidad de la flota, editable en el propio renglón. */
@@ -3728,14 +4198,14 @@ function pintarDispersionExtras(){
       <td>${disp
         ? `<span class="tag ok-disp">Dispersado</span> <span class="mini">${esc(g.FECHA_DISPERSION)}</span>`
         : '<span class="tag pend-disp">Pendiente de gasto extra</span>'}</td>
-      <td>${disp? '' : `<button class="btn btn-p btn-sm" data-xdext="${g.ID}"${puedeDispersar()?'':' disabled title="Solo un usuario auditor puede dispersar"'}>Dispersar</button>`}</td>`;
+      <td>${disp? '' : `<button class="btn btn-p btn-sm" data-xdext="${g.ID}"${puedeDispersar()?'':' disabled title="Solo un auditor o un administrador puede dispersar"'}>Dispersar</button>`}</td>`;
     tb.appendChild(tr);
   });
   if(!filas.length) tb.innerHTML='<tr><td colspan="9" class="mini">Sin gastos extra en este filtro.</td></tr>';
   tb.querySelectorAll('[data-xdext]').forEach(b=>b.addEventListener('click',()=>dispersarExtra(b.dataset.xdext)));
 }
 async function dispersarExtra(id){
-  if(!puedeDispersar()){ modal('Sin permiso','Solo un usuario <b>auditor</b> puede confirmar la dispersión.','🔒'); return; }
+  if(!puedeDispersar()){ modal('Sin permiso','Solo un <b>auditor</b> o un <b>administrador</b> puede confirmar la dispersión.','🔒'); return; }
   const g = (DB.GASTOS_EXTRA||[]).find(x=>String(x.ID)===String(id)); if(!g) return;
   const reg = Object.assign({}, g, {
     DISPERSION:'SI', DISPERSADO_POR: nombreUsuario(), FECHA_DISPERSION: ahoraTexto()
@@ -3810,7 +4280,7 @@ function pintarMontosDispersados(s){
     ? 'Son los montos que quedaron registrados al confirmar la dispersión.'
     : editable
       ? 'Captura lo que realmente se le dispersa al operador. Vienen precargados con lo solicitado; ajústalos si difieren.'
-      : 'Solo un usuario auditor puede capturar los montos dispersados.';
+      : 'Solo un auditor o un administrador puede capturar los montos dispersados.';
 
   calcularTotalDispersado(s);
 }
@@ -3852,9 +4322,9 @@ function pintarBotonDispersar(id, s){
   } else {
     $('dispInfo').innerHTML = puedeDispersar()
       ? 'Revisa que los montos solicitados sean correctos antes de confirmar.'
-      : 'Solo un usuario auditor puede confirmar la dispersión.';
+      : 'Solo un auditor o un administrador puede confirmar la dispersión.';
     btn.disabled = !puedeDispersar();
-    btn.title = puedeDispersar()? '' : 'Solo un usuario auditor puede confirmar la dispersión';
+    btn.title = puedeDispersar()? '' : 'Solo un auditor o un administrador puede confirmar la dispersión';
   }
 }
 
@@ -4568,7 +5038,8 @@ function puedeAutorizar(){ return rolActual()==='ADMIN' || rolActual()==='SUP'; 
 /* Confirma la dispersión de gasto al operador: exclusivo del auditor.
    El administrador conserva solo la posibilidad de revertirla, como respaldo
    si se confirmó por error. */
-function puedeDispersar(){ return rolActual()==='AUDITOR'; }
+/* La dispersión la confirma el auditor y también el administrador */
+function puedeDispersar(){ return rolActual()==='AUDITOR' || esAdmin(); }
 function puedeRevertirDispersion(){ return rolActual()==='ADMIN'; }
 function etiquetaRol(rol){
   const r = String(rol||'').toUpperCase();
@@ -5307,11 +5778,17 @@ const ADMIN = {
     csv:'ECONOMICO, PLACAS, TIPO' },
   CLIENTES:{ cols:[{k:'NOMBRE'},{k:'EJECUTIVO',t:'Ejecutivo de la cuenta'}], csv:'NOMBRE, EJECUTIVO' },
   /* Catálogos que alimentan el alta de Nuevo Servicio */
-  PROVEEDORES:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
+  /* Accesos a la plataforma de rastreo del proveedor: se ven en la bitácora
+     del viaje cuando el servicio va con esa línea. */
+  PROVEEDORES:{ cols:[{k:'NOMBRE'},
+      {k:'PLATAFORMA_ENLACE',t:'Enlace de su plataforma'},
+      {k:'PLATAFORMA_USUARIO',t:'Usuario',raw:true},
+      {k:'PLATAFORMA_PASSWORD',t:'Contraseña',raw:true}],
+    csv:'NOMBRE, PLATAFORMA_ENLACE, PLATAFORMA_USUARIO, PLATAFORMA_PASSWORD' },
   TIPO_NEGOCIO:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
   ADUANAS:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
   ESTADOS:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
-  CIUDADES:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
+  CIUDADES:{ cols:[{k:'NOMBRE'},{k:'ESTADO'}], csv:'NOMBRE, ESTADO' },
   /* Catálogo de lo que el monitorista puede reportar en ruta */
   TIPOS_INCIDENCIA:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
   /* Lo que se reportó en ruta y dónde iba la unidad: solo consulta */
@@ -5321,6 +5798,11 @@ const ADMIN = {
   UBICACIONES:{ soloLectura:true, sinBorrar:true, invertido:true,
     cols:[{k:'FECHA_HORA'},{k:'CP'},{k:'ECONOMICO'},{k:'OPERADOR'},
           {k:'UBICACION'},{k:'REGISTRADO_POR'}] },
+  TICKETS_CALIDAD:{ soloLectura:true, invertido:true, sinBorrarMasivo:true,
+    cols:[{k:'FOLIO'},{k:'FECHA_ALTA'},{k:'TIPO'},{k:'TITULO'},{k:'CP'},
+          {k:'RESPONSABLE'},{k:'FECHA_COMPROMISO'},{k:'PRIORIDAD'},{k:'ESTADO'}] },
+  SEGUIMIENTOS_CALIDAD:{ soloLectura:true, sinBorrar:true, invertido:true,
+    cols:[{k:'FECHA_HORA'},{k:'TICKET_ID'},{k:'ESTADO'},{k:'NOTA'},{k:'REGISTRADO_POR'}] },
   SERVICIOS:{ soloLectura:true, invertido:true,
     cols:[{k:'MODALIDAD'},{k:'CP'},{k:'CLIENTE'},{k:'CITA_CARGA'},
           {k:'SEMANA'},{k:'CIUDAD_DESTINO'},{k:'TIPO_UNIDAD'},
@@ -5353,13 +5835,14 @@ let adminOk=false;
 const SECCIONES_INFO = {
   nuevoservicio:'Nuevo Servicio', asignacion:'Asignación de Unidad', tdc:'TDC', fwd:'FWD',
   solicitud:'Solicitud de Gasto', dispersiones:'Dispersiones', monitoreo:'Monitoreo',
-  liquidacion:'Liquidación', prenomina:'Hoja de Servicio', indicadores:'Indicadores', rutas:'Rutas'
+  calidad:'Calidad', liquidacion:'Liquidación', prenomina:'Hoja de Servicio',
+  indicadores:'Indicadores', rutas:'Rutas'
 };
 const TODAS_LAS_SECCIONES = Object.keys(SECCIONES_INFO);
-const SECCIONES_AUDITOR = ['dispersiones','monitoreo','liquidacion','prenomina','indicadores'];
+const SECCIONES_AUDITOR = ['dispersiones','monitoreo','calidad','liquidacion','prenomina','indicadores'];
 /* El ejecutivo trabaja su cartera: da de alta servicios, los sigue y los ve
    en TDC/FWD. Todo filtrado a SUS clientes (ver clientesDelUsuario). */
-const SECCIONES_EJECUTIVO = ['nuevoservicio','tdc','fwd','monitoreo','indicadores'];
+const SECCIONES_EJECUTIVO = ['nuevoservicio','tdc','fwd','monitoreo','calidad','indicadores'];
 function seccionesPorDefecto(rol){
   const r = String(rol||'').toUpperCase();
   if(r==='AUDITOR')   return SECCIONES_AUDITOR;
@@ -5743,6 +6226,7 @@ function refrescarTodo(){
   if(document.querySelector('#sec-solicitud.active')) pintarListaSol();
   if(document.querySelector('#sec-asignacion.active')){ pintarDespacho(); pintarTablero(); }
   if(document.querySelector('#sec-monitoreo.active')) pintarMonitoreo();
+  if(document.querySelector('#sec-calidad.active')) pintarCalidad();
   if(document.querySelector('#sec-nuevoservicio.active')) pintarServicios();
   if(document.querySelector('#sec-tdc.active')) pintarTdc();
   if(document.querySelector('#sec-fwd.active')) pintarFwd();

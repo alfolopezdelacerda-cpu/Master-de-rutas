@@ -79,10 +79,10 @@ Se puede llenar a mano en el Sheet, o desde **Administración → Casetas**
 
 | Rol | Administración | Objetivos y parámetros | Autoriza aclaraciones y cancelaciones | Confirma dispersión | Revierte dispersión | Pestañas por defecto |
 |---|---|---|---|---|---|---|
-| `ADMIN` | sí | sí | sí | no | sí | todas |
+| `ADMIN` | sí | sí | sí | sí | sí | todas |
 | `SUP` | no | no | sí | no | no | todas menos Administración |
 | `AUDITOR` | no | no | no | sí | no | solo Dispersiones, Liquidación, Hoja de Servicio, Indicadores |
-| `EJECUTIVO` | no | no | no | no | no | solo Nuevo Servicio, TDC, FWD, Monitoreo, Indicadores — **y solo de sus clientes** |
+| `EJECUTIVO` | no | no | no | no | no | solo Nuevo Servicio, TDC, FWD, Monitoreo, Calidad, Indicadores — **y solo de sus clientes** |
 | `OPERATIVO` | no | no | no | no | no | todas menos Administración |
 
 Mientras la hoja `USUARIOS` esté vacía, la app permite entrar con **admin /
@@ -155,8 +155,8 @@ Cinco catálogos nuevos la alimentan, todos con la misma forma (`ID`,
 | `TIPO_NEGOCIO` | Tipo de negocio |
 | `ADUANAS` | Aduana / puerto |
 | `ESTADOS` | Estado de origen |
-| `CIUDADES` | Ciudad destino |
-| `PROVEEDORES` | Línea transportista (solo en FWD) |
+| `CIUDADES` | Ciudad destino — con su columna `ESTADO`, para que al elegir el estado salgan solo sus ciudades |
+| `PROVEEDORES` | Línea transportista (solo en FWD) — más los accesos a su plataforma de rastreo: `PLATAFORMA_ENLACE`, `PLATAFORMA_USUARIO`, `PLATAFORMA_PASSWORD` |
 | `TIPOS_INCIDENCIA` | Tipo de incidencia en el monitoreo |
 
 ### Hojas `INCIDENCIAS` y `UBICACIONES`
@@ -168,6 +168,8 @@ Las dos las escribe el monitoreo y las dos son solo de consulta en la app.
 | `INCIDENCIAS` | `ID`, `FECHA_HORA`, `SERVICIO_ID`, `CP`, `CLIENTE`, `ECONOMICO`, `OPERADOR`, `TIPO`, `DESCRIPCION`, `REGISTRADO_POR` |
 | `UBICACIONES` | `ID`, `FECHA_HORA`, `SERVICIO_ID`, `CP`, `ECONOMICO`, `OPERADOR`, `UBICACION`, `REGISTRADO_POR` |
 | `EVIDENCIAS` | `ID`, `FECHA_HORA`, `SERVICIO_ID`, `FOLIO`, `CP`, `OPERADOR`, `CLASE`, `GASTO_ID`, `NOMBRE`, `IMAGEN`, `REGISTRADO_POR` |
+| `TICKETS_CALIDAD` | `ID`, `FOLIO`, `FECHA_ALTA`, `TIPO`, `PRIORIDAD`, `ESTADO`, `AREA`, `SERVICIO_ID`, `CP`, `CLIENTE`, `OPERADOR`, `ECONOMICO`, `TITULO`, `DESCRIPCION`, `RESPONSABLE`, `LEVANTADO_POR`, `FECHA_COMPROMISO`, `ACCION_CORRECTIVA`, `CAUSA_RAIZ`, `FECHA_CIERRE`, `CERRADO_POR` |
+| `SEGUIMIENTOS_CALIDAD` | `ID`, `TICKET_ID`, `FECHA_HORA`, `ESTADO`, `NOTA`, `REGISTRADO_POR` |
 | `GASTOS_EXTRA` | `ID`, `FOLIO`, `SOLICITUD_ID`, `SERVICIO_ID`, `CARTAS_PORTE`, `OPERADOR`, `ECONOMICO`, `FECHA_SOLICITUD`, `TIPO`, `MONTO`, `MOTIVO`, `SOLICITADO_POR`, `DISPERSION`, `DISPERSADO_POR`, `FECHA_DISPERSION`, `COMPROBANTE_ID` |
 
 `INCIDENCIAS` guarda lo que se reporta en ruta contra el servicio y su
@@ -238,7 +240,7 @@ capturan a mano**: las mueve la pantalla que le toca a cada paso.
 | 1 | Solicitud para TDC | Nuevo Servicio | `SOLICITADO` |
 | 2 | Asignación de unidad y operador | Asignación de Unidad | `ASIGNADO` |
 | 3 | Asignación de gastos | Solicitud de Gasto | `GASTO SOLICITADO` |
-| 4 | Dispersión | Dispersiones (auditor) | `DISPERSADO` |
+| 4 | Dispersión | Dispersiones (auditor o administrador) | `DISPERSADO` |
 | 5 | Monitoreo | Monitoreo → *Salida* | `EN RUTA` |
 | 6 | Servicio finalizado | Monitoreo → *Finalizado* | `FINALIZADO` |
 | 7 | Entrega de evidencia | Monitoreo → *Evidencia* | `EVIDENCIA ENTREGADA` |
@@ -258,7 +260,7 @@ Los pasos 1, 2, 5, 6, 7 y 10 los marca la pantalla directamente. Los pasos 3,
 carta porte y lo adelanta solo:
 
 - Guardar una **solicitud de gasto** → `GASTO SOLICITADO` (o `DISPERSADO`, si
-  el auditor ya la dispersó). La solicitud además guarda `SERVICIO_ID`.
+  la dispersión ya está hecha). La solicitud además guarda `SERVICIO_ID`.
 - **Liquidar** un viaje → `LIQUIDADO`.
 - **Registrar una nómina** → todos los viajes liquidados de ese operador pasan
   a `EN PRE-NÓMINA`; al marcarla **pagada**, a `PAGADO`.
@@ -296,6 +298,23 @@ se puede finalizar si falta alguno de los seis previos**; la pantalla dice
 cuáles faltan. Tampoco se puede poner el estatus en *Servicio finalizado* a
 mano sin haber cerrado la bitácora.
 
+Una vez sellado, **el horario queda abierto**: el campo se puede corregir a
+mano (formato `dd/mm/aaaa hh:mm`) y se guarda al salir o con Enter. Si la fecha
+no es válida no se guarda nada y el campo vuelve a lo que tenía; vaciarlo borra
+ese horario. Los dos cumplimientos se recalculan con cada corrección.
+
+**Datos del servicio a la vista.** La bitácora muestra, de solo lectura,
+booking, contenedores, PO, tipo de mercancía, tipo de unidad, equipo de
+arrastre, puntos de carga y descarga, aduana, tipo de negocio, ejecutivo y
+línea transportista.
+
+**Rastreo.** Dos campos guardan los enlaces de **cuenta espejo** de la unidad y
+de los portas (`ESPEJO_UNIDAD`, `ESPEJO_PORTAS`), con su botón para abrirlos.
+Y si el servicio va con un **proveedor** —cualquier línea que no sea ADL—,
+debajo aparecen los accesos a su plataforma tal como estén capturados en
+*Administración → Proveedores*: usuario, contraseña y enlace. En un servicio de
+**ADL no se muestra nada de esto**.
+
 **Citas y cumplimiento.** La cita de carga (`CITA_CARGA`) y la de descarga
 (`CITA_ENTREGA`) se muestran solas, tal como se capturaron en Nuevo Servicio.
 De ahí salen los dos cumplimientos, sin capturar nada:
@@ -330,8 +349,8 @@ misma lista por defecto.
 
 ### Ubicación de la unidad, a mano
 
-La bitácora tiene un campo de **ubicación actual** con su botón *Registrar
-ubicación*: cada captura deja un renglón en la hoja `UBICACIONES` —fecha y
+La bitácora tiene un campo de **ubicación actual**: se escribe y se guarda con
+**Enter**, sin botón de por medio. Cada captura deja un renglón en la hoja `UBICACIONES` —fecha y
 hora, servicio, carta porte, unidad, operador y quién la reportó— y la última
 se copia a `UNIDADES.UBICACION_ACTUAL` / `UBICACION_ACTUALIZADA`, que es lo que
 se ve en el tablero operativo. Debajo del campo queda el histórico reciente.
@@ -365,10 +384,16 @@ El formulario va en el orden en que se captura de verdad:
    aceptación**, cita de carga, semana y mes (solos), cita de entrega,
    ejecutivo y estatus. Un servicio nuevo nace en **Pendiente por despachar**.
 2. **Negocio** — cliente, tipo de negocio, aduana/puerto, RF/Seco, OW/RT,
-   línea transportista, **tipo de unidad** (con una **segunda caja** que solo
-   se habilita cuando es Full) y tipo de mercancía.
-3. **Servicio y carga** — cartas porte y contenedores.
-4. **Origen y destino**.
+   línea transportista, tipo de unidad y tipo de mercancía.
+3. **Servicio y carga** — cartas porte y **contenedores**: un **Full** habilita
+   dos (Contenedor 1 y Contenedor 2), un **Sencillo** habilita uno, y con
+   cualquier otro tipo de unidad no aplican y quedan bloqueados. Se guardan por
+   separado en `CONTENEDOR_1` y `CONTENEDOR_2`, y juntos en `CONTENEDORES`,
+   como se venía haciendo.
+4. **Origen y destino** — al elegir el **estado destino**, la lista de ciudades
+   se reduce a las de ese estado (`CIUDADES.ESTADO`); las ciudades sin estado
+   capturado siempre se ofrecen, para no perderlas. Y al revés: si eliges la
+   ciudad primero, su estado se pone solo.
 5. **Referencias** — booking y PO, hasta abajo.
 
 Arriba a la derecha, un interruptor
@@ -774,21 +799,20 @@ independientes.
 Tiene su propia pestaña, **Dispersiones**, con una tabla de todas las
 solicitudes y su estado (Pendiente / Dispersado). Al abrir una:
 
-- **Gris, "Dispersar"** — todavía no se confirma. Es **exclusivo del rol
-  auditor**: nadie más puede activarlo, ni siquiera el administrador. Antes de
-  mandar la confirmación se muestra un resumen de los montos para revisarlos.
+- **Gris, "Dispersar"** — todavía no se confirma. Lo puede activar un
+  **auditor** o un **administrador**. Antes de mandar la confirmación se
+  muestra un resumen de los montos para revisarlos.
 - **Verde, "✔ Dispersado"** — ya se confirmó. Muestra quién y cuándo.
 
-Solo un **administrador** puede revertir una dispersión ya confirmada (por si
-se marcó por error) — pero no puede confirmarla él mismo; esa parte es
-exclusiva del auditor.
+Revertir una dispersión ya confirmada (por si se marcó por error) sigue siendo
+exclusivo del **administrador**.
 
 ### Montos dispersados
 
 Lo que Operaciones pidió y lo que el auditor realmente dispersa son dos cosas
 distintas, y la pantalla las muestra por separado. En **Montos dispersados**
-—que solo el **auditor** captura, y solo mientras la dispersión siga
-pendiente— van:
+—que captura el **auditor** o el **administrador**, y solo mientras la
+dispersión siga pendiente— van:
 
 - **Combustible** y **Casetas**
 - Un renglón por cada **pago adicional** de la solicitud (adelanto de nómina,
@@ -876,8 +900,8 @@ gasto extra**.
 De ahí en adelante camina solo:
 
 - Aparece en **Dispersiones**, en su propia tarjeta, y lo dispersa el
-  **auditor** uno por uno (los demás roles ven el botón bloqueado). Un extra
-  pendiente también cuenta en el contador de pendientes.
+  **auditor** o el **administrador**, uno por uno (los demás roles ven el
+  botón bloqueado). Un extra pendiente también cuenta en el contador.
 - Aparece en **Liquidación**, en *Comprobantes de gastos extra*, donde se le
   sube su **comprobante** (una foto, comprimida igual que la evidencia). El
   comprobante vive en `EVIDENCIAS` con `CLASE = COMPROBANTE` y el `GASTO_ID`
@@ -913,6 +937,37 @@ la cuenta*. Un usuario con ese rol solo ve —en TDC, FWD, Asignación, Monitore
 e Indicadores— los servicios de sus clientes, y en Nuevo Servicio solo puede
 capturar para ellos. Un servicio también le pertenece si trae su nombre en la
 columna `EJECUTIVO`.
+
+## Calidad
+
+Pestaña propia para el seguimiento del área de calidad. Un **ticket** se
+levanta desde cualquier área y vive hasta que se cierra con su acción
+correctiva.
+
+**Al levantarlo** se captura tipo —desviación del proceso, queja del cliente,
+retraso, daño a la carga, falla de la unidad, incumplimiento documental,
+incidencia de seguridad, hallazgo de auditoría, sugerencia de mejora u otro—,
+prioridad, área responsable, responsable, título y descripción. La **fecha
+compromiso** es la que hace que el ticket se marque en rojo cuando se pasa.
+
+Si se captura una **carta porte**, el ticket queda ligado a ese servicio y
+arrastra cliente, operador y unidad; sin ella queda como un tema general del
+proceso. La app dice de qué servicio se trata mientras se escribe.
+
+**El seguimiento** es una bitácora: cada nota queda con su fecha, su autor y el
+**estado en que deja el ticket** —Abierto, En proceso, En verificación o
+Cerrado—, así que el estado del ticket siempre corresponde a su última nota.
+Al cerrarlo se sella la fecha y quién lo cerró.
+
+Arriba, un resumen cuenta los tickets por estado y sirve de filtro, más un
+contador de los que van **fuera de fecha compromiso**. La lista arranca
+mostrando solo los abiertos.
+
+Los tickets se guardan en `TICKETS_CALIDAD` y sus notas en
+`SEGUIMIENTOS_CALIDAD` (un renglón por nota, para no rescribir el ticket
+completo cada vez). Las dos hojas se consultan también desde Administración. Un
+usuario **ejecutivo** solo ve los tickets de los servicios de su cartera, más
+los que no traen servicio.
 
 ## Tiempos del proceso (Indicadores)
 

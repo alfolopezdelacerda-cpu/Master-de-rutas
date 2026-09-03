@@ -53,8 +53,13 @@ var HOJAS = {
   TIPO_NEGOCIO: ['ID','NOMBRE'],
   ADUANAS: ['ID','NOMBRE'],
   ESTADOS: ['ID','NOMBRE'],
-  CIUDADES: ['ID','NOMBRE'],
-  PROVEEDORES: ['ID','NOMBRE'],
+  /* Cada ciudad pertenece a un estado: al elegir el estado, la app ofrece
+     solo sus ciudades. Una ciudad sin ESTADO sale con todas. */
+  CIUDADES: ['ID','NOMBRE','ESTADO'],
+  /* Los proveedores (líneas transportistas de FWD) traen los accesos a su
+     plataforma de rastreo. Se ven en la bitácora del viaje cuando el servicio
+     va con ese proveedor; si la línea es ADL no se muestra nada. */
+  PROVEEDORES: ['ID','NOMBRE','PLATAFORMA_USUARIO','PLATAFORMA_PASSWORD','PLATAFORMA_ENLACE'],
   /* Catálogo de incidencias que el monitorista puede reportar en ruta
      (desvío de ruta, estadía no autorizada, etc.) */
   TIPOS_INCIDENCIA: ['ID','NOMBRE'],
@@ -78,6 +83,17 @@ var HOJAS = {
                   renglón de GASTOS_EXTRA. */
                'CLASE','GASTO_ID','NOMBRE','IMAGEN','REGISTRADO_POR'],
 
+  /* Tickets del área de calidad: desviaciones del proceso, quejas, hallazgos.
+     El seguimiento de cada uno vive en SEGUIMIENTOS_CALIDAD, un renglón por
+     nota, para no rescribir el ticket completo cada vez. */
+  TICKETS_CALIDAD: ['ID','FOLIO','FECHA_ALTA','TIPO','PRIORIDAD','ESTADO','AREA',
+                    'SERVICIO_ID','CP','CLIENTE','OPERADOR','ECONOMICO',
+                    'TITULO','DESCRIPCION','RESPONSABLE','LEVANTADO_POR',
+                    'FECHA_COMPROMISO','ACCION_CORRECTIVA','CAUSA_RAIZ',
+                    'FECHA_CIERRE','CERRADO_POR'],
+
+  SEGUIMIENTOS_CALIDAD: ['ID','TICKET_ID','FECHA_HORA','ESTADO','NOTA','REGISTRADO_POR'],
+
   /* Gastos extra que se piden CUANDO LA SOLICITUD YA SE DISPERSÓ. La solicitud
      original ya no se toca: cada extra es su propio renglón, entra como
      pendiente de dispersión y al liquidar se le sube su comprobante. */
@@ -95,8 +111,12 @@ var HOJAS = {
               'CLIENTE','CITA_ENTREGA','ESTATUS','CP','CONTENEDORES',
               'TIPO_MERCANCIA','BOOKING','PO','ESTADO_ORIGEN','PUNTO_CARGA',
               'CIUDAD_DESTINO','PUNTO_DESCARGA','LINEA_TRANSPORTISTA','TIPO_UNIDAD',
-              /* Segunda caja cuando el servicio va en Full */
-              'TIPO_UNIDAD_2',
+              /* Contenedores del servicio. Un Full lleva dos; un Sencillo,
+                 uno; los demás tipos de unidad no aplican. CONTENEDORES
+                 conserva los dos juntos, como se venía guardando. */
+              'CONTENEDOR_1','CONTENEDOR_2',
+              /* Estado al que pertenece la ciudad destino */
+              'ESTADO_DESTINO',
               /* Despacho: un servicio TDC nace PENDIENTE POR DESPACHAR y pasa a
                  ASIGNADO cuando se le captura unidad y operador. */
               'ECONOMICO','PLACAS','OPERADOR','MEDIO_COMUNICACION',
@@ -113,6 +133,8 @@ var HOJAS = {
               /* Monitoreo: estatus del viaje y bitácora de horarios. El
                  cumplimiento sale de comparar el arribo contra la cita. */
               'ESTATUS_MONITOREO',
+              /* Cuentas espejo del rastreo, capturadas en la bitácora */
+              'ESPEJO_UNIDAD','ESPEJO_PORTAS',
               'HITO_SALIDA_PATIO','HITO_ARRIBO_CARGA','HITO_INGRESO_CARGAR','HITO_INICIO_RUTA',
               'HITO_ARRIBO_DESTINO','HITO_INGRESO_DESCARGA','HITO_SERVICIO_FINALIZADO',
               'CUMPLIMIENTO_CARGA','CUMPLIMIENTO_DESCARGA',
