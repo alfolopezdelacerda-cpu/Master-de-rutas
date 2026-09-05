@@ -34,7 +34,9 @@ var HOJAS = {
              'ESTATUS_OPERATIVO','NOTA_OPERATIVA','ESTATUS_ACTUALIZADO',
              /* Última ubicación reportada a mano por el monitorista. El
                 histórico completo vive en la hoja UBICACIONES. */
-             'UBICACION_ACTUAL','UBICACION_ACTUALIZADA'],
+             'UBICACION_ACTUAL','UBICACION_ACTUALIZADA','UBICACION_FUENTE',
+             /* Última posición traída de la plataforma de rastreo */
+             'LAT','LON','GPS_ACTUALIZADO'],
 
   /* Dos sueldos semanales, uno por esquema de pre-nómina:
      PAGO_NOMINAL_SEMANAL  → esquema de pago por objetivo (el de siempre)
@@ -71,7 +73,7 @@ var HOJAS = {
 
   /* Bitácora de ubicaciones reportadas a mano durante el viaje */
   UBICACIONES: ['ID','FECHA_HORA','SERVICIO_ID','CP','ECONOMICO','OPERADOR',
-                'UBICACION','REGISTRADO_POR'],
+                'UBICACION','LAT','LON','FUENTE','REGISTRADO_POR'],
 
   /* Fotografías de la evidencia del viaje, capturadas al liquidar. IMAGEN
      guarda la foto ya reducida como data URL (la app la comprime antes de
@@ -117,6 +119,8 @@ var HOJAS = {
               'CONTENEDOR_1','CONTENEDOR_2',
               /* Estado al que pertenece la ciudad destino */
               'ESTADO_DESTINO',
+              /* Ruta del catálogo RUTAS, de las dadas de alta para ese cliente */
+              'RUTA',
               /* Despacho: un servicio TDC nace PENDIENTE POR DESPACHAR y pasa a
                  ASIGNADO cuando se le captura unidad y operador. */
               'ECONOMICO','PLACAS','OPERADOR','MEDIO_COMUNICACION',
@@ -150,7 +154,10 @@ var HOJAS = {
      (rutas,solicitud,dispersiones,liquidacion,prenomina,indicadores). Vacío
      = se usan las pestañas por defecto de su rol. Administración es aparte:
      siempre exclusiva de ROL=ADMIN, nunca se otorga por esta columna. */
-  USUARIOS: ['ID','USUARIO','NOMBRE','PASSWORD','ROL','ACTIVO','PESTANAS'],
+  /* CLIENTES: lista separada por comas con la cartera de ese usuario. Solo
+     aplica a los roles COMERCIAL y EJECUTIVO: son los clientes cuya
+     información pueden ver. */
+  USUARIOS: ['ID','USUARIO','NOMBRE','PASSWORD','ROL','ACTIVO','PESTANAS','CLIENTES'],
 
   RUTAS: ['ID','RUTA','CLIENTE','TIPO_SERVICIO','TIPO_VIAJE','TIPO_UNIDAD','EQUIPO_ARRASTRE',
           'TRAMOS_JSON','TOTAL_KM','KM_CARGADOS','KM_VACIOS','KM_POSICIONAMIENTO',

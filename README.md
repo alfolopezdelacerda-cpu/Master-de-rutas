@@ -71,18 +71,19 @@ Se puede llenar a mano en el Sheet, o desde **Administración → Casetas**
 
 ### Hoja `USUARIOS`
 
-| ID | USUARIO | NOMBRE | PASSWORD | ROL | ACTIVO | PESTANAS |
-|----|---------|--------|----------|-----|--------|----------|
+| ID | USUARIO | NOMBRE | PASSWORD | ROL | ACTIVO | PESTANAS | CLIENTES |
+|----|---------|--------|----------|-----|--------|----------|----------|
 
 - `ACTIVO` — `SI` / `NO`
-- `ROL` — uno de cinco:
+- `ROL` — uno de seis:
 
 | Rol | Administración | Objetivos y parámetros | Autoriza aclaraciones y cancelaciones | Confirma dispersión | Revierte dispersión | Pestañas por defecto |
 |---|---|---|---|---|---|---|
 | `ADMIN` | sí | sí | sí | sí | sí | todas |
 | `SUP` | no | no | sí | no | no | todas menos Administración |
 | `AUDITOR` | no | no | no | sí | no | solo Dispersiones, Liquidación, Hoja de Servicio, Indicadores |
-| `EJECUTIVO` | no | no | no | no | no | solo Nuevo Servicio, TDC, FWD, Monitoreo, Calidad, Indicadores — **y solo de sus clientes** |
+| `COMERCIAL` | no | no | no | no | no | solo Nuevo Servicio, TDC, FWD, Monitoreo, Calidad, Indicadores — **y solo de los clientes de su cartera** |
+| `EJECUTIVO` | no | no | no | no | no | igual que `COMERCIAL` |
 | `OPERATIVO` | no | no | no | no | no | todas menos Administración |
 
 Mientras la hoja `USUARIOS` esté vacía, la app permite entrar con **admin /
@@ -166,7 +167,7 @@ Las dos las escribe el monitoreo y las dos son solo de consulta en la app.
 | Hoja | Columnas |
 |---|---|
 | `INCIDENCIAS` | `ID`, `FECHA_HORA`, `SERVICIO_ID`, `CP`, `CLIENTE`, `ECONOMICO`, `OPERADOR`, `TIPO`, `DESCRIPCION`, `REGISTRADO_POR` |
-| `UBICACIONES` | `ID`, `FECHA_HORA`, `SERVICIO_ID`, `CP`, `ECONOMICO`, `OPERADOR`, `UBICACION`, `REGISTRADO_POR` |
+| `UBICACIONES` | `ID`, `FECHA_HORA`, `SERVICIO_ID`, `CP`, `ECONOMICO`, `OPERADOR`, `UBICACION`, `LAT`, `LON`, `FUENTE`, `REGISTRADO_POR` |
 | `EVIDENCIAS` | `ID`, `FECHA_HORA`, `SERVICIO_ID`, `FOLIO`, `CP`, `OPERADOR`, `CLASE`, `GASTO_ID`, `NOMBRE`, `IMAGEN`, `REGISTRADO_POR` |
 | `TICKETS_CALIDAD` | `ID`, `FOLIO`, `FECHA_ALTA`, `TIPO`, `PRIORIDAD`, `ESTADO`, `AREA`, `SERVICIO_ID`, `CP`, `CLIENTE`, `OPERADOR`, `ECONOMICO`, `TITULO`, `DESCRIPCION`, `RESPONSABLE`, `LEVANTADO_POR`, `FECHA_COMPROMISO`, `ACCION_CORRECTIVA`, `CAUSA_RAIZ`, `FECHA_CIERRE`, `CERRADO_POR` |
 | `SEGUIMIENTOS_CALIDAD` | `ID`, `TICKET_ID`, `FECHA_HORA`, `ESTADO`, `NOTA`, `REGISTRADO_POR` |
@@ -390,7 +391,12 @@ El formulario va en el orden en que se captura de verdad:
    cualquier otro tipo de unidad no aplican y quedan bloqueados. Se guardan por
    separado en `CONTENEDOR_1` y `CONTENEDOR_2`, y juntos en `CONTENEDORES`,
    como se venía haciendo.
-4. **Origen y destino** — al elegir el **estado destino**, la lista de ciudades
+4. **Origen y destino** — arriba, la **ruta del cliente**: el selector trae
+   **solo las rutas de la hoja `RUTAS` cuya columna `CLIENTE` es el cliente
+   elegido**, y nada más; sin cliente queda bloqueado. Al elegirla, si su
+   nombre trae origen y destino reconocibles (`JALISCO - QUERÉTARO`) se ponen
+   solos, y la ruta se guarda en el servicio para que la Solicitud de Gasto la
+   tome sin preguntar. Al elegir el **estado destino**, la lista de ciudades
    se reduce a las de ese estado (`CIUDADES.ESTADO`); las ciudades sin estado
    capturado siempre se ofrecen, para no perderlas. Y al revés: si eliges la
    ciudad primero, su estado se pone solo.
@@ -490,6 +496,9 @@ Debajo de la asignación, el **tablero operativo** lista toda la flota con su
 estado: **Disponible, Programado, Despachado, En servicio, Vacío, Descanso,
 Mantenimiento, Falla mecánica** o **Sin GPS**. Una unidad sin estado
 capturado se muestra como *Disponible*.
+
+Cada renglón muestra el **operador**: el del viaje en curso si la unidad trae
+uno, y si no, el que tenga asignado de planta en el catálogo.
 
 El estado se cambia en el propio renglón y se guarda al momento, sellando
 cuándo (`ESTATUS_ACTUALIZADO`); junto a él hay la **ubicación** —capturada a
@@ -917,10 +926,10 @@ cliente*, lo que esa cuenta ya ha usado antes; abajo, el resto del catálogo,
 para no cerrarle la puerta a un destino nuevo. Debajo del título se listan las
 **rutas dadas de alta para ese cliente**.
 
-**La ruta se pone sola.** Al pedir el gasto desde un servicio, el buscador de
-rutas pone al frente las del cliente del servicio, y la ruta se selecciona sola
-cuando hay una que va de ese origen a ese destino (o cuando el cliente tiene
-una sola ruta). Con ella se llenan tipo de servicio, tipo de viaje, KM y
+**La ruta se pone sola.** Al pedir el gasto desde un servicio se usa la ruta
+que se eligió en el alta; si el servicio no trae ninguna, el buscador pone al
+frente las del cliente y la selecciona sola cuando hay una que va de ese origen
+a ese destino (o cuando el cliente tiene una sola ruta). Con ella se llenan tipo de servicio, tipo de viaje, KM y
 casetas.
 
 **La unidad manda.** El catálogo de `UNIDADES` guarda de planta el
@@ -931,12 +940,15 @@ llenan solos operador, medio de comunicación, placas y equipo de arrastre —do
 portacontenedores y dolly cuando es Full, uno cuando no—, y todo eso viaja al
 servicio y de ahí a la **Solicitud de Gasto**, que ya no se captura a mano.
 
-**El ejecutivo ve lo suyo.** El rol `EJECUTIVO` se asigna en Usuarios, y los
-clientes se le reparten en **Administración → Clientes**, columna *Ejecutivo de
-la cuenta*. Un usuario con ese rol solo ve —en TDC, FWD, Asignación, Monitoreo
-e Indicadores— los servicios de sus clientes, y en Nuevo Servicio solo puede
-capturar para ellos. Un servicio también le pertenece si trae su nombre en la
-columna `EJECUTIVO`.
+**El comercial ve lo suyo.** El rol `COMERCIAL` (y el `EJECUTIVO`, que se
+comporta igual) trabaja **su cartera**. Los clientes se le asignan en
+**Administración → Usuarios**, columna **Cartera**: el botón abre un panel con
+todos los clientes del catálogo y se marcan los suyos; se guardan en
+`USUARIOS.CLIENTES`. Un usuario con ese rol solo ve —en TDC, FWD, Asignación,
+Monitoreo, Calidad e Indicadores— los servicios de esos clientes, y en Nuevo
+Servicio solo puede capturar y ver rutas de ellos. También cuenta lo que traiga
+`CLIENTES.EJECUTIVO` con su nombre, para no perder lo que ya estaba capturado
+así, y un servicio le pertenece si trae su nombre en la columna `EJECUTIVO`.
 
 ## Calidad
 
@@ -968,6 +980,40 @@ Los tickets se guardan en `TICKETS_CALIDAD` y sus notas en
 completo cada vez). Las dos hojas se consultan también desde Administración. Un
 usuario **ejecutivo** solo ve los tickets de los servicios de su cartera, más
 los que no traen servicio.
+
+## Plataforma de rastreo (GPS)
+
+El tablero operativo puede traer sola la ubicación de las unidades desde el API
+de tu plataforma de rastreo. La conexión se captura en **Administración →
+Plataforma de rastreo (GPS)**:
+
+| Campo | Para qué |
+|---|---|
+| Nombre de la plataforma | Solo para identificarla en pantalla |
+| URL del API | El `GET` que devuelve las unidades con su posición |
+| Token / llave | Se manda como `Authorization: Bearer …` (el header es configurable) |
+| Campo de la lista | Dónde viene el arreglo dentro de la respuesta (`data`, `items`…). Vacío = se busca el primer arreglo |
+| Campo del económico | Cómo se llama el económico en cada renglón (`unidad`, `name`, `eco`…) |
+| Campo de ubicación | La dirección o descripción del lugar |
+| Campos de lat / lon | Por ejemplo `lat,lng` |
+
+Los tres últimos son opcionales: si se dejan vacíos, la app intenta reconocer
+los nombres más comunes. El botón **Probar conexión** dice cuántas unidades
+devolvió y muestra la primera, para saber si el mapeo quedó bien antes de
+guardarlo.
+
+Con la conexión guardada, el botón **📡 Actualizar ubicaciones por GPS** del
+tablero consulta la plataforma y, por cada unidad que reconozca **por su
+económico**, guarda la ubicación (con `LAT`/`LON` si vienen), la marca como
+`GPS` y deja su renglón en el histórico de `UBICACIONES`. Solo escribe las que
+cambiaron, y avisa cuántas unidades vinieron sin correspondencia en el
+catálogo. La ubicación capturada a mano sigue funcionando igual y se distingue
+por su origen (`UBICACION_FUENTE`: `GPS` o `MANUAL`).
+
+> La consulta la hace el navegador, así que **el API tiene que permitir CORS**.
+> Si la plataforma no lo permite, la app lo dice con todas sus letras en vez de
+> quedarse callada; en ese caso hay que pedirle al proveedor que habilite el
+> dominio, o publicar un pequeño proxy.
 
 ## Tiempos del proceso (Indicadores)
 

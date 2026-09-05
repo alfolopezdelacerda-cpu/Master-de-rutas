@@ -163,10 +163,10 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 .userchip{font-size:12px;font-weight:600;padding:5px 12px;border-radius:99px;background:rgba(255,255,255,.12);white-space:nowrap}
 
 /* Modal de aviso */
-#modalWrap,#cancelWrap,#permWrap,#detWrap,#incWrap,#extraWrap{position:fixed;inset:0;z-index:210;background:rgba(9,14,24,.55);display:none;align-items:center;justify-content:center;padding:20px}
-#modalWrap.show,#cancelWrap.show,#permWrap.show,#detWrap.show,#incWrap.show,#extraWrap.show{display:flex}
-#cancelWrap,#permWrap{z-index:220}
-#cancelWrap .mbox,#permWrap .mbox{max-height:92vh;overflow-y:auto}
+#modalWrap,#cancelWrap,#permWrap,#cartWrap,#detWrap,#incWrap,#extraWrap{position:fixed;inset:0;z-index:210;background:rgba(9,14,24,.55);display:none;align-items:center;justify-content:center;padding:20px}
+#modalWrap.show,#cancelWrap.show,#permWrap.show,#cartWrap.show,#detWrap.show,#incWrap.show,#extraWrap.show{display:flex}
+#cancelWrap,#permWrap,#cartWrap{z-index:220}
+#cancelWrap .mbox,#permWrap .mbox,#cartWrap .mbox{max-height:92vh;overflow-y:auto}
 #detWrap,#incWrap,#extraWrap{z-index:230}
 #detWrap .mbox,#incWrap .mbox,#extraWrap .mbox{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.3);padding:24px;max-height:92vh;overflow-y:auto}
 #detWrap .mbox{max-width:900px}
@@ -185,11 +185,11 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 #modalWrap h3{font-size:20px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px}
 #modalWrap .mtxt{font-size:14px;color:var(--ink2);line-height:1.55;margin-bottom:20px}
 #modalWrap .mtxt b{color:var(--ink)}
-#permWrap .mbox{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.3);padding:26px}
-#permWrap .mico{font-size:40px;margin-bottom:8px;text-align:center}
-#permWrap h3{font-size:20px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;text-align:center}
-#permWrap .mtxt{font-size:14px;color:var(--ink2);line-height:1.55;margin-bottom:14px}
-#permWrap .mtxt b{color:var(--ink)}
+#permWrap .mbox,#cartWrap .mbox{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:16px;box-shadow:0 12px 40px rgba(0,0,0,.3);padding:26px}
+#permWrap .mico,#cartWrap .mico{font-size:40px;margin-bottom:8px;text-align:center}
+#permWrap h3,#cartWrap h3{font-size:20px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px;text-align:center}
+#permWrap .mtxt,#cartWrap .mtxt{font-size:14px;color:var(--ink2);line-height:1.55;margin-bottom:14px}
+#permWrap .mtxt b,#cartWrap .mtxt b{color:var(--ink)}
 
 .printArea{display:none}
 @media print{
@@ -403,6 +403,8 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <h3>Origen y destino</h3>
     <div class="mini" id="nsRutasCliente" style="margin-bottom:10px;color:var(--ink2)"></div>
     <div class="grid g5" style="margin-bottom:14px">
+      <div style="grid-column:1/3"><label>Ruta del cliente</label>
+        <select id="nsRuta" title="Solo las rutas dadas de alta para el cliente elegido"></select></div>
       <div><label>Estado de origen</label><select id="nsEstadoOrigen"></select></div>
       <div><label>Punto de carga</label><input id="nsPuntoCarga"></div>
       <div><label>Estado destino</label><select id="nsEstadoDestino"></select></div>
@@ -471,13 +473,17 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <h2>Tablero operativo</h2>
     <div class="sub">Estado de cada unidad de la flota. Cámbialo desde el propio renglón: se guarda al momento. La <b>ubicación</b> se captura a mano aquí o desde la bitácora del viaje.</div>
     <div id="tabChips" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px"></div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px">
+      <button class="btn btn-p btn-sm" id="btnGps">📡 Actualizar ubicaciones por GPS</button>
+      <span class="mini" id="gpsInfo"></span>
+    </div>
     <div class="grid g3" style="margin-bottom:12px">
       <div style="grid-column:1/3"><label>Buscar</label><input id="tabBusca" placeholder="🔍 Económico, placas, tipo de unidad…"></div>
       <div><label>Estatus</label><select id="tabFiltro"><option value="todos">Todos</option></select></div>
     </div>
     <div class="twrap" style="max-height:520px;overflow-y:auto"><table>
       <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
-        <th>Económico</th><th>Placas</th><th>Tipo</th><th style="min-width:190px">Estatus</th>
+        <th>Económico</th><th>Placas</th><th>Tipo</th><th>Operador</th><th style="min-width:190px">Estatus</th>
         <th style="min-width:190px">Ubicación</th><th>Nota</th><th>Servicio en curso</th><th>Actualizado</th>
       </tr></thead>
       <tbody id="tbodyTablero"></tbody>
@@ -1287,6 +1293,26 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       </div>
       <div style="margin-top:16px"><button class="btn btn-p" id="btnGuardarCfg">Guardar parámetros</button></div>
       <hr class="sep">
+      <h3 style="margin-top:4px">Plataforma de rastreo (GPS)</h3>
+      <div class="sub" style="margin-bottom:10px">Conecta el API de tu plataforma para traer sola la ubicación de las unidades al tablero operativo. La app hace una petición <b>GET</b> y lee la respuesta en JSON; los campos se indican abajo, por si tu proveedor los nombra distinto.</div>
+      <div class="grid g3" style="margin-bottom:10px">
+        <div><label>Nombre de la plataforma</label><input id="cfgGpsNombre" placeholder="Ej: Wialon, Detector, Copiloto…"></div>
+        <div style="grid-column:2/4"><label>URL del API</label><input id="cfgGpsUrl" placeholder="https://api.miplataforma.com/v1/unidades"></div>
+        <div style="grid-column:1/3"><label>Token / llave (opcional)</label><input id="cfgGpsToken" placeholder="Se manda como Authorization: Bearer …"></div>
+        <div><label>Header del token</label><input id="cfgGpsHeader" placeholder="Authorization"></div>
+      </div>
+      <div class="grid g4" style="margin-bottom:10px">
+        <div><label>Campo de la lista</label><input id="cfgGpsLista" placeholder="Ej: data · items (vacío = la raíz)"></div>
+        <div><label>Campo del económico</label><input id="cfgGpsEco" placeholder="Ej: name · unidad · eco"></div>
+        <div><label>Campo de ubicación</label><input id="cfgGpsUbic" placeholder="Ej: address · posicion"></div>
+        <div><label>Campos de lat / lon</label><input id="cfgGpsLatLon" placeholder="Ej: lat,lng"></div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px">
+        <button class="btn btn-p" id="btnGuardarGps">Guardar conexión</button>
+        <button class="btn btn-s" id="btnProbarGps">Probar conexión</button>
+      </div>
+      <div class="mini" id="gpsPrueba" style="margin-bottom:12px"></div>
+      <hr class="sep">
       <label>URL del logo (opcional)</label>
       <div class="sub" style="margin-bottom:8px">Liga directa a la imagen del logo de ADL. Si se deja vacía, se usa el logo dibujado en la propia app.</div>
       <input id="cfgLogo" placeholder="https://…/logo-adl.png" style="margin-bottom:12px">
@@ -1402,6 +1428,25 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       <button class="btn btn-s" id="permRestablecer">Restablecer al rol</button>
       <button class="btn btn-s" id="permCerrar">Cancelar</button>
       <button class="btn btn-p" id="permGuardar">💾 Guardar permisos</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ CARTERA DE CLIENTES DEL COMERCIAL ============ -->
+<div id="cartWrap">
+  <div class="mbox" style="max-width:520px">
+    <div class="mico">🧾</div>
+    <h3>Clientes de su cuenta</h3>
+    <div class="mtxt" style="text-align:center" id="cartDatos"></div>
+    <div class="mini" style="margin-bottom:14px">
+      Marca los clientes que le pertenecen a este usuario. Solo verá servicios, tickets e
+      indicadores de esos clientes. Si no marcas ninguno, no verá información de ningún cliente.
+    </div>
+    <div id="cartLista" style="display:flex;flex-direction:column;gap:10px;margin-bottom:18px;max-height:46vh;overflow-y:auto"></div>
+    <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+      <button class="btn btn-s" id="cartTodos">Marcar todos</button>
+      <button class="btn btn-s" id="cartCerrar">Cancelar</button>
+      <button class="btn btn-p" id="cartGuardar">💾 Guardar cartera</button>
     </div>
   </div>
 </div>
@@ -2304,13 +2349,41 @@ function filtrarPorCliente(){
   const destinos = new Set(srv.map(x=>String(x.CIUDAD_DESTINO||'').trim().toUpperCase()).filter(Boolean));
   agruparPorCliente('nsEstadoOrigen','ESTADOS', origenes);
   agruparPorCliente('nsCiudadDestino','CIUDADES', destinos, ciudadesDeEstado(nombreDeSelect('nsEstadoDestino','ESTADOS')));
+
+  /* Rutas: SOLO las de ese cliente, tal como están en la hoja RUTAS (la
+     columna CLIENTE es la que manda). Sin cliente elegido, no hay de dónde. */
+  const selR = $('nsRuta'), antes = selR.value;
+  selR.innerHTML = '<option value="">— Selecciona —</option>'+
+    [...rutas].sort((a,b)=>String(a.RUTA||'').localeCompare(String(b.RUTA||'')))
+      .map(r=>`<option value="${esc(r.ID)}">${esc(r.RUTA)}${r.TOTAL_KM? ' · '+num(r.TOTAL_KM,0)+' km':''}</option>`).join('');
+  if([...selR.options].some(o=>o.value===antes)) selR.value = antes;
+  selR.disabled = !cliente || !rutas.length;
+
   $('nsRutasCliente').innerHTML = !cliente
-    ? 'Elige un cliente para ver sus orígenes, destinos y rutas.'
-    : (rutas.length || srv.length)
-      ? `<b>${esc(cliente)}</b>: ${srv.length} servicio(s) previos · rutas dadas de alta: `+
-        (rutas.length? rutas.map(r=>esc(r.RUTA)).join(' · ') : 'ninguna todavía')
-      : `<b>${esc(cliente)}</b> todavía no tiene servicios ni rutas registradas: se listan todos los catálogos.`;
+    ? 'Elige un cliente para ver sus rutas, orígenes y destinos.'
+    : rutas.length
+      ? `<b>${esc(cliente)}</b>: ${rutas.length} ruta(s) dadas de alta · ${srv.length} servicio(s) previos.`
+      : `<b>${esc(cliente)}</b> no tiene rutas dadas de alta en la hoja RUTAS. Se pueden crear en la pestaña <b>Rutas</b>.`;
 }
+/* Al elegir la ruta del cliente, si trae origen y destino reconocibles se
+   ponen solos ("JALISCO - QUERÉTARO" → origen JALISCO, destino QUERÉTARO). */
+$('nsRuta').addEventListener('change',()=>{
+  const r = DB.RUTAS.find(x=>String(x.ID)===$('nsRuta').value);
+  if(!r) return;
+  const partes = String(r.RUTA||'').split(/\s*[-–>]+\s*/).map(x=>x.trim()).filter(Boolean);
+  if(partes.length>=2){
+    const org = DB.ESTADOS.find(e=>String(e.NOMBRE||'').trim().toUpperCase()===partes[0].toUpperCase());
+    if(org && !$('nsEstadoOrigen').value) $('nsEstadoOrigen').value = org.ID;
+    const dst = DB.CIUDADES.find(c=>String(c.NOMBRE||'').trim().toUpperCase()===partes[partes.length-1].toUpperCase());
+    if(dst){
+      if(dst.ESTADO && !$('nsEstadoDestino').value){
+        seleccionarPorNombre('nsEstadoDestino','ESTADOS', dst.ESTADO);
+        alCambiarEstadoDestino();
+      }
+      if(!$('nsCiudadDestino').value) $('nsCiudadDestino').value = dst.ID;
+    }
+  }
+});
 $('nsCliente').addEventListener('change', filtrarPorCliente);
 
 /* Los catálogos se guardan por nombre, no por ID: la sábana necesita el
@@ -2334,7 +2407,7 @@ function limpiarServicio(){
    'nsMercancia','nsBooking','nsPO','nsPuntoCarga','nsPuntoDescarga'].forEach(id=>$(id).value='');
   cpServicio=['']; pintarCpServicio();
   ['nsTipoNegocio','nsAduana','nsCliente','nsEstadoOrigen','nsEstadoDestino','nsCiudadDestino',
-   'nsLineaSel','nsTipoUnidad'].forEach(id=>$(id).value='');
+   'nsLineaSel','nsTipoUnidad','nsRuta'].forEach(id=>$(id).value='');
   $('nsCont1').value=''; $('nsCont2').value='';
   // Un servicio nuevo nace pendiente por despachar
   $('nsEstatus').value=EST_PENDIENTE;
@@ -2386,6 +2459,7 @@ function armarServicio(){
     ESTADO_ORIGEN: nombreDeSelect('nsEstadoOrigen','ESTADOS'),
     PUNTO_CARGA: $('nsPuntoCarga').value.trim(),
     ESTADO_DESTINO: nombreDeSelect('nsEstadoDestino','ESTADOS'),
+    RUTA: (DB.RUTAS.find(r=>String(r.ID)===$('nsRuta').value)||{}).RUTA || '',
     CIUDAD_DESTINO: nombreDeSelect('nsCiudadDestino','CIUDADES'),
     PUNTO_DESCARGA: $('nsPuntoDescarga').value.trim(),
     LINEA_TRANSPORTISTA: m==='FWD'? nombreDeSelect('nsLineaSel','PROVEEDORES') : 'ADL',
@@ -2441,8 +2515,9 @@ function abrirServicio(id){
   seleccionarPorNombre('nsTipoNegocio','TIPO_NEGOCIO', s.TIPO_NEGOCIO);
   seleccionarPorNombre('nsAduana','ADUANAS', s.ADUANA_PUERTO);
   seleccionarPorNombre('nsCliente','CLIENTES', s.CLIENTE);
-  // Con el cliente puesto se reagrupan orígenes y destinos antes de elegirlos
+  // Con el cliente puesto se reagrupan rutas, orígenes y destinos
   filtrarPorCliente();
+  if(s.RUTA){ const r = DB.RUTAS.find(x=>String(x.RUTA||'')===String(s.RUTA)); if(r) $('nsRuta').value = r.ID; }
   seleccionarPorNombre('nsEstadoOrigen','ESTADOS', s.ESTADO_ORIGEN);
   seleccionarPorNombre('nsEstadoDestino','ESTADOS', s.ESTADO_DESTINO);
   alCambiarEstadoDestino();
@@ -3011,13 +3086,13 @@ async function registrarUbicacionMon(){
   const ok = await apiEnviar({action:'upsert', sheet:'UBICACIONES', record:{
     FECHA_HORA: ahora, SERVICIO_ID: s.ID, CP: s.CP,
     ECONOMICO: s.ECONOMICO, OPERADOR: s.OPERADOR,
-    UBICACION: donde, REGISTRADO_POR: nombreUsuario()
+    UBICACION: donde, FUENTE:'MANUAL', REGISTRADO_POR: nombreUsuario()
   }});
   if(!ok) return;
   // La última reportada se queda a la vista en el tablero operativo
   const u = DB.UNIDADES.find(x=>String(x.ECONOMICO||'').trim().toUpperCase()===String(s.ECONOMICO||'').trim().toUpperCase());
   if(u) await apiEnviar({action:'upsert', sheet:'UNIDADES',
-    record: Object.assign({}, u, { UBICACION_ACTUAL: donde, UBICACION_ACTUALIZADA: ahora })});
+    record: Object.assign({}, u, { UBICACION_ACTUAL: donde, UBICACION_ACTUALIZADA: ahora, UBICACION_FUENTE:'MANUAL' })});
   toast('Ubicación registrada');
   abrirMonitoreo(monEditando);
 }
@@ -3370,17 +3445,24 @@ function pintarTablero(){
     const e = estatusDeUnidad(u);
     const srv = servicioEnCurso(u.ECONOMICO);
     const tr=document.createElement('tr');
+    // El operador del viaje en curso manda; si no hay viaje, el de planta
+    const operador = (srv && srv.OPERADOR) || u.OPERADOR_ASIGNADO || '';
     tr.innerHTML=`<td><b>${esc(u.ECONOMICO)}</b></td><td>${esc(u.PLACAS)}</td><td>${esc(u.TIPO_UNIDAD)}</td>
+      <td>${esc(operador)||'<span class="mini">—</span>'}</td>
       <td><select data-tabest="${u.ID}" style="border-left:5px solid ${COLOR_ESTATUS[e]}">${
         ESTATUS_OPERATIVO.map(x=>`<option${x===e?' selected':''}>${x}</option>`).join('')}</select></td>
       <td><input data-tabubic="${u.ID}" value="${esc(u.UBICACION_ACTUAL)}" placeholder="Capturar ubicación…"${
-        u.UBICACION_ACTUALIZADA? ` title="Reportada el ${esc(u.UBICACION_ACTUALIZADA)}"`:''}></td>
+        u.UBICACION_ACTUALIZADA? ` title="${esc(u.UBICACION_FUENTE==='GPS'? 'Del GPS' : 'Capturada a mano')} el ${esc(u.UBICACION_ACTUALIZADA)}"`:''}>
+        ${u.UBICACION_FUENTE==='GPS'? '<span class="mini">📡 GPS</span>' : ''}</td>
       <td><input data-tabnota="${u.ID}" value="${esc(u.NOTA_OPERATIVA)}" placeholder="—"></td>
       <td>${srv? esc(srv.CP)+' · '+esc(srv.CIUDAD_DESTINO||'') : '<span class="mini">—</span>'}</td>
       <td class="mini">${esc(u.ESTATUS_ACTUALIZADO)||'—'}</td>`;
     tb.appendChild(tr);
   });
-  if(!filas.length) tb.innerHTML='<tr><td colspan="8" class="mini">Sin unidades en este filtro.</td></tr>';
+  if(!filas.length) tb.innerHTML='<tr><td colspan="9" class="mini">Sin unidades en este filtro.</td></tr>';
+  $('gpsInfo').innerHTML = gpsConfigurado()
+    ? 'Conectado a <b>'+esc(DB.CONFIG.GPS_NOMBRE||'la plataforma de rastreo')+'</b>. Trae la posición de cada económico y la deja en su renglón.'
+    : 'Sin plataforma de rastreo configurada. Se captura en <b>Administración → Plataforma de rastreo (GPS)</b>.';
 
   tb.querySelectorAll('[data-tabest]').forEach(el=>el.addEventListener('change',()=>guardarTablero(el.dataset.tabest)));
   tb.querySelectorAll('[data-tabnota]').forEach(el=>el.addEventListener('change',()=>guardarTablero(el.dataset.tabnota)));
@@ -3399,6 +3481,7 @@ async function guardarTablero(id){
     NOTA_OPERATIVA: nota? nota.value.trim() : (u.NOTA_OPERATIVA||''),
     UBICACION_ACTUAL: ubicNueva,
     UBICACION_ACTUALIZADA: cambioUbic? ahora : (u.UBICACION_ACTUALIZADA||''),
+    UBICACION_FUENTE: cambioUbic? 'MANUAL' : (u.UBICACION_FUENTE||''),
     ESTATUS_ACTUALIZADO: ahora
   });
   if(!await apiEnviar({action:'upsert', sheet:'UNIDADES', record:reg})) return;
@@ -3408,7 +3491,7 @@ async function guardarTablero(id){
     await apiEnviar({action:'upsert', sheet:'UBICACIONES', record:{
       FECHA_HORA: ahora, SERVICIO_ID: srv? srv.ID : '', CP: srv? srv.CP : '',
       ECONOMICO: u.ECONOMICO, OPERADOR: srv? srv.OPERADOR : '',
-      UBICACION: ubicNueva, REGISTRADO_POR: nombreUsuario()
+      UBICACION: ubicNueva, FUENTE:'MANUAL', REGISTRADO_POR: nombreUsuario()
     }});
     toast('Unidad '+u.ECONOMICO+' en '+ubicNueva);
     return;
@@ -3417,6 +3500,102 @@ async function guardarTablero(id){
 }
 ['tabBusca','tabFiltro'].forEach(id=>$(id).addEventListener('input', pintarTablero));
 $('tabFiltro').addEventListener('change', pintarTablero);
+
+/* ---------- Plataforma de rastreo (GPS) ----------
+   Conector genérico: se le dice la URL, el token y cómo se llaman los campos
+   en la respuesta, porque cada plataforma los nombra distinto. La consulta la
+   hace el navegador, así que el API tiene que permitir CORS. */
+function cfgGps(){
+  return { url: DB.CONFIG.GPS_URL||'', token: DB.CONFIG.GPS_TOKEN||'',
+           header: DB.CONFIG.GPS_HEADER||'Authorization', lista: DB.CONFIG.GPS_LISTA||'',
+           campoEco: DB.CONFIG.GPS_CAMPO_ECO||'', campoUbic: DB.CONFIG.GPS_CAMPO_UBIC||'',
+           campoLatLon: DB.CONFIG.GPS_CAMPO_LATLON||'' };
+}
+function gpsConfigurado(){ return !!String(DB.CONFIG.GPS_URL||'').trim(); }
+/* Lee "a.b.c" dentro de un objeto */
+function porRuta(obj, ruta){
+  return String(ruta||'').split('.').filter(Boolean).reduce((o,k)=>(o==null? o : o[k]), obj);
+}
+/* Busca en un objeto la primera llave que se parezca a alguno de esos nombres */
+function primerCampo(obj, nombres){
+  for(const n of nombres){
+    const k = Object.keys(obj||{}).find(x=>x.toLowerCase()===n);
+    if(k!==undefined && obj[k]!==null && obj[k]!=='') return obj[k];
+  }
+  return '';
+}
+async function traerPosicionesGps(cfg){
+  const c = cfg || cfgGps();
+  if(!c.url) throw new Error('Falta la URL del API de la plataforma de rastreo.');
+  const headers = {};
+  if(c.token) headers[c.header || 'Authorization'] = /^bearer /i.test(c.token)? c.token : 'Bearer '+c.token;
+  let r;
+  try{ r = await fetch(c.url, { headers }); }
+  catch(e){ throw new Error('No se pudo conectar con la plataforma. Suele ser que el API no permite llamadas desde el navegador (CORS) o que la URL está mal.'); }
+  if(!r.ok) throw new Error('La plataforma respondió '+r.status+' '+r.statusText);
+  let j;
+  try{ j = await r.json(); }catch(e){ throw new Error('La respuesta no es JSON.'); }
+
+  let filas = c.lista? porRuta(j, c.lista) : j;
+  if(!Array.isArray(filas)){
+    // Si no se dijo dónde viene la lista, se busca el primer arreglo de la respuesta
+    filas = Object.values(j||{}).find(v=>Array.isArray(v)) || [];
+  }
+  const latlon = String(c.campoLatLon||'').split(',').map(x=>x.trim()).filter(Boolean);
+  return filas.map(f=>{
+    const eco = c.campoEco? porRuta(f, c.campoEco)
+      : primerCampo(f, ['economico','eco','unidad','name','nombre','label','vehiculo','placa','placas']);
+    const ubic = c.campoUbic? porRuta(f, c.campoUbic)
+      : primerCampo(f, ['ubicacion','direccion','address','location','posicion','lugar']);
+    const lat = latlon.length? porRuta(f, latlon[0]) : primerCampo(f, ['lat','latitud','latitude']);
+    const lon = latlon.length>1? porRuta(f, latlon[1]) : primerCampo(f, ['lon','lng','longitud','longitude']);
+    return { economico: String(eco||'').trim(), ubicacion: String(ubic||'').trim(),
+             lat: lat===''? '' : String(lat), lon: lon===''? '' : String(lon) };
+  }).filter(x=>x.economico);
+}
+
+/* Trae las posiciones y las deja en cada unidad del tablero. Solo escribe las
+   que de verdad cambiaron, y deja su renglón en el histórico de UBICACIONES. */
+$('btnGps').addEventListener('click', async ()=>{
+  if(!gpsConfigurado()){
+    modal('Falta configurar el rastreo',
+      'Captura la conexión de tu plataforma en <b>Administración → Plataforma de rastreo (GPS)</b>: '+
+      'la URL del API y, si hace falta, el token y el nombre de los campos.', '📡');
+    return;
+  }
+  const btn = $('btnGps'); btn.disabled = true;
+  $('gpsInfo').textContent = 'Consultando la plataforma…';
+  try{
+    const filas = await traerPosicionesGps();
+    let n = 0, sinUnidad = [];
+    for(const f of filas){
+      const u = DB.UNIDADES.find(x=>String(x.ECONOMICO||'').trim().toUpperCase()===f.economico.toUpperCase());
+      if(!u){ sinUnidad.push(f.economico); continue; }
+      const donde = f.ubicacion || (f.lat && f.lon? f.lat+', '+f.lon : '');
+      if(!donde) continue;
+      if(String(u.UBICACION_ACTUAL||'')===donde) continue;
+      const ahora = ahoraTexto();
+      await apiEnviar({action:'upsert', sheet:'UNIDADES', record: Object.assign({}, u, {
+        UBICACION_ACTUAL: donde, UBICACION_ACTUALIZADA: ahora, UBICACION_FUENTE:'GPS',
+        LAT: f.lat||'', LON: f.lon||'', GPS_ACTUALIZADO: ahora })});
+      const srv = servicioEnCurso(u.ECONOMICO);
+      await apiEnviar({action:'upsert', sheet:'UBICACIONES', record:{
+        FECHA_HORA: ahora, SERVICIO_ID: srv? srv.ID : '', CP: srv? srv.CP : '',
+        ECONOMICO: u.ECONOMICO, OPERADOR: srv? srv.OPERADOR : (u.OPERADOR_ASIGNADO||''),
+        UBICACION: donde, LAT: f.lat||'', LON: f.lon||'', FUENTE:'GPS',
+        REGISTRADO_POR: DB.CONFIG.GPS_NOMBRE || 'GPS' }});
+      n++;
+    }
+    pintarTablero();
+    $('gpsInfo').innerHTML = `<span style="color:var(--ok)">${n} unidad(es) actualizada(s)</span> de ${filas.length} que devolvió la plataforma`+
+      (sinUnidad.length? ` · ${sinUnidad.length} sin unidad en el catálogo (${esc(sinUnidad.slice(0,3).join(', '))}${sinUnidad.length>3?'…':''})` : '');
+    toast(n? n+' ubicación(es) actualizadas por GPS' : 'Ninguna ubicación cambió');
+  }catch(e){
+    $('gpsInfo').innerHTML = '<span style="color:var(--bad)">'+esc(e.message)+'</span>';
+    toast('No se pudo consultar el GPS', true);
+  }
+  btn.disabled = false;
+});
 
 /* Salta a Solicitud de Gasto con la carta porte puesta y todo prellenado */
 function irASolicitudDeGasto(id){
@@ -3614,6 +3793,11 @@ let clienteSolicitud = '';
 /* De las rutas del cliente, la que va del origen al destino del servicio.
    Si solo hay una ruta de ese cliente, esa. */
 function rutaDeServicio(s){
+  // La que se eligió en el alta manda sobre cualquier deducción
+  if(s.RUTA){
+    const puesta = DB.RUTAS.find(r=>String(r.RUTA||'').trim().toUpperCase()===String(s.RUTA).trim().toUpperCase());
+    if(puesta) return puesta;
+  }
   const candidatas = rutasDeCliente(s.CLIENTE);
   if(!candidatas.length) return null;
   const norm = t => String(t||'').trim().toUpperCase();
@@ -5010,14 +5194,28 @@ function estadoLiq(solId){ const l=liqDe(solId); return l? String(l.ESTADO||'').
 function estaLiquidado(solId){ return estadoLiq(solId)==='LIQUIDADO'; }
 function enAclaracion(solId){ return estadoLiq(solId)==='ACLARACION'; }
 function rolActual(){ return usuarioActual? String(usuarioActual.ROL||'').toUpperCase() : ''; }
-function esEjecutivo(){ return rolActual()==='EJECUTIVO'; }
+/* Roles con cartera: ven únicamente los clientes que traen asignados */
+function conCartera(rol){
+  const r = String(rol||'').toUpperCase();
+  return r==='COMERCIAL' || r==='EJECUTIVO';
+}
+function esEjecutivo(){ return conCartera(rolActual()); }
+function listaClientes(txt){
+  return String(txt||'').split(',').map(x=>x.trim()).filter(Boolean);
+}
 
-/* ---------- Cartera del ejecutivo ----------
-   Un usuario con rol EJECUTIVO solo ve lo de SUS clientes: los que traen su
-   nombre en CLIENTES.EJECUTIVO. Los demás roles lo ven todo. */
+/* ---------- Cartera del comercial ----------
+   Un usuario COMERCIAL (o EJECUTIVO) solo ve lo de SUS clientes. La cartera se
+   le asigna en Administración → Usuarios (columna Cartera) y se guarda en
+   USUARIOS.CLIENTES; también cuenta lo que traiga CLIENTES.EJECUTIVO con su
+   nombre, para no perder lo que ya estaba capturado así. */
 function clientesDelUsuario(){
   const yo = String(nombreUsuario()||'').trim().toUpperCase();
-  return DB.CLIENTES.filter(c=>String(c.EJECUTIVO||'').trim().toUpperCase()===yo);
+  const asignados = new Set(listaClientes(usuarioActual && usuarioActual.CLIENTES).map(c=>c.toUpperCase()));
+  return DB.CLIENTES.filter(c=>{
+    const n = String(c.NOMBRE||'').trim().toUpperCase();
+    return asignados.has(n) || String(c.EJECUTIVO||'').trim().toUpperCase()===yo;
+  });
 }
 function clientesVisibles(){
   return esEjecutivo()? clientesDelUsuario() : DB.CLIENTES;
@@ -5044,7 +5242,7 @@ function puedeRevertirDispersion(){ return rolActual()==='ADMIN'; }
 function etiquetaRol(rol){
   const r = String(rol||'').toUpperCase();
   return r==='ADMIN'? 'ADMINISTRADOR' : r==='SUP'? 'SUPERVISOR' : r==='AUDITOR'? 'AUDITOR'
-       : r==='EJECUTIVO'? 'EJECUTIVO' : 'OPERATIVO';
+       : r==='COMERCIAL'? 'COMERCIAL' : r==='EJECUTIVO'? 'EJECUTIVO' : 'OPERATIVO';
 }
 function etiquetaEstadoLiq(solId){
   const e = estadoLiq(solId);
@@ -5764,8 +5962,9 @@ const ADMIN = {
     csv:'NOMBRE, CARRETERA, COSTO_2E, COSTO_5E, COSTO_9E' },
   USUARIOS:{ cols:[
       {k:'USUARIO',raw:true},{k:'NOMBRE'},{k:'PASSWORD',raw:true},
-      {k:'ROL',opts:['OPERATIVO','EJECUTIVO','SUP','AUDITOR','ADMIN']},{k:'ACTIVO',opts:['SI','NO']},
-      {k:'PESTANAS',tipo:'permisos'}] },
+      {k:'ROL',opts:['OPERATIVO','COMERCIAL','EJECUTIVO','SUP','AUDITOR','ADMIN']},{k:'ACTIVO',opts:['SI','NO']},
+      {k:'PESTANAS',tipo:'permisos'},
+      {k:'CLIENTES',t:'Cartera',tipo:'cartera'}] },
   /* Un sueldo semanal por esquema de pre-nómina */
   OPERADORES:{ cols:[{k:'NOMBRE'},
       {k:'PAGO_NOMINAL_SEMANAL',t:'Pago x objetivo (semanal)',tipo:'number'},
@@ -5840,13 +6039,13 @@ const SECCIONES_INFO = {
 };
 const TODAS_LAS_SECCIONES = Object.keys(SECCIONES_INFO);
 const SECCIONES_AUDITOR = ['dispersiones','monitoreo','calidad','liquidacion','prenomina','indicadores'];
-/* El ejecutivo trabaja su cartera: da de alta servicios, los sigue y los ve
-   en TDC/FWD. Todo filtrado a SUS clientes (ver clientesDelUsuario). */
+/* El comercial (y el ejecutivo) trabajan su cartera: dan de alta servicios,
+   los siguen y los ven en TDC/FWD. Todo filtrado a SUS clientes. */
 const SECCIONES_EJECUTIVO = ['nuevoservicio','tdc','fwd','monitoreo','calidad','indicadores'];
 function seccionesPorDefecto(rol){
   const r = String(rol||'').toUpperCase();
-  if(r==='AUDITOR')   return SECCIONES_AUDITOR;
-  if(r==='EJECUTIVO') return SECCIONES_EJECUTIVO;
+  if(r==='AUDITOR')  return SECCIONES_AUDITOR;
+  if(conCartera(r))  return SECCIONES_EJECUTIVO;
   return TODAS_LAS_SECCIONES;
 }
 function seccionesPermitidas(usuario){
@@ -5896,7 +6095,40 @@ function cargarConfigAdmin(){
   $('cfgUrl').value=WEBHOOK;
   $('cfgSabana').value = DB.CONFIG.SABANA_SHEET_ID || '';
   $('cfgLogo').value = DB.CONFIG.LOGO_URL || '';
+  $('cfgGpsNombre').value = DB.CONFIG.GPS_NOMBRE || '';
+  $('cfgGpsUrl').value    = DB.CONFIG.GPS_URL || '';
+  $('cfgGpsToken').value  = DB.CONFIG.GPS_TOKEN || '';
+  $('cfgGpsHeader').value = DB.CONFIG.GPS_HEADER || 'Authorization';
+  $('cfgGpsLista').value  = DB.CONFIG.GPS_LISTA || '';
+  $('cfgGpsEco').value    = DB.CONFIG.GPS_CAMPO_ECO || '';
+  $('cfgGpsUbic').value   = DB.CONFIG.GPS_CAMPO_UBIC || '';
+  $('cfgGpsLatLon').value = DB.CONFIG.GPS_CAMPO_LATLON || '';
 }
+const CFG_GPS = [['GPS_NOMBRE','cfgGpsNombre'],['GPS_URL','cfgGpsUrl'],['GPS_TOKEN','cfgGpsToken'],
+  ['GPS_HEADER','cfgGpsHeader'],['GPS_LISTA','cfgGpsLista'],['GPS_CAMPO_ECO','cfgGpsEco'],
+  ['GPS_CAMPO_UBIC','cfgGpsUbic'],['GPS_CAMPO_LATLON','cfgGpsLatLon']];
+$('btnGuardarGps').addEventListener('click', async ()=>{
+  // Igual que arriba: primero se leen todos los campos, luego se guardan
+  const valores = CFG_GPS.map(([clave,id])=>[clave, $(id).value.trim()]);
+  for(const [clave,valor] of valores) await apiEnviar({action:'setConfig', clave, valor});
+  toast('Conexión de rastreo guardada');
+});
+$('btnProbarGps').addEventListener('click', async ()=>{
+  $('gpsPrueba').textContent = 'Consultando…';
+  try{
+    const filas = await traerPosicionesGps({ url:$('cfgGpsUrl').value.trim(), token:$('cfgGpsToken').value.trim(),
+      header:$('cfgGpsHeader').value.trim(), lista:$('cfgGpsLista').value.trim(),
+      campoEco:$('cfgGpsEco').value.trim(), campoUbic:$('cfgGpsUbic').value.trim(),
+      campoLatLon:$('cfgGpsLatLon').value.trim() });
+    $('gpsPrueba').innerHTML = filas.length
+      ? `<span style="color:var(--ok)">Respondió con ${filas.length} unidad(es).</span> Primera: `+
+        `<b>${esc(filas[0].economico||'sin económico')}</b> · ${esc(filas[0].ubicacion||'sin ubicación')}`+
+        (filas[0].lat? ` · ${esc(filas[0].lat)}, ${esc(filas[0].lon)}` : '')
+      : '<span style="color:var(--bad)">Respondió, pero no se encontró ninguna unidad. Revisa el campo de la lista y el del económico.</span>';
+  }catch(e){
+    $('gpsPrueba').innerHTML = '<span style="color:var(--bad)">'+esc(e.message)+'</span>';
+  }
+});
 /* Si hay una URL de logo capturada, sustituye el dibujo por esa imagen; si la
    imagen no carga, se queda el dibujo. */
 function pintarLogo(){
@@ -5923,7 +6155,11 @@ $('btnGuardarLogo').addEventListener('click', async ()=>{
   }
 });
 $('btnGuardarCfg').addEventListener('click', async ()=>{
-  for(const [clave,id] of CFG_MAP){ await apiEnviar({action:'setConfig', clave, valor: nf($(id).value)}); }
+  /* Se leen TODOS los campos antes de empezar a guardar: cada respuesta
+     repinta la pantalla de Administración, y si se leyeran dentro del ciclo
+     se guardarían los valores ya repintados en vez de los que se capturaron. */
+  const valores = CFG_MAP.map(([clave,id])=>[clave, nf($(id).value)]);
+  for(const [clave,valor] of valores){ await apiEnviar({action:'setConfig', clave, valor}); }
   toast('Parámetros guardados');
 });
 $('btnGuardarSabana').addEventListener('click', async ()=>{
@@ -5983,6 +6219,44 @@ $('permGuardar').addEventListener('click', async ()=>{
 });
 document.addEventListener('keydown', e=>{ if(e.key==='Escape') cerrarPermisos(); });
 
+/* ---------- Cartera de clientes ----------
+   A un usuario COMERCIAL (o EJECUTIVO) se le asignan aquí sus clientes. Es la
+   lista que decide qué información ve en toda la app. */
+let cartEditando = null;
+function abrirCartera(id){
+  const u = DB.USUARIOS.find(x=>String(x.ID)===String(id)); if(!u) return;
+  cartEditando = id;
+  const suyos = listaClientes(u.CLIENTES).map(c=>c.toUpperCase());
+  $('cartDatos').innerHTML = `Usuario <b>${esc(u.NOMBRE||u.USUARIO)}</b> · Rol <b>${esc(etiquetaRol(u.ROL))}</b>`;
+  const clientes = [...DB.CLIENTES].sort((a,b)=>String(a.NOMBRE||'').localeCompare(String(b.NOMBRE||'')));
+  $('cartLista').innerHTML = clientes.length
+    ? clientes.map(c=>{
+        const n = String(c.NOMBRE||'');
+        return `<label style="display:flex;align-items:center;gap:10px;font-size:14px;text-transform:none;letter-spacing:0;font-weight:600;color:var(--ink)">
+          <input type="checkbox" data-cartc="${esc(n)}" ${suyos.includes(n.toUpperCase())?'checked':''} style="width:18px;height:18px;min-width:18px"> ${esc(n)}
+        </label>`;
+      }).join('')
+    : '<span class="mini">No hay clientes en el catálogo todavía.</span>';
+  $('cartWrap').classList.add('show');
+}
+function cerrarCartera(){ $('cartWrap').classList.remove('show'); cartEditando=null; }
+$('cartCerrar').addEventListener('click', cerrarCartera);
+$('cartWrap').addEventListener('click', e=>{ if(e.target===$('cartWrap')) cerrarCartera(); });
+$('cartTodos').addEventListener('click',()=>{
+  const casillas = [...document.querySelectorAll('#cartLista input[data-cartc]')];
+  const faltan = casillas.some(c=>!c.checked);
+  casillas.forEach(c=>{ c.checked = faltan; });
+});
+$('cartGuardar').addEventListener('click', async ()=>{
+  if(!cartEditando) return;
+  const u = DB.USUARIOS.find(x=>String(x.ID)===String(cartEditando)); if(!u) return;
+  const marcados = [...document.querySelectorAll('#cartLista input[data-cartc]:checked')].map(c=>c.dataset.cartc);
+  if(await apiEnviar({action:'upsert', sheet:'USUARIOS', record: Object.assign({}, u, { CLIENTES: marcados.join(', ') })})){
+    toast(marcados.length? 'Cartera guardada: '+marcados.length+' cliente(s)' : 'Cartera vaciada');
+    cerrarCartera();
+  }
+});
+
 function admSeleccionados(){
   return [...$('admBody').querySelectorAll('input[type=checkbox][data-sel]:checked')].map(c=>c.dataset.sel);
 }
@@ -6009,6 +6283,13 @@ function pintarAdmin(){
       if(c.tipo==='permisos'){
         const n = String(r[c.k]||'').split(',').map(s=>s.trim()).filter(Boolean).length;
         return `<td><button class="btn btn-s btn-sm" data-permrow="${r.ID}">🔐 ${n? n+' pestaña'+(n>1?'s':'') : 'Por rol'}</button></td>`;
+      }
+      // La cartera de clientes solo tiene sentido en un comercial o ejecutivo
+      if(c.tipo==='cartera'){
+        const n = listaClientes(r[c.k]).length;
+        return conCartera(r.ROL)
+          ? `<td><button class="btn btn-s btn-sm" data-cartrow="${r.ID}">🧾 ${n? n+' cliente'+(n>1?'s':'') : 'Sin asignar'}</button></td>`
+          : '<td><span class="mini">—</span></td>';
       }
       if(c.opts) return `<td><select data-id="${r.ID}" data-k="${c.k}">${c.opts.map(o=>`<option${String(r[c.k])===o?' selected':''}>${o}</option>`).join('')}</select></td>`;
       return `<td><input type="${c.tipo||'text'}" step="any" value="${esc(r[c.k])}" data-id="${r.ID}" data-k="${c.k}"></td>`;
@@ -6037,6 +6318,7 @@ function pintarAdmin(){
     if(confirm('¿Eliminar el registro?')){ if(await apiEnviar({action:'delete', sheet:admHoja, id:b.dataset.adel})) toast('Registro eliminado'); }
   }));
   tb.querySelectorAll('[data-permrow]').forEach(b=>b.addEventListener('click',()=>abrirPermisos(b.dataset.permrow)));
+  tb.querySelectorAll('[data-cartrow]').forEach(b=>b.addEventListener('click',()=>abrirCartera(b.dataset.cartrow)));
 }
 $('btnAdmAdd').addEventListener('click', async ()=>{
   const def=ADMIN[admHoja]; if(def.soloLectura) return;
