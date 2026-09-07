@@ -277,22 +277,27 @@ en cada una de las diez etapas —cada contador funciona como filtro—; abajo, 
 lista de viajes con su estatus, sus citas y su cumplimiento. El filtro arranca
 en *En proceso*, que esconde lo que ya se liquidó.
 
-**Estatus del viaje** (`ESTATUS_MONITOREO`), con su color: En ruta, En espera
-de carga, En espera de descarga, Descargando, Vacío, En taller, En resguardo,
-Falla mecánica, Detenido, Siniestro y Servicio finalizado.
+**Estatus del viaje** (`ESTATUS_MONITOREO`), con su color. Los que **pone sola
+la bitácora** conforme se sellan los horarios: En tránsito vacío a carga, Con
+cliente en espera de carga, En tránsito cargado, Con cliente, Con cliente en
+espera de descarga, Vacío a patio y Servicio finalizado. Y los que el
+monitorista pone a mano cuando algo se sale del carril: En ruta, En espera de
+carga, En espera de descarga, Descargando, Vacío, En taller, En resguardo,
+Falla mecánica, Detenido y Siniestro.
 
 **Bitácora de horarios.** Al abrir un viaje se registran sus siete horarios,
 cada uno sellado con la fecha y hora del momento en que se pulsa el botón:
 
 | # | Horario | Deja el estatus en |
 |---|---|---|
-| 1 | Salida de patio | En ruta |
-| 2 | Arribo a carga | En espera de carga |
-| 3 | Ingreso a cargar | — |
-| 4 | Inicio de ruta | En ruta |
-| 5 | Arribo a destino | En espera de descarga |
-| 6 | Ingreso a descarga | Descargando |
-| 7 | Servicio finalizado | Servicio finalizado |
+| 1 | Salida de patio | En tránsito vacío a carga |
+| 2 | Arribo a carga | Con cliente en espera de carga |
+| 3 | Ingreso a cargar | Con cliente en espera de carga |
+| 4 | Inicio de ruta | En tránsito cargado |
+| 5 | Arribo a destino | Con cliente |
+| 6 | Ingreso a descarga | Con cliente en espera de descarga |
+| 7 | Servicio finalizado | Servicio finalizado · o **Vacío a patio** (ver abajo) |
+| 8 | Arribo a patio ADL | Servicio finalizado — solo si regresa a patio |
 
 Se registran **en orden** —cada botón espera al anterior— y **el servicio no
 se puede finalizar si falta alguno de los seis previos**; la pantalla dice
@@ -315,6 +320,23 @@ Y si el servicio va con un **proveedor** —cualquier línea que no sea ADL—,
 debajo aparecen los accesos a su plataforma tal como estén capturados en
 *Administración → Proveedores*: usuario, contraseña y enlace. En un servicio de
 **ADL no se muestra nada de esto**.
+
+**¿Regresa a patio ADL?** Al sellar *Servicio finalizado* en un viaje de
+**ADL** (no de un proveedor), la app pregunta si la unidad regresa al patio. Si
+la respuesta es **sí**, el viaje queda en **Vacío a patio** y se habilita un
+octavo horario, *Arribo a patio ADL*; si es **no**, queda en **Servicio
+finalizado** y ahí termina.
+
+**Los viajes cerrados salen del seguimiento.** La lista de Monitoreo arranca en
+*En proceso* y de ahí desaparece todo lo ya finalizado —y, cuando regresaba a
+patio, lo que además ya llegó—. Para verlos está el filtro *Todas* o la pestaña
+TDC, donde queda el registro completo.
+
+**Compartir con el cliente.** El botón *📤 Compartir con el cliente* arma el
+reporte del servicio —carta porte, contenedores, booking, ruta, unidad,
+operador, estatus, última ubicación, citas y todos los horarios registrados— y
+lo **copia al portapapeles** listo para pegarlo en WhatsApp. Si el navegador no
+deja copiar solo, el texto se muestra en pantalla para copiarlo a mano.
 
 **Citas y cumplimiento.** La cita de carga (`CITA_CARGA`) y la de descarga
 (`CITA_ENTREGA`) se muestran solas, tal como se capturaron en Nuevo Servicio.
@@ -731,6 +753,26 @@ Si los km de un viaje superan al renglón más alto de la tabla, se cotiza con
 ese renglón y la fila se marca **«tope de la tabla»**. Si la tabla está vacía,
 la tarjeta lo avisa en rojo en vez de pagar cero en silencio.
 
+### Complemento de pago (esquema de pago fijo)
+
+En el esquema de **pago fijo** el operador cobra **sueldo + pago por servicio
+(según los km de cada viaje en la tabla `PAGO_X_KM`) + apoyo para viaje**
+(1 500 por defecto). Si esa suma no llega al **piso** de su tipo de unidad, la
+diferencia se paga como **complemento de pago**:
+
+| Tipo de unidad | Piso |
+|---|---|
+| Full | $7,500 |
+| Sencillo | $5,200 |
+| Rabón | $3,900 |
+| 3.5 T | $2,900 |
+
+Los cuatro montos se configuran en **Administración → Piso de pago por tipo de
+unidad**. La tarjeta *Pago por KM* muestra el desglose completo —pago por
+servicio, sueldo, apoyo, suma del periodo, piso y complemento— y dice si el
+complemento aplicó o no. Se guardan en `NOMINAS.PISO_PAGO` y
+`NOMINAS.COMPLEMENTO_PAGO`.
+
 ### Objetivos de cumplimiento
 
 Los tres —**Llegada en tiempo**, **Evidencia en tiempo** y **Sin incidencias en
@@ -866,11 +908,17 @@ porte repetida antes de poder guardar.
 
 ## Gastos adicionales al operador
 
-Además del gasto propio del viaje (combustible, casetas, pensión, comida),
-la Solicitud de Gasto tiene una sección para capturar **adelantos** que no son
-parte de ese gasto: **adelanto de nómina, pensión (hospedaje) u hotel**, con
-selección múltiple de conceptos y su monto. Se suman al total de la solicitud
-en un renglón aparte ("Gastos adicionales al operador").
+El gasto propio del viaje son **combustible, casetas y urea**; *pensión* y
+*comida* salieron de esa parte del formulario. Todo lo demás que se le entrega
+al operador va en **Gastos adicionales al operador**, con su concepto y su
+monto:
+
+**Adelanto de nómina · Pensión · Hotel · Talacha · Mecánico · Gasto operativo ·
+Complemento de combustible · Otro.**
+
+Con **Otro** se abre una caja para escribir el motivo, y sin ese motivo la
+solicitud no se guarda. Los gastos adicionales se suman al total de la
+solicitud en un renglón aparte.
 
 **Comprobación al liquidar:** si la solicitud tenía adelantos, Liquidación
 muestra una caja con cada concepto y lo asignado, y un campo para capturar
@@ -1014,6 +1062,28 @@ por su origen (`UBICACION_FUENTE`: `GPS` o `MANUAL`).
 > Si la plataforma no lo permite, la app lo dice con todas sus letras en vez de
 > quedarse callada; en ese caso hay que pedirle al proveedor que habilite el
 > dominio, o publicar un pequeño proxy.
+
+## Aviso al operador por WhatsApp
+
+Al asignarle un servicio a un operador, la app arma el aviso —cliente, origen,
+destino, carta porte, cita de carga y unidad— y abre WhatsApp con el mensaje ya
+escrito, al teléfono que traiga el operador en **Administración → Operadores**
+(columna *Teléfono*). Un número de 10 dígitos se completa solo con la lada de
+México. El mensaje además se copia al portapapeles.
+
+Si el operador no tiene teléfono capturado, el aviso se copia igual y la app lo
+dice, para pegarlo a mano.
+
+> WhatsApp no permite mandar mensajes sin su API de negocio, así que el envío
+> es a un clic: la app deja todo listo y la persona pulsa enviar.
+
+## La unidad ocupada no se asigna
+
+En **Asignación de unidad**, si el económico elegido está en
+**Mantenimiento**, **En servicio**, **Programado**, **Despachado** o **Falla
+mecánica**, sale un aviso y **la asignación no se hace**. El aviso dice en qué
+estado está y, si trae otro viaje en curso, cuál es. Para poder asignarla hay
+que liberarla en el tablero operativo.
 
 ## Tiempos del proceso (Indicadores)
 

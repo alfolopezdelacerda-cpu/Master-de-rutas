@@ -596,8 +596,6 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       <div><label>Litros de combustible</label><input id="sLitros" class="num" readonly></div>
       <div id="ureaLBox" style="display:none"><label>Litros de urea</label><input id="sLitrosUrea" class="num" type="number" step="0.1" min="0"></div>
       <div id="ureaDBox" style="display:none"><label>Depósito de urea ($)</label><input id="sDepUrea" type="number" step="0.01" min="0" value="0"></div>
-      <div><label>Pensión ($)</label><input id="sPension" type="number" step="0.01" min="0" value="0"></div>
-      <div><label>Comida ($)</label><input id="sComida" type="number" step="0.01" min="0" value="0"></div>
       <div><label>Casetas ($) (según tipo de unidad)</label><input id="sCasetas" class="num" readonly value="0"></div>
       <div><label>Quien realizó el servicio</label><select id="sEjecutivo"></select></div>
     </div>
@@ -613,7 +611,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <div class="grid g2">
       <div>
         <div class="totrow"><span>Dispersión de combustible</span><b class="num" id="tDispComb">$0.00</b></div>
-        <div class="totrow"><span>Dispersión en efectivo (casetas + pensión + comida + urea)</span><b class="num" id="tDispEfec">$0.00</b></div>
+        <div class="totrow"><span>Dispersión en efectivo (casetas + urea)</span><b class="num" id="tDispEfec">$0.00</b></div>
         <div class="totrow" id="tGastosAdicBox"><span>Gastos adicionales al operador</span><b class="num" id="tGastosAdic">$0.00</b></div>
         <div class="totrow big"><span>Gasto total del viaje</span><span class="num" id="tTotal">$0.00</span></div>
       </div>
@@ -830,7 +828,9 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <div style="display:flex;gap:10px;flex-wrap:wrap">
       <button class="btn btn-p btn-sm" id="btnMonGuardar">💾 Guardar estatus y nota</button>
       <button class="btn btn-s btn-sm" id="btnMonIncidencia" style="background:var(--bad);color:#fff">⚠ Reportar incidencia</button>
+      <button class="btn btn-s btn-sm" id="btnMonCompartir">📤 Compartir con el cliente</button>
     </div>
+    <div class="mini" id="monCompartirAviso" style="margin-top:8px"></div>
 
     <h3 style="margin-top:18px">Ubicación de la unidad</h3>
     <div class="sub" style="margin-bottom:10px">Escríbela y pulsa <b>Enter</b>: queda con fecha y hora, se guarda el histórico y la última se ve en el tablero operativo.</div>
@@ -1153,9 +1153,13 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
           <thead><tr><th>Folio</th><th>Ruta</th><th>Unidad</th><th class="right">KM proy.</th><th class="right">KM tabla</th><th class="right">Pago</th></tr></thead>
           <tbody id="tbodyPagoKm"></tbody>
         </table></div>
-        <div class="totrow" style="margin-top:8px"><span>Total de servicios</span><b class="num" id="pPagoKmTotal">$0.00</b></div>
+        <div class="totrow" style="margin-top:8px"><span>Pago por servicio (por km)</span><b class="num" id="pPagoKmTotal">$0.00</b></div>
         <div class="totrow"><span>Sueldo fijo del periodo</span><b class="num" id="pPagoKmSueldo">$0.00</b></div>
-        <div class="totrow"><span id="pPagoKmDifTit">Diferencia a pagar</span><b class="num pos" id="pPagoKmDif">$0.00</b></div>
+        <div class="totrow"><span>Apoyo para viaje</span><b class="num" id="pPagoKmApoyo">$0.00</b></div>
+        <div class="totrow"><span>Suma del periodo</span><b class="num" id="pPagoKmSubtotal">$0.00</b></div>
+        <div class="totrow"><span id="pPagoKmPisoTit">Piso de pago</span><b class="num" id="pPagoKmPiso">$0.00</b></div>
+        <div class="totrow"><span>Complemento de pago</span><b class="num pos" id="pPagoKmComplemento">$0.00</b></div>
+        <div class="totrow" style="display:none"><span id="pPagoKmDifTit">Diferencia a pagar</span><b class="num pos" id="pPagoKmDif">$0.00</b></div>
         <div class="mini" id="pPagoKmNota" style="margin-top:6px"></div>
       </div>
 
@@ -1270,6 +1274,15 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <div><label>$ litro ahorrado (diésel)</label><input id="cfgBLD" type="number" step="0.5"></div>
         <div><label>$ litro ahorrado (gasolina)</label><input id="cfgBLG" type="number" step="0.5"></div>
       </div>
+      <h3 style="margin-top:18px">Piso de pago por tipo de unidad (esquema de pago fijo)</h3>
+      <div class="sub" style="margin-bottom:12px">Si el pago del periodo —sueldo + pago por servicio + apoyo— no llega a este monto, la diferencia se paga como <b>complemento de pago</b>.</div>
+      <div class="grid g4">
+        <div><label>Full</label><input id="cfgPisoFull" type="number" step="100"></div>
+        <div><label>Sencillo</label><input id="cfgPisoSen" type="number" step="100"></div>
+        <div><label>Rabón</label><input id="cfgPisoRab" type="number" step="100"></div>
+        <div><label>3.5 T</label><input id="cfgPiso35" type="number" step="100"></div>
+      </div>
+
       <h3 style="margin-top:18px">Objetivo semanal de KM por tipo de unidad</h3>
       <div class="sub" style="margin-bottom:12px">Full y Sencillo tienen objetivo distinto para servicio foráneo y local.</div>
       <div class="grid g4">
@@ -1529,8 +1542,6 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
           <tr><td class="prLbl">LITROS COMBUSTIBLE</td><td id="pvLitros"></td></tr>
           <tr><td class="prLbl">LITROS UREA</td><td id="pvLUrea"></td></tr>
           <tr><td class="prLbl">DEPÓSITO DE UREA</td><td id="pvDUrea"></td></tr>
-          <tr><td class="prLbl">PENSIÓN</td><td id="pvPension"></td></tr>
-          <tr><td class="prLbl">COMIDA</td><td id="pvComida"></td></tr>
           <tr><td class="prLbl">CASETAS</td><td id="pvCasetas"></td></tr>
         </table>
       </td>
@@ -2683,9 +2694,17 @@ function etiquetaEtapa(s){
    Estatus del viaje y bitácora de horarios. Los siete hitos se sellan con la
    fecha y hora del momento en que se pulsan; el cumplimiento sale de comparar
    el arribo contra la cita, y el estatus arrastra al tablero operativo. */
-const ESTATUS_MONITOREO = ['EN RUTA','EN ESPERA DE CARGA','EN ESPERA DE DESCARGA','DESCARGANDO',
-  'VACÍO','EN TALLER','EN RESGUARDO','FALLA MECÁNICA','DETENIDO','SINIESTRO','SERVICIO FINALIZADO'];
+const ESTATUS_MONITOREO = [
+  /* Los que pone sola la bitácora, en el orden del viaje */
+  'EN TRÁNSITO VACÍO A CARGA','CON CLIENTE EN ESPERA DE CARGA','EN TRÁNSITO CARGADO',
+  'CON CLIENTE','CON CLIENTE EN ESPERA DE DESCARGA','VACÍO A PATIO','SERVICIO FINALIZADO',
+  /* Los que el monitorista pone a mano cuando algo se sale del carril */
+  'EN RUTA','EN ESPERA DE CARGA','EN ESPERA DE DESCARGA','DESCARGANDO',
+  'VACÍO','EN TALLER','EN RESGUARDO','FALLA MECÁNICA','DETENIDO','SINIESTRO'];
 const COLOR_MONITOREO = {
+  'EN TRÁNSITO VACÍO A CARGA':'var(--road)', 'CON CLIENTE EN ESPERA DE CARGA':'var(--accent)',
+  'EN TRÁNSITO CARGADO':'var(--ok)', 'CON CLIENTE':'var(--accent)',
+  'CON CLIENTE EN ESPERA DE DESCARGA':'var(--accent)', 'VACÍO A PATIO':'var(--road)',
   'EN RUTA':'var(--ok)', 'EN ESPERA DE CARGA':'var(--accent)', 'EN ESPERA DE DESCARGA':'var(--accent)',
   'DESCARGANDO':'var(--accent)', 'VACÍO':'var(--road)', 'EN TALLER':'var(--bad)',
   'EN RESGUARDO':'var(--road)', 'FALLA MECÁNICA':'var(--bad)', 'DETENIDO':'var(--bad)',
@@ -2694,6 +2713,9 @@ const COLOR_MONITOREO = {
 /* Mientras el viaje está activo, el estatus del monitoreo arrastra al del
    tablero operativo. Al finalizar, la unidad vuelve a quedar disponible. */
 const MONITOREO_A_TABLERO = {
+  'EN TRÁNSITO VACÍO A CARGA':'EN SERVICIO', 'CON CLIENTE EN ESPERA DE CARGA':'EN SERVICIO',
+  'EN TRÁNSITO CARGADO':'EN SERVICIO', 'CON CLIENTE':'EN SERVICIO',
+  'CON CLIENTE EN ESPERA DE DESCARGA':'EN SERVICIO', 'VACÍO A PATIO':'VACÍO',
   'EN RUTA':'EN SERVICIO', 'EN ESPERA DE CARGA':'EN SERVICIO', 'EN ESPERA DE DESCARGA':'EN SERVICIO',
   'DESCARGANDO':'EN SERVICIO', 'DETENIDO':'EN SERVICIO',
   'VACÍO':'VACÍO', 'EN TALLER':'MANTENIMIENTO', 'EN RESGUARDO':'DESCANSO',
@@ -2701,15 +2723,33 @@ const MONITOREO_A_TABLERO = {
   'SERVICIO FINALIZADO':'DISPONIBLE'
 };
 /* Los siete horarios del viaje, en el orden en que ocurren */
+/* Cada horario deja el viaje en un estatus, sin que nadie lo capture */
 const HITOS = [
-  { campo:'HITO_SALIDA_PATIO',        texto:'Salida de patio' },
-  { campo:'HITO_ARRIBO_CARGA',        texto:'Arribo a carga' },
-  { campo:'HITO_INGRESO_CARGAR',      texto:'Ingreso a cargar' },
-  { campo:'HITO_INICIO_RUTA',         texto:'Inicio de ruta' },
-  { campo:'HITO_ARRIBO_DESTINO',      texto:'Arribo a destino' },
-  { campo:'HITO_INGRESO_DESCARGA',    texto:'Ingreso a descarga' },
-  { campo:'HITO_SERVICIO_FINALIZADO', texto:'Servicio finalizado' }
+  { campo:'HITO_SALIDA_PATIO',        texto:'Salida de patio',      estatus:'EN TRÁNSITO VACÍO A CARGA' },
+  { campo:'HITO_ARRIBO_CARGA',        texto:'Arribo a carga',       estatus:'CON CLIENTE EN ESPERA DE CARGA' },
+  { campo:'HITO_INGRESO_CARGAR',      texto:'Ingreso a cargar',     estatus:'CON CLIENTE EN ESPERA DE CARGA' },
+  { campo:'HITO_INICIO_RUTA',         texto:'Inicio de ruta',       estatus:'EN TRÁNSITO CARGADO' },
+  { campo:'HITO_ARRIBO_DESTINO',      texto:'Arribo a destino',     estatus:'CON CLIENTE' },
+  { campo:'HITO_INGRESO_DESCARGA',    texto:'Ingreso a descarga',   estatus:'CON CLIENTE EN ESPERA DE DESCARGA' },
+  { campo:'HITO_SERVICIO_FINALIZADO', texto:'Servicio finalizado',  estatus:'SERVICIO FINALIZADO' }
 ];
+/* Octavo horario, solo cuando el viaje es de ADL y la unidad regresa a patio */
+const HITO_PATIO = { campo:'HITO_ARRIBO_PATIO_ADL', texto:'Arribo a patio ADL', estatus:'SERVICIO FINALIZADO' };
+function esDeADL(s){
+  const l = String((s&&s.LINEA_TRANSPORTISTA)||'ADL').trim().toUpperCase();
+  return !l || l==='ADL';
+}
+function regresaAPatio(s){ return String((s&&s.REGRESA_PATIO)||'').toUpperCase()==='SI'; }
+/* Los horarios que pide ESTE viaje */
+function hitosDe(s){
+  return regresaAPatio(s)? HITOS.concat([HITO_PATIO]) : HITOS;
+}
+/* Un viaje deja el seguimiento cuando ya se finalizó (y, si regresaba a
+   patio, cuando además llegó al patio). */
+function viajeCerrado(s){
+  if(!s || !s.HITO_SERVICIO_FINALIZADO) return false;
+  return regresaAPatio(s)? !!s.HITO_ARRIBO_PATIO_ADL : true;
+}
 function estatusMonitoreoDe(s){
   const v = String((s&&s.ESTATUS_MONITOREO)||'').trim().toUpperCase();
   return ESTATUS_MONITOREO.includes(v)? v : '';
@@ -2837,12 +2877,13 @@ $('btnMonCerrar').addEventListener('click',()=>{ $('monDetalle').style.display='
 
 function pintarHitos(s){
   const w=$('monHitos'); w.innerHTML='';
-  HITOS.forEach((h,i)=>{
+  const lista = hitosDe(s);
+  lista.forEach((h,i)=>{
     const val = s[h.campo]||'';
     // Se registran en orden: el anterior debe estar sellado
-    const previoListo = i===0 || !!s[HITOS[i-1].campo];
-    // El último exige que estén todos los demás (punto 5)
-    const esFinal = i===HITOS.length-1;
+    const previoListo = i===0 || !!s[lista[i-1].campo];
+    // Finalizar exige que estén todos los anteriores (punto 5)
+    const esFinal = h.campo==='HITO_SERVICIO_FINALIZADO';
     const faltan = HITOS.slice(0,-1).filter(x=>!s[x.campo]);
     const puede = !val && previoListo && (!esFinal || !faltan.length);
     const d=document.createElement('div');
@@ -2857,7 +2898,9 @@ function pintarHitos(s){
   });
   const faltan = HITOS.slice(0,-1).filter(x=>!s[x.campo]);
   $('monAvisoFin').innerHTML = s.HITO_SERVICIO_FINALIZADO
-    ? '<span style="color:var(--ok)">Servicio finalizado: la bitácora está completa.</span>'
+    ? (regresaAPatio(s) && !s.HITO_ARRIBO_PATIO_ADL
+        ? '<span style="color:var(--accent)">Servicio finalizado. Falta registrar el <b>arribo a patio ADL</b>: hasta entonces el viaje sigue en el seguimiento.</span>'
+        : '<span style="color:var(--ok)">Servicio finalizado: la bitácora está completa.</span>')
     : faltan.length
       ? `<span style="color:var(--bad)">No se puede finalizar el servicio: faltan ${faltan.length} horario(s) — ${faltan.map(x=>x.texto).join(', ')}.</span>`
       : 'Todos los horarios previos están registrados: ya se puede finalizar el servicio.';
@@ -2900,31 +2943,65 @@ async function registrarHito(campo){
       return;
     }
   }
+  const hito = hitosDe(s).find(h=>h.campo===campo) || {texto:'Horario'};
   const reg = Object.assign({}, s);
   reg[campo] = ahoraTexto();
   // El cumplimiento se recalcula en cuanto se sella el arribo que le toca
   reg.CUMPLIMIENTO_CARGA    = cumplimiento(reg.HITO_ARRIBO_CARGA,   reg.CITA_CARGA);
   reg.CUMPLIMIENTO_DESCARGA = cumplimiento(reg.HITO_ARRIBO_DESTINO, reg.CITA_ENTREGA);
+  // Cada horario deja el viaje en su estatus, sin capturar nada
+  if(hito.estatus) reg.ESTATUS_MONITOREO = hito.estatus;
 
-  // Los hitos que mueven la etapa del proceso y el estatus del viaje
-  if(campo==='HITO_SALIDA_PATIO'){
-    if(indiceEtapa(etapaDe(s)) < indiceEtapa('EN RUTA')){ reg.ETAPA='EN RUTA'; reg.FECHA_SALIDA=reg[campo]; }
-    if(!reg.ESTATUS_MONITOREO) reg.ESTATUS_MONITOREO='EN RUTA';
+  // Los hitos que además mueven la etapa del proceso
+  if(campo==='HITO_SALIDA_PATIO' && indiceEtapa(etapaDe(s)) < indiceEtapa('EN RUTA')){
+    reg.ETAPA='EN RUTA'; reg.FECHA_SALIDA=reg[campo];
   }
-  if(campo==='HITO_ARRIBO_CARGA')     reg.ESTATUS_MONITOREO='EN ESPERA DE CARGA';
-  if(campo==='HITO_INICIO_RUTA')      reg.ESTATUS_MONITOREO='EN RUTA';
-  if(campo==='HITO_ARRIBO_DESTINO')   reg.ESTATUS_MONITOREO='EN ESPERA DE DESCARGA';
-  if(campo==='HITO_INGRESO_DESCARGA') reg.ESTATUS_MONITOREO='DESCARGANDO';
-  if(campo==='HITO_SERVICIO_FINALIZADO'){
-    reg.ESTATUS_MONITOREO='SERVICIO FINALIZADO';
-    if(indiceEtapa(etapaDe(s)) < indiceEtapa('FINALIZADO')){ reg.ETAPA='FINALIZADO'; reg.FECHA_FINALIZADO=reg[campo]; }
+  if(campo==='HITO_SERVICIO_FINALIZADO' && indiceEtapa(etapaDe(s)) < indiceEtapa('FINALIZADO')){
+    reg.ETAPA='FINALIZADO'; reg.FECHA_FINALIZADO=reg[campo];
   }
 
-  if(await apiEnviar({action:'upsert', sheet:'SERVICIOS', record:reg})){
-    await fijarEstatusUnidad(reg.ECONOMICO, MONITOREO_A_TABLERO[reg.ESTATUS_MONITOREO]);
-    toast(HITOS.find(h=>h.campo===campo).texto+' registrado');
-    abrirMonitoreo(monEditando); pintarMonitoreo();
+  /* Al finalizar un viaje de ADL se pregunta si la unidad regresa a patio: si
+     sí, el viaje queda VACÍO A PATIO y se habilita un horario más. */
+  if(campo==='HITO_SERVICIO_FINALIZADO' && esDeADL(s)){
+    const regresa = await preguntar('¿Regresa a patio ADL?',
+      `El servicio <b>${esc(s.CP)}</b> quedó finalizado. ¿La unidad <b>${esc(s.ECONOMICO)||'—'}</b> regresa al patio de ADL?`);
+    reg.REGRESA_PATIO = regresa? 'SI' : 'NO';
+    if(regresa) reg.ESTATUS_MONITOREO = 'VACÍO A PATIO';
   }
+
+  await guardarHito(reg, hito.texto);
+}
+
+/* Guarda el renglón y responde de inmediato: la pantalla se repinta con lo que
+   ya se aplicó en local y el estatus de la unidad se manda sin hacer esperar. */
+async function guardarHito(reg, texto){
+  const ok = await apiEnviar({action:'upsert', sheet:'SERVICIOS', record:reg});
+  if(!ok) return;
+  toast((texto||'Horario')+' registrado');
+  abrirMonitoreo(reg.ID); pintarMonitoreo();
+  const destino = MONITOREO_A_TABLERO[reg.ESTATUS_MONITOREO];
+  if(destino) fijarEstatusUnidad(reg.ECONOMICO, destino);   // en segundo plano
+}
+
+/* Pregunta de sí o no, sobre el mismo cuadro de aviso */
+function preguntar(titulo, html, ico){
+  return new Promise(resolve=>{
+    $('modTit').textContent = titulo;
+    $('modTxt').innerHTML = html;
+    $('modIco').textContent = ico || '❓';
+    const ok = $('modOk'), extra = document.createElement('button');
+    ok.textContent = 'Sí';
+    extra.className = 'btn btn-s'; extra.style.minWidth='140px'; extra.textContent = 'No';
+    ok.parentNode.insertBefore(extra, ok);
+    const cerrar = valor => {
+      $('modalWrap').classList.remove('show');
+      extra.remove(); ok.textContent = 'Entendido';
+      resolve(valor);
+    };
+    ok.addEventListener('click', ()=>cerrar(true), {once:true});
+    extra.addEventListener('click', ()=>cerrar(false), {once:true});
+    $('modalWrap').classList.add('show');
+  });
 }
 
 $('btnMonGuardar').addEventListener('click', async ()=>{
@@ -2999,7 +3076,12 @@ function pintarMonitoreo(){
   const filtro = selF.value;
   const filas = tdc.filter(s=>{
     const e = etapaDe(s);
-    if(filtro==='activos'){ if(indiceEtapa(e) >= indiceEtapa('LIQUIDADO')) return false; }
+    // Un servicio finalizado (y de vuelta en patio, si aplicaba) sale del
+    // seguimiento: para verlo está el filtro "Todas" o la pestaña TDC.
+    if(filtro==='activos'){
+      if(viajeCerrado(s)) return false;
+      if(indiceEtapa(e) >= indiceEtapa('LIQUIDADO')) return false;
+    }
     else if(filtro!=='todos' && e!==filtro) return false;
     if(!q) return true;
     return [s.CP,s.CLIENTE,s.OPERADOR,s.ECONOMICO,s.CIUDAD_DESTINO,s.ESTADO_ORIGEN]
@@ -3097,8 +3179,54 @@ async function registrarUbicacionMon(){
   abrirMonitoreo(monEditando);
 }
 
+/* ---------- Reporte para el cliente ----------
+   El texto que el monitorista le manda por WhatsApp: qué servicio es, quién lo
+   trae, dónde va y a qué hora pasó cada cosa. Se copia al portapapeles. */
+function reporteCliente(s){
+  const u = DB.UNIDADES.find(x=>String(x.ECONOMICO||'').trim().toUpperCase()===String(s.ECONOMICO||'').trim().toUpperCase());
+  const ubis = ubicacionesDe(s.ID);
+  const ultima = ubis.length? ubis[ubis.length-1] : null;
+  const donde = (u && u.UBICACION_ACTUAL) || (ultima && ultima.UBICACION) || '';
+  const cuando = (u && u.UBICACION_ACTUALIZADA) || (ultima && ultima.FECHA_HORA) || '';
+  const horarios = hitosDe(s).filter(h=>s[h.campo]).map(h=>'· '+h.texto+': '+s[h.campo]);
+
+  return [
+    '*ADL · Estatus de su servicio*',
+    '',
+    'Cliente: '+(s.CLIENTE||'—'),
+    'Carta porte: '+(s.CP||'—'),
+    s.CONTENEDORES? 'Contenedores: '+s.CONTENEDORES : '',
+    s.BOOKING? 'Booking: '+s.BOOKING : '',
+    'Ruta: '+(s.ESTADO_ORIGEN||'—')+' → '+(s.CIUDAD_DESTINO||'—'),
+    '',
+    'Unidad: '+(s.ECONOMICO||'—')+(s.PLACAS? ' · Placas '+s.PLACAS : ''),
+    'Operador: '+(s.OPERADOR||'—'),
+    'Estatus: '+(estatusMonitoreoDe(s)||'sin estatus'),
+    donde? 'Ubicación: '+donde+(cuando? ' ('+cuando+')' : '') : '',
+    '',
+    s.CITA_CARGA?   'Cita de carga: '+fmtFechaHora(s.CITA_CARGA) : '',
+    s.CITA_ENTREGA? 'Cita de descarga: '+fmtFechaHora(s.CITA_ENTREGA) : '',
+    horarios.length? '' : null,
+    horarios.length? '*Horarios registrados*' : null,
+    ...horarios,
+    '',
+    'Reporte generado el '+ahoraTexto()
+  ].filter(x=>x!==null && x!==undefined).join('\n').replace(/\n{3,}/g,'\n\n');
+}
+$('btnMonCompartir').addEventListener('click', async ()=>{
+  const s = DB.SERVICIOS.find(x=>String(x.ID)===String(monEditando)); if(!s) return;
+  const txt = reporteCliente(s);
+  const ok = await copiarTexto(txt);
+  $('monCompartirAviso').innerHTML = ok
+    ? '<span style="color:var(--ok)">Reporte copiado: pégalo en WhatsApp.</span>'
+    : '<span style="color:var(--bad)">No se pudo copiar solo. Copia el texto de aquí abajo:</span>'+
+      `<pre style="white-space:pre-wrap;background:var(--surface2);padding:10px;border-radius:8px;margin-top:8px">${esc(txt)}</pre>`;
+  if(ok) toast('Reporte del servicio copiado');
+});
+
 /* Lo que se ve dentro de la bitácora: histórico de ubicaciones e incidencias */
 function pintarIncidenciasYUbicaciones(s){
+  $('monCompartirAviso').innerHTML = '';
   const ubis = ubicacionesDe(s.ID);
   $('monUbicacion').value = '';
   $('monUbicHist').innerHTML = ubis.length
@@ -3396,6 +3524,8 @@ const COLOR_ESTATUS = {
   'EN SERVICIO':'var(--accent)', 'VACÍO':'var(--road)', 'DESCANSO':'var(--road)',
   'MANTENIMIENTO':'var(--bad)', 'FALLA MECÁNICA':'var(--bad)', 'SIN GPS':'var(--bad)'
 };
+/* Con la unidad en cualquiera de estos estados no se le puede dar un viaje */
+const ESTATUS_NO_ASIGNABLES = ['MANTENIMIENTO','EN SERVICIO','PROGRAMADO','DESPACHADO','FALLA MECÁNICA'];
 function estatusDeUnidad(u){
   const v = String(u.ESTATUS_OPERATIVO||'').trim().toUpperCase();
   return ESTATUS_OPERATIVO.includes(v)? v : 'DISPONIBLE';
@@ -3692,6 +3822,18 @@ $('btnAsignarDesp').addEventListener('click', async ()=>{
   if(!u){ toast('Selecciona el económico.', true); $('despEco').focus(); return; }
   if(!o){ toast('Selecciona el operador.', true); $('despOperador').focus(); return; }
 
+  /* Una unidad ocupada o parada no se asigna: el tablero manda. Si trae otro
+     viaje en curso, se dice cuál. */
+  const estadoU = estatusDeUnidad(u);
+  if(ESTATUS_NO_ASIGNABLES.includes(estadoU)){
+    const otro = servicioEnCurso(u.ECONOMICO);
+    modal('La unidad no está disponible',
+      `La unidad <b>${esc(u.ECONOMICO)}</b> está en <b>${esc(estadoU)}</b>, así que no se le puede asignar este servicio.`+
+      (otro && String(otro.ID)!==String(s.ID)? `<br><br>Trae el servicio <b>${esc(otro.CP)}</b> (${esc(otro.CLIENTE)}).` : '')+
+      `<br><br>Libérala en el <b>tablero operativo</b> o elige otro económico.`, '🚫');
+    return;
+  }
+
   const nomRem = id => { const r = DB.REMOLQUES.find(x=>String(x.ID)===String(id)); return r? (r.ECONOMICO||'') : ''; };
   const reg = Object.assign({}, s, {
     ECONOMICO: u.ECONOMICO, PLACAS: u.PLACAS||'',
@@ -3708,8 +3850,59 @@ $('btnAsignarDesp').addEventListener('click', async ()=>{
     toast('Servicio '+(s.CP||'')+' asignado a '+o.NOMBRE);
     $('despDetalle').style.display='none'; despachoEditando=null;
     pintarDespacho();
+    avisarOperadorWhatsApp(reg, o);
   }
 });
+
+/* ---------- Aviso al operador por WhatsApp ----------
+   Al asignarle el servicio se le manda el mensaje con lo que necesita saber.
+   WhatsApp no deja mandar mensajes sin su API de negocio, así que la app abre
+   la conversación con el texto ya escrito (wa.me) y además lo deja copiado,
+   por si se prefiere pegarlo a mano. */
+function soloDigitos(t){ return String(t||'').replace(/\D/g,''); }
+function telefonoWhatsApp(op){
+  const d = soloDigitos(op && op.TELEFONO);
+  if(!d) return '';
+  return d.length===10? '52'+d : d;      // México, si viene sin lada de país
+}
+function mensajeAsignacion(s){
+  return [
+    '*ADL · Servicio asignado*',
+    '',
+    'Cliente: '+(s.CLIENTE||'—'),
+    'Origen: '+(s.ESTADO_ORIGEN||'—')+(s.PUNTO_CARGA? ' · '+s.PUNTO_CARGA : ''),
+    'Destino: '+(s.CIUDAD_DESTINO||'—')+(s.PUNTO_DESCARGA? ' · '+s.PUNTO_DESCARGA : ''),
+    'Carta porte: '+(s.CP||'—'),
+    s.CITA_CARGA? 'Cita de carga: '+fmtFechaHora(s.CITA_CARGA) : '',
+    s.ECONOMICO? 'Unidad: '+s.ECONOMICO : ''
+  ].filter(Boolean).join('\n');
+}
+async function copiarTexto(txt){
+  try{ await navigator.clipboard.writeText(txt); return true; }
+  catch(e){
+    // Sin permiso de portapapeles: se cae al método de siempre
+    try{
+      const ta = document.createElement('textarea');
+      ta.value = txt; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select();
+      const ok = document.execCommand('copy');
+      ta.remove(); return ok;
+    }catch(e2){ return false; }
+  }
+}
+function avisarOperadorWhatsApp(s, op){
+  const msg = mensajeAsignacion(s);
+  const tel = telefonoWhatsApp(op);
+  copiarTexto(msg);
+  if(!tel){
+    modal('El operador no tiene teléfono',
+      `Se copió el aviso al portapapeles, pero <b>${esc(op.NOMBRE)}</b> no tiene teléfono capturado.<br><br>`+
+      `Captúralo en <b>Administración → Operadores</b> para que el aviso de WhatsApp salga solo.`, '📱');
+    return;
+  }
+  window.open('https://wa.me/'+tel+'?text='+encodeURIComponent(msg), '_blank');
+  toast('Aviso de WhatsApp listo para '+op.NOMBRE);
+}
 
 /* =====================================================
    SOLICITUD DE GASTO
@@ -3719,17 +3912,22 @@ let cartasPorte = [''];
    viaje en sí (adelanto de nómina, pensión, hotel…). Se comprueban al
    liquidar; la diferencia entre lo asignado y lo comprobado se descuenta (o
    se abona, si comprobó de más) en la Pre-Nómina del operador. */
-const CONCEPTOS_GASTO_ADIC = ['ADELANTO DE NÓMINA','PENSIÓN','HOTEL','OTRO'];
+const CONCEPTOS_GASTO_ADIC = ['ADELANTO DE NÓMINA','PENSIÓN','HOTEL','TALACHA','MECÁNICO',
+  'GASTO OPERATIVO','COMPLEMENTO DE COMBUSTIBLE','OTRO'];
 let gastosAdicionales = [];
 function pintarGastosAdicionales(){
   const w = $('gastosAdicWrap'); w.innerHTML='';
   gastosAdicionales.forEach((g,i)=>{
     const d=document.createElement('div');
     d.style.cssText='display:flex;gap:8px;align-items:end;margin-bottom:10px';
+    // Con "OTRO" hay que decir de qué se trata
+    const esOtro = String(g.CONCEPTO||'').toUpperCase()==='OTRO';
     d.innerHTML=`
       <div style="flex:2"><label>Concepto ${i+1}</label>
         <select data-gi="${i}" data-gk="CONCEPTO">${CONCEPTOS_GASTO_ADIC.map(c=>`<option${g.CONCEPTO===c?' selected':''}>${c}</option>`).join('')}</select>
       </div>
+      ${esOtro? `<div style="flex:2"><label>¿Cuál es el motivo?</label>
+        <input value="${esc(g.MOTIVO||'')}" data-gi="${i}" data-gk="MOTIVO" placeholder="Describe el gasto"></div>` : ''}
       <div style="flex:1"><label>Monto ($)</label><input type="number" min="0" step="0.01" value="${g.MONTO}" data-gi="${i}" data-gk="MONTO"></div>
       <button class="xbtn" data-gdel="${i}" title="Quitar gasto adicional">✕</button>`;
     w.appendChild(d);
@@ -3740,7 +3938,10 @@ function pintarGastosAdicionales(){
     recalcularSolicitud();
   }));
   w.querySelectorAll('[data-gi][data-gk="CONCEPTO"]').forEach(el=>el.addEventListener('change',()=>{
-    gastosAdicionales[+el.dataset.gi].CONCEPTO = el.value;
+    const g = gastosAdicionales[+el.dataset.gi];
+    g.CONCEPTO = el.value;
+    if(String(el.value).toUpperCase()!=='OTRO') g.MOTIVO = '';
+    pintarGastosAdicionales();     // aparece o se va la caja del motivo
   }));
   w.querySelectorAll('[data-gdel]').forEach(el=>el.addEventListener('click',()=>{
     gastosAdicionales.splice(+el.dataset.gdel,1);
@@ -3752,6 +3953,18 @@ $('btnAddGastoAdic').addEventListener('click',()=>{
   pintarGastosAdicionales(); recalcularSolicitud();
 });
 function totalGastosAdicionales(){ return gastosAdicionales.reduce((s,g)=>s+nf(g.MONTO),0); }
+/* Cómo se lee un gasto adicional: el concepto, y si es OTRO, su motivo */
+function etiquetaGastoAdic(g){
+  const c = String((g&&g.CONCEPTO)||'').toUpperCase();
+  return c==='OTRO' && g.MOTIVO? 'OTRO · '+g.MOTIVO : (g&&g.CONCEPTO)||'';
+}
+/* Un gasto "OTRO" sin motivo no se guarda */
+function gastosAdicValidos(){
+  const malo = gastosAdicionales.find(g=>nf(g.MONTO)>0 &&
+    String(g.CONCEPTO||'').toUpperCase()==='OTRO' && !String(g.MOTIVO||'').trim());
+  if(malo){ toast('Escribe el motivo del gasto adicional "Otro".', true); return false; }
+  return true;
+}
 let solEditando = null;
 
 function folioAuto(){
@@ -4008,7 +4221,7 @@ function recalcularSolicitud(){
   }
   const dispComb = litros * precioComb(u? u.COMBUSTIBLE:'DIESEL');
   const depUrea = llevaUrea? nf($('sDepUrea').value) : 0;
-  const dispEfec = nf($('sCasetas').dataset.v)+nf($('sPension').value)+nf($('sComida').value)+depUrea;
+  const dispEfec = nf($('sCasetas').dataset.v)+depUrea;
   const gastosAdic = totalGastosAdicionales();
   $('tDispComb').textContent = money(dispComb);
   $('tDispEfec').textContent = money(dispEfec);
@@ -4016,7 +4229,6 @@ function recalcularSolicitud(){
   $('tGastosAdicBox').style.display = gastosAdic>0? '' : 'none';
   $('tTotal').textContent = money(dispComb+dispEfec+gastosAdic);
 }
-['sPension','sComida'].forEach(id=>$(id).addEventListener('input',recalcularSolicitud));
 $('sLitrosUrea').addEventListener('input',()=>{ $('sLitrosUrea').dataset.manual='1'; if(!$('sDepUrea').dataset.manual){ $('sDepUrea').value=(nf($('sLitrosUrea').value)*cfgNum('PRECIO_UREA',20)).toFixed(2);} recalcularSolicitud(); });
 $('sDepUrea').addEventListener('input',()=>{ $('sDepUrea').dataset.manual='1'; recalcularSolicitud(); });
 
@@ -4063,13 +4275,16 @@ function armarSolicitud(){
     LITROS_COMBUSTIBLE: nf($('sLitros').dataset.v),
     LITROS_UREA: llevaUrea? nf($('sLitrosUrea').value):0,
     DEPOSITO_UREA: llevaUrea? nf($('sDepUrea').value):0,
-    PENSION: nf($('sPension').value),
-    COMIDA: nf($('sComida').value),
+    // Pensión y comida salieron de la solicitud: si hacen falta, van como
+    // gasto adicional al operador. Se conservan en cero por el histórico.
+    PENSION: 0, COMIDA: 0,
     COSTO_CASETAS: r2(nf($('sCasetas').dataset.v)),
     TARIFA_CASETAS: etiquetaTarifa($('sTipoUnidad').value),
     EJECUTIVO: ej? ej.NOMBRE:'',
     COMBUSTIBLE_ASIGNADO: r2(dispComb),
-    GASTOS_ADICIONALES_JSON: JSON.stringify(gastosAdicionales.filter(g=>nf(g.MONTO)>0)),
+    GASTOS_ADICIONALES_JSON: JSON.stringify(gastosAdicionales.filter(g=>nf(g.MONTO)>0)
+      .map(g=>({ CONCEPTO: g.CONCEPTO, MOTIVO: g.MOTIVO||'', MONTO: g.MONTO,
+                 ETIQUETA: etiquetaGastoAdic(g) }))),
     TOTAL: dispComb+dispEfec+gastosAdic
   };
 }
@@ -4077,6 +4292,7 @@ $('btnGuardarSol').addEventListener('click', async ()=>{
   if(solEditando && dispersadoSol(solEditando)){
     toast('Esta solicitud ya fue dispersada; no se puede modificar.', true); return;
   }
+  if(!gastosAdicValidos()) return;
   // Cartas porte duplicadas: bloquean el guardado por completo, no se puede
   // continuar hasta que se corrija (ignorando la propia solicitud si se edita)
   const cpsIngresadas = cartasPorte.filter(Boolean);
@@ -4117,7 +4333,7 @@ function nuevaSolicitud(){
   $('sRutaBusca').value='';
   ['sPlacas','sTipoServicio','sTipoViaje','sKm','sCombustible','sRend','sLitros'].forEach(id=>$(id).value='');
   $('sKm').dataset.v=0; $('sLitros').dataset.v=0;
-  ['sPension','sComida','sDepUrea'].forEach(id=>{ $(id).value='0'; delete $(id).dataset.manual; });
+  ['sDepUrea'].forEach(id=>{ $(id).value='0'; delete $(id).dataset.manual; });
   $('sCasetas').value=money(0); $('sCasetas').dataset.v=0; $('sCasetasDesglose').innerHTML='';
   $('sLitrosUrea').value=''; delete $('sLitrosUrea').dataset.manual;
   $('sArrastre').value='CARGADO';
@@ -4133,7 +4349,7 @@ function nuevaSolicitud(){
    tocar operador, unidad, ruta ni montos. */
 const CAMPOS_SOL_EDITABLES = [
   'sFechaServ','sArrastre','sEco','sTipoUnidad','sOperador','sRem1','sRem2','sDolly',
-  'sRutaBusca','sPension','sComida','sLitrosUrea','sDepUrea','sEjecutivo'
+  'sRutaBusca','sLitrosUrea','sDepUrea','sEjecutivo'
 ];
 function aplicarCandadoSolicitud(bloqueado){
   CAMPOS_SOL_EDITABLES.forEach(id=>{ $(id).disabled = bloqueado; });
@@ -4178,8 +4394,6 @@ function cargarSolicitudEnFormulario(id){
   $('sRutaBusca').value = r? `${r.RUTA}${r.CLIENTE?' ('+r.CLIENTE+')':''}` : (s.RUTA||'');
   alCambiarRuta();
 
-  $('sPension').value = num(nf(s.PENSION),2);
-  $('sComida').value = num(nf(s.COMIDA),2);
   if(nf(s.LITROS_UREA)){ $('sLitrosUrea').value = num(nf(s.LITROS_UREA),1); $('sLitrosUrea').dataset.manual='1'; }
   if(nf(s.DEPOSITO_UREA)){ $('sDepUrea').value = num(nf(s.DEPOSITO_UREA),2); $('sDepUrea').dataset.manual='1'; }
 
@@ -4209,7 +4423,6 @@ $('btnPdfSol').addEventListener('click',()=>{
   $('pvKm').textContent=num(d.KM,1); $('pvComb').textContent=d.COMBUSTIBLE;
   $('pvRend').textContent=num(d.RENDIMIENTO,2); $('pvLitros').textContent=num(d.LITROS_COMBUSTIBLE,1);
   $('pvLUrea').textContent=num(d.LITROS_UREA,1); $('pvDUrea').textContent=money(d.DEPOSITO_UREA);
-  $('pvPension').textContent=money(d.PENSION); $('pvComida').textContent=money(d.COMIDA);
   $('pvCasetas').textContent=money(d.COSTO_CASETAS);
   const r = rutaSel();
   const lista = leerCasetasRuta(r);
@@ -4862,9 +5075,22 @@ function pagoPorKmDelPeriodo(serviciosLiq){
 }
 
 /* Tarjeta de Pago por KM: solo existe en el esquema de nómina fija */
-function pintarPagoPorKm(esModoFijo, items, totalServicios, sueldo, diferencia, rebasa){
+/* Piso de pago por tipo de unidad: si el pago del periodo se queda por
+   debajo, la diferencia se completa. Los montos se configuran en
+   Administración → Hoja de servicio. */
+const PISO_PAGO_DEF = { 'FULL':7500, 'SENCILLO':5200, 'RABÓN':3900, '3.5 TON':2900 };
+const PISO_PAGO_CFG = { 'FULL':'PISO_FULL', 'SENCILLO':'PISO_SENCILLO',
+                        'RABÓN':'PISO_RABON', '3.5 TON':'PISO_35' };
+function pisoDePago(tipo){
+  const t = String(tipo||'').toUpperCase();
+  const clave = PISO_PAGO_CFG[t];
+  return clave? cfgNum(clave, PISO_PAGO_DEF[t]) : 0;
+}
+
+function pintarPagoPorKm(esModoFijo, items, totalServicios, sueldo, diferencia, rebasa, extra){
   $('pCardPagoKm').style.display = esModoFijo? '' : 'none';
   if(!esModoFijo) return;
+  extra = extra || {};
 
   const tb = $('tbodyPagoKm'); tb.innerHTML='';
   items.forEach(i=>{
@@ -4881,13 +5107,21 @@ function pintarPagoPorKm(esModoFijo, items, totalServicios, sueldo, diferencia, 
 
   $('pPagoKmTotal').textContent = money(totalServicios);
   $('pPagoKmSueldo').textContent = money(sueldo);
+  $('pPagoKmApoyo').textContent = money(extra.apoyo||0);
+  $('pPagoKmSubtotal').textContent = money(extra.subtotal||0);
+  $('pPagoKmPisoTit').textContent = 'Piso de pago'+(extra.tipo? ' ('+extra.tipo+')' : '');
+  $('pPagoKmPiso').textContent = extra.piso? money(extra.piso) : '— sin piso para ese tipo —';
+  $('pPagoKmComplemento').textContent = money(extra.complemento||0);
   $('pPagoKmDifTit').textContent = rebasa? 'Diferencia a pagar (servicios − sueldo)' : 'Diferencia a pagar';
   $('pPagoKmDif').textContent = money(diferencia);
   $('pPagoKmNota').innerHTML = !DB.PAGO_X_KM.length
     ? '<span style="color:var(--bad)">La tabla <b>Pago x KM</b> está vacía: cárgala en Administración → Pago x KM.</span>'
-    : rebasa
-      ? 'Los servicios rebasan el sueldo fijo: se paga el sueldo + la diferencia + el bono por cumplimiento.'
-      : 'Los servicios no rebasan el sueldo fijo: se paga únicamente el sueldo, sin bono.';
+    : (extra.complemento>0
+        ? `El pago del periodo (${money(extra.subtotal||0)}) no llega al piso de <b>${esc(extra.tipo||'')}</b> `+
+          `(${money(extra.piso||0)}): se completa la diferencia.`
+        : extra.piso
+          ? `El pago del periodo ya rebasa el piso de <b>${esc(extra.tipo||'')}</b> (${money(extra.piso)}): no hay complemento.`
+          : 'Ese tipo de unidad no tiene piso de pago configurado.');
 }
 
 /* Los tres objetivos se marcan a mano. Las incidencias del periodo se
@@ -4966,8 +5200,14 @@ function calcularPrenomina(){
   const combAsignado = serviciosLiq.reduce((a,s)=>a+nf(s.COMBUSTIBLE_ASIGNADO||0),0);
   const rendInfomativo = combAsignado>0? kmOdo/combAsignado : 0;
 
+  /* El apoyo para viaje aplica en los dos esquemas: en el de pago fijo entra
+     completo por cada periodo con servicios, porque ahí no hay objetivo de km
+     contra el cual escalonarlo. */
   const apoyo = esModoFijo
-    ? { monto:0, pct:0, autorizado:false, nota:'' }
+    ? (serviciosLiq.length
+        ? { monto: nf($('pApoyoMonto').value), pct:100, autorizado:true,
+            nota:'Apoyo para viaje del esquema de pago fijo.' }
+        : { monto:0, pct:0, autorizado:false, nota:'Sin viajes liquidados en el periodo.' })
     : calcularApoyo(serviciosLiq.length, cumplePct);
 
   // Descuentos por adelantos al operador (adelanto de nómina, pensión,
@@ -4991,11 +5231,20 @@ function calcularPrenomina(){
   const rebasa = difServicios > 0;
   const bonoPagado = esModoFijo? (rebasa? bono : 0) : bono;
 
+  /* Pago fijo: sueldo + pago por servicio (según los km de cada viaje en la
+     tabla Pago x KM) + apoyo para viaje. Si con todo eso no se llega al piso
+     del tipo de unidad, la diferencia se paga como COMPLEMENTO DE PAGO. */
+  const subtotalFijo = bruto + totalServicios + apoyo.monto + bonoPagado - descuentoGastos;
+  const piso = esModoFijo? pisoDePago(tipo) : 0;
+  const complemento = esModoFijo? Math.max(0, piso - subtotalFijo) : 0;
+
   const total = esModoFijo
-    ? bruto + difServicios + bonoPagado - descuentoGastos
+    ? subtotalFijo + complemento
     : bruto + bono + pagoKm + pagoRend + apoyo.monto - descuentoGastos;
 
-  pintarPagoPorKm(esModoFijo, itemsPagoKm, totalServicios, bruto, difServicios, rebasa);
+  pintarPagoPorKm(esModoFijo, itemsPagoKm, totalServicios, bruto, difServicios, rebasa,
+                  { apoyo: apoyo.monto, bono: bonoPagado, subtotal: subtotalFijo,
+                    piso, complemento, tipo });
 
   $('pDescuentosBox').style.display = descItems.length? '' : 'none';
   const tbD=$('tbodyDescuentos'); tbD.innerHTML='';
@@ -5039,7 +5288,7 @@ function calcularPrenomina(){
   ultimoCalculoNom = op? {
     op, etiqueta, servicios:serviciosLiq, semanas, bruto, bono: bonoPagado, km,
     kmRuta, kmOdo, fuente, cumplePct, esModoFijo,
-    itemsPagoKm, totalServicios, difServicios,
+    itemsPagoKm, totalServicios, difServicios, piso, complemento,
     objKmSemanal: esModoFijo? 0 : nf($('pObjKm').value), objTot, kmX, pagoKm,
     rObj: esModoFijo? 0 : rObj, rReal: esModoFijo? 0 : rReal, ahorro, pagoRend,
     apoyo: apoyo.monto, apoyoPct: apoyo.pct, apoyoAutorizado: apoyo.autorizado,
@@ -5124,6 +5373,7 @@ $('btnRegNom').addEventListener('click', async ()=>{
     OPERADOR: c.op.NOMBRE, MODO: modo.toUpperCase(), PERIODO: c.etiqueta, SEMANAS: c.semanas,
     TIPO_PAGO: c.esModoFijo? 'FIJA' : 'VARIABLE',
     SUELDO_FIJO: c.esModoFijo? r2(c.bruto) : 0,
+    PISO_PAGO: r2(c.piso||0), COMPLEMENTO_PAGO: r2(c.complemento||0),
     PAGO_SERVICIOS: r2(c.totalServicios||0),
     DIFERENCIA_SERVICIOS: r2(c.difServicios||0),
     SUELDO_BRUTO: r2(c.bruto), IMPUESTO_PCT: 0, IMPUESTOS: 0, SUELDO_NETO: r2(c.bruto),
@@ -5967,11 +6217,12 @@ const ADMIN = {
       {k:'CLIENTES',t:'Cartera',tipo:'cartera'}] },
   /* Un sueldo semanal por esquema de pre-nómina */
   OPERADORES:{ cols:[{k:'NOMBRE'},
+      {k:'TELEFONO',t:'Teléfono (WhatsApp)',raw:true},
       {k:'PAGO_NOMINAL_SEMANAL',t:'Pago x objetivo (semanal)',tipo:'number'},
       {k:'SUELDO_FIJO_SEMANAL',t:'Pago fijo (semanal)',tipo:'number'},
       {k:'MEDIO_COMUNICACION',t:'Medio de comunicación'},
       {k:'ACTIVO',opts:['SI','NO']}],
-    csv:'NOMBRE, PAGO_NOMINAL_SEMANAL, SUELDO_FIJO_SEMANAL, MEDIO_COMUNICACION, ACTIVO' },
+    csv:'NOMBRE, TELEFONO, PAGO_NOMINAL_SEMANAL, SUELDO_FIJO_SEMANAL, MEDIO_COMUNICACION, ACTIVO' },
   EJECUTIVOS:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
   REMOLQUES:{ cols:[{k:'ECONOMICO'},{k:'PLACAS'},{k:'TIPO',opts:['REMOLQUE','PORTACONTENEDOR','DOLLY']}],
     csv:'ECONOMICO, PLACAS, TIPO' },
@@ -6088,7 +6339,9 @@ const CFG_MAP = [
   ['OBJ_KM_FULL_LOCAL','cfgOKFullLoc',1500],['OBJ_KM_SENCILLO_LOCAL','cfgOKSenLoc',1500],
   ['OBJ_KM_35','cfgOK35',800],['OBJ_KM_15','cfgOK15',800],['OBJ_KM_UTIL','cfgOKUtil',500],
   ['OBJ_REND_FULL','cfgORFull',1.8],['OBJ_REND_SENCILLO','cfgORSen',2.5],['OBJ_REND_RABON','cfgORRab',3.5],
-  ['OBJ_REND_35','cfgOR35',3],['OBJ_REND_15','cfgOR15',8],['OBJ_REND_UTIL','cfgORUtil',10]
+  ['OBJ_REND_35','cfgOR35',3],['OBJ_REND_15','cfgOR15',8],['OBJ_REND_UTIL','cfgORUtil',10],
+  ['PISO_FULL','cfgPisoFull',7500],['PISO_SENCILLO','cfgPisoSen',5200],
+  ['PISO_RABON','cfgPisoRab',3900],['PISO_35','cfgPiso35',2900]
 ];
 function cargarConfigAdmin(){
   CFG_MAP.forEach(([clave,id,def])=>{ $(id).value=cfgNum(clave,def); });

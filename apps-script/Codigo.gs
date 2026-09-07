@@ -41,7 +41,9 @@ var HOJAS = {
   /* Dos sueldos semanales, uno por esquema de pre-nómina:
      PAGO_NOMINAL_SEMANAL  → esquema de pago por objetivo (el de siempre)
      SUELDO_FIJO_SEMANAL   → esquema de nómina fija */
-  OPERADORES: ['ID','NOMBRE','PAGO_NOMINAL_SEMANAL','SUELDO_FIJO_SEMANAL','MEDIO_COMUNICACION','ACTIVO'],
+  /* TELEFONO: a 10 dígitos o con lada. Es al que se le manda el aviso de
+     WhatsApp cuando se le asigna un servicio. */
+  OPERADORES: ['ID','NOMBRE','TELEFONO','PAGO_NOMINAL_SEMANAL','SUELDO_FIJO_SEMANAL','MEDIO_COMUNICACION','ACTIVO'],
 
   EJECUTIVOS: ['ID','NOMBRE'],
 
@@ -141,6 +143,8 @@ var HOJAS = {
               'ESPEJO_UNIDAD','ESPEJO_PORTAS',
               'HITO_SALIDA_PATIO','HITO_ARRIBO_CARGA','HITO_INGRESO_CARGAR','HITO_INICIO_RUTA',
               'HITO_ARRIBO_DESTINO','HITO_INGRESO_DESCARGA','HITO_SERVICIO_FINALIZADO',
+              /* Solo cuando el viaje es de ADL y el operador regresa a patio */
+              'REGRESA_PATIO','HITO_ARRIBO_PATIO_ADL',
               'CUMPLIMIENTO_CARGA','CUMPLIMIENTO_DESCARGA',
               'CREADO_POR','FECHA_REGISTRO'],
 
@@ -180,12 +184,14 @@ var HOJAS = {
                 'SERVICIO_ID',
                 'DISPERSION','DISPERSADO_POR','FECHA_DISPERSION'],
 
+  /* COMPLEMENTO_PAGO: lo que falta para llegar al piso de pago del tipo de
+     unidad (Full, Sencillo, Rabón, 3.5 T). Ver "Complemento de pago". */
   NOMINAS: ['ID','OPERADOR','MODO','PERIODO','SEMANAS','TIPO_PAGO','SUELDO_BRUTO','SUELDO_FIJO','IMPUESTO_PCT','IMPUESTOS',
             'SUELDO_NETO','BONO_CUMPLIMIENTO','KM','KM_RUTA','KM_ODOMETRO','FUENTE_KM',
             'OBJETIVO_KM','CUMPLIMIENTO_PCT','KM_EXTRA','PAGO_KM_EXTRA',
             'REND_OBJETIVO','REND_REAL','LITROS_AHORRADOS','PAGO_RENDIMIENTO',
             'OBJ_LLEGADA_TIEMPO','OBJ_SIN_INCIDENCIAS',
-            'PAGO_SERVICIOS','DIFERENCIA_SERVICIOS',
+            'PAGO_SERVICIOS','DIFERENCIA_SERVICIOS','PISO_PAGO','COMPLEMENTO_PAGO',
             'APOYO_VIAJE','APOYO_PCT','APOYO_AUTORIZADO','AUTORIZADO_POR',
             'DESCUENTO_GASTOS',
             'TOTAL','REGISTRADO_POR','FECHA_REGISTRO',
