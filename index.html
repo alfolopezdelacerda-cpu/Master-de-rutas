@@ -314,8 +314,11 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       <button class="tab" data-sec="dispersiones">Dispersiones</button>
       <button class="tab" data-sec="cxc">CXC</button>
       <button class="tab" data-sec="cxp">CXP</button>
-      <button class="tab" data-sec="liberaciones">Liberaciones<span class="pt">dev</span></button>
-      <button class="tab" data-sec="facturacion">Facturación<span class="pt">dev</span></button>
+      <button class="tab" data-sec="ordenes">Órdenes de compra</button>
+      <button class="tab" data-sec="liberaciones">Liberaciones</button>
+      <button class="tab" data-sec="facturacion">Facturación</button>
+      <button class="tab" data-sec="cartasporte">Cartas porte timbradas</button>
+      <button class="tab" data-sec="caja">Cobros y pagos</button>
     </div>
   </div>
   <div class="area" data-area="calidad">
@@ -915,7 +918,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 
     <h3>Horarios del viaje</h3>
     <div class="sub" style="margin-bottom:10px">Cada botón sella la fecha y hora del momento en que se pulsa. Se registran en orden, y el servicio no se puede finalizar si falta alguno. Una vez sellado, el horario queda <b>abierto</b>: se puede corregir a mano.</div>
-    <div id="monHitos" class="grid g4" style="margin-bottom:14px"></div>
+    <div id="monHitos" class="grid g3" style="margin-bottom:14px"></div>
 
     <div class="grid g3" style="margin-bottom:12px">
       <div><label>Estatus del viaje</label><select id="monEstatus"></select></div>
@@ -926,6 +929,10 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       <button class="btn btn-p btn-sm" id="btnMonGuardar">💾 Guardar estatus y nota</button>
       <button class="btn btn-s btn-sm" id="btnMonIncidencia" style="background:var(--bad);color:#fff">⚠ Reportar incidencia</button>
       <button class="btn btn-s btn-sm" id="btnMonCompartir">📤 Compartir con el cliente</button>
+    </div>
+    <div style="margin-top:10px">
+      <label>Observaciones para el cliente</label>
+      <input id="monObservaciones" placeholder="Lo que quieras que vaya en el reporte; si se deja vacío se usa la nota del viaje">
     </div>
     <div class="mini" id="monCompartirAviso" style="margin-top:8px"></div>
 
@@ -1427,6 +1434,16 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       </div>
       <div class="mini" id="gpsPrueba" style="margin-bottom:12px"></div>
       <hr class="sep">
+      <h3>Área financiera</h3>
+      <label>RFC emisor (el de ADL, para timbrar)</label>
+      <input id="cfgRfcEmisor" placeholder="XAXX010101000" style="margin-bottom:12px">
+      <label style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+        <input type="checkbox" id="cfgLibObliga" style="width:18px;height:18px;min-width:18px">
+        Exigir liberación de Finanzas antes de dispersar o pagar
+      </label>
+      <div class="sub" style="margin-bottom:12px">Apagado, la pantalla de Liberaciones es un visto bueno informativo. Encendido, ni la dispersión al operador ni el pago de una orden de compra pueden hacerse sin liberar antes.</div>
+      <button class="btn btn-s" id="btnGuardarFin">Guardar ajustes financieros</button>
+      <hr class="sep">
       <label>URL del logo (opcional)</label>
       <div class="sub" style="margin-bottom:8px">Liga directa a la imagen del logo de ADL. Si se deja vacía, se usa el logo dibujado en la propia app.</div>
       <input id="cfgLogo" placeholder="https://…/logo-adl.png" style="margin-bottom:12px">
@@ -1709,25 +1726,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
   </div>
 </section>
 
-<!-- ============ LIBERACIONES (Finanzas) ============ -->
-<section class="sec" id="sec-liberaciones">
-  <div class="card" style="text-align:center;padding:48px 26px">
-    <div style="font-size:44px;margin-bottom:10px">🚧</div>
-    <h2>Liberaciones</h2>
-    <div class="sub" style="margin:8px auto 0;max-width:520px">Liberación de pagos y de garantías: aquí se autorizará lo que ya puede salir a pago.</div>
-    <div class="tag" style="margin-top:18px;background:var(--accent);color:var(--accent-ink)">En desarrollo</div>
-  </div>
-</section>
 
-<!-- ============ FACTURACIÓN (Finanzas) ============ -->
-<section class="sec" id="sec-facturacion">
-  <div class="card" style="text-align:center;padding:48px 26px">
-    <div style="font-size:44px;margin-bottom:10px">🚧</div>
-    <h2>Facturación</h2>
-    <div class="sub" style="margin:8px auto 0;max-width:520px">Emisión y control de facturas de los servicios cobrables.</div>
-    <div class="tag" style="margin-top:18px;background:var(--accent);color:var(--accent-ink)">En desarrollo</div>
-  </div>
-</section>
 
 <!-- ============ CAPACITACIONES (RRHH) ============ -->
 <section class="sec" id="sec-capacitaciones">
@@ -1776,6 +1775,232 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <h2>Prospectos</h2>
     <div class="sub" style="margin:8px auto 0;max-width:520px">Clientes potenciales y el avance de cada oportunidad.</div>
     <div class="tag" style="margin-top:18px;background:var(--accent);color:var(--accent-ink)">En desarrollo</div>
+  </div>
+</section>
+
+<!-- ============ ÓRDENES DE COMPRA ============ -->
+<section class="sec" id="sec-ordenes">
+  <div class="card">
+    <h2>Órdenes de compra</h2>
+    <div class="sub">Lo que se le compra a un proveedor: refacciones, servicios de taller, fletes de terceros. Una orden nace en <b>borrador</b>, se <b>autoriza</b>, se marca <b>recibida</b> y termina <b>pagada</b>. Las autorizadas entran a Cuentas por Pagar y a Liberaciones.</div>
+    <div class="kpis" style="margin-top:14px">
+      <div class="kpi"><div class="v num" id="kOcTotal">0</div><div class="l">Órdenes</div></div>
+      <div class="kpi"><div class="v num" id="kOcBorrador">$0</div><div class="l">En borrador</div></div>
+      <div class="kpi"><div class="v num" id="kOcAutorizado">$0</div><div class="l">Autorizado sin pagar</div></div>
+      <div class="kpi"><div class="v num" id="kOcPagado">$0</div><div class="l">Pagado</div></div>
+    </div>
+    <div class="grid g4" style="margin:14px 0 12px">
+      <div style="grid-column:1/3"><label>Buscar</label><input id="ocBusca" placeholder="🔍 Folio, proveedor, concepto, carta porte…"></div>
+      <div><label>Estado</label><select id="ocEstado">
+        <option value="todos">Todos</option><option>BORRADOR</option><option>AUTORIZADA</option>
+        <option>RECIBIDA</option><option>PAGADA</option><option>CANCELADA</option>
+      </select></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn btn-p" id="btnOcNueva" style="width:100%">＋ Nueva orden</button></div>
+    </div>
+
+    <div id="ocForm" style="display:none;background:var(--surface2);border:1px dashed var(--road);border-radius:10px;padding:14px;margin-bottom:14px">
+      <h3 style="margin-bottom:4px">Orden de compra · <span id="ocTit">nueva</span></h3>
+      <div class="mini" id="ocInfo" style="margin-bottom:12px"></div>
+      <div class="grid g4" style="margin-bottom:12px">
+        <div><label>Proveedor</label><select id="ocProveedor"></select></div>
+        <div><label>Fecha</label><input id="ocFecha" type="date"></div>
+        <div style="grid-column:3/5"><label>Concepto</label><input id="ocConcepto" placeholder="Para qué es la compra"></div>
+        <div><label>Carta porte (opcional)</label><input id="ocCP" placeholder="Liga la orden a un servicio"></div>
+        <div><label>IVA (%)</label><input id="ocIva" type="number" min="0" step="0.5" value="16"></div>
+        <div style="grid-column:3/5"><label>Notas</label><input id="ocNotas" placeholder="Condiciones, tiempo de entrega…"></div>
+      </div>
+      <h3>Partidas</h3>
+      <div id="ocPartidas" style="margin-bottom:10px"></div>
+      <button class="btn btn-s btn-sm" id="btnOcPartida" style="margin-bottom:12px">＋ Agregar partida</button>
+      <div class="grid g4" style="margin-bottom:12px">
+        <div class="totrow"><span>Subtotal</span><b class="num" id="ocSubtotal">$0.00</b></div>
+        <div class="totrow"><span>IVA</span><b class="num" id="ocIvaMonto">$0.00</b></div>
+        <div class="totrow"><span>Total</span><b class="num" id="ocTotal">$0.00</b></div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-p" id="btnOcGuardar">💾 Guardar orden</button>
+        <button class="btn btn-s" id="btnOcCancelar">Cancelar</button>
+      </div>
+    </div>
+
+    <div class="twrap" style="max-height:520px;overflow-y:auto"><table>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
+        <th>Folio</th><th>Fecha</th><th>Proveedor</th><th>Concepto</th><th>CP</th>
+        <th class="right">Total</th><th>Estado</th><th>Factura del proveedor</th><th></th>
+      </tr></thead>
+      <tbody id="tbodyOrdenes"></tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============ LIBERACIONES ============ -->
+<section class="sec" id="sec-liberaciones">
+  <div class="card">
+    <h2>Liberaciones</h2>
+    <div class="sub">Finanzas autoriza aquí lo que puede salir a pago: solicitudes de gasto, gastos extra y órdenes de compra. Lo liberado se marca en Dispersiones y en Cuentas por Pagar.</div>
+    <div class="kpis" style="margin-top:14px">
+      <div class="kpi"><div class="v num" id="kLibPend">0</div><div class="l">Por liberar</div></div>
+      <div class="kpi"><div class="v num" id="kLibMonto">$0</div><div class="l">Monto por liberar</div></div>
+      <div class="kpi"><div class="v num" id="kLibLiberado">$0</div><div class="l">Liberado sin pagar</div></div>
+      <div class="kpi"><div class="v num" id="kLibRechazado">0</div><div class="l">Rechazadas</div></div>
+    </div>
+    <div class="mini" id="libAvisoRegla" style="margin:12px 0"></div>
+    <div class="grid g4" style="margin-bottom:12px">
+      <div style="grid-column:1/3"><label>Buscar</label><input id="libBusca" placeholder="🔍 Folio, concepto, proveedor, operador…"></div>
+      <div><label>Tipo</label><select id="libTipo">
+        <option value="todos">Todos</option><option>SOLICITUD</option><option>GASTO EXTRA</option><option>ORDEN DE COMPRA</option>
+      </select></div>
+      <div><label>Estado</label><select id="libEstado">
+        <option value="pendientes">Por liberar</option><option value="todos">Todos</option>
+        <option>LIBERADO</option><option>RECHAZADO</option>
+      </select></div>
+    </div>
+    <div class="twrap" style="max-height:520px;overflow-y:auto"><table>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
+        <th>Tipo</th><th>Folio</th><th>Concepto</th><th>A quién</th><th class="right">Monto</th>
+        <th>Estado</th><th>Liberó</th><th></th>
+      </tr></thead>
+      <tbody id="tbodyLiberaciones"></tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============ FACTURACIÓN ============ -->
+<section class="sec" id="sec-facturacion">
+  <div class="card">
+    <h2>Facturación</h2>
+    <div class="sub">Factura los servicios que ya están por facturar en <b>Cuentas por Cobrar</b>. Una factura puede amparar varios servicios del mismo cliente; al emitirla, esos servicios pasan a <b>Facturado</b>, y al registrar el cobro pasan a <b>Cobrado</b>.</div>
+    <div class="kpis" style="margin-top:14px">
+      <div class="kpi"><div class="v num" id="kFacEmitidas">0</div><div class="l">Facturas emitidas</div></div>
+      <div class="kpi"><div class="v num" id="kFacPorCobrar">$0</div><div class="l">Por cobrar</div></div>
+      <div class="kpi"><div class="v num" id="kFacCobrado">$0</div><div class="l">Cobrado</div></div>
+      <div class="kpi"><div class="v num" id="kFacVencidas">0</div><div class="l">Con más de 30 días</div></div>
+    </div>
+
+    <h3 style="margin-top:18px">Servicios por facturar</h3>
+    <div class="grid g4" style="margin:10px 0 12px">
+      <div><label>Cliente</label><select id="facCliente"></select></div>
+      <div><label>Serie</label><input id="facSerie" placeholder="A"></div>
+      <div><label>Folio</label><input id="facFolio" placeholder="1234"></div>
+      <div><label>Fecha</label><input id="facFecha" type="date"></div>
+      <div><label>UUID (folio fiscal)</label><input id="facUuid" placeholder="Se pega del CFDI timbrado"></div>
+      <div><label>RFC del cliente</label><input id="facRfc"></div>
+      <div><label>IVA (%)</label><input id="facIva" type="number" min="0" step="0.5" value="16"></div>
+      <div><label>Retención (%)</label><input id="facRet" type="number" min="0" step="0.5" value="4" title="Retención de IVA por servicios de autotransporte"></div>
+      <div style="grid-column:1/3"><label>Liga al XML</label><input id="facXml" placeholder="https://…"></div>
+      <div style="grid-column:3/5"><label>Liga al PDF</label><input id="facPdf" placeholder="https://…"></div>
+    </div>
+    <div class="twrap" style="max-height:300px;overflow-y:auto"><table>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
+        <th><input type="checkbox" id="facTodos"></th><th>Carta porte</th><th>Ruta</th><th>Fecha</th>
+        <th class="right">Tarifa</th><th class="right">Extras</th><th class="right">Total</th>
+      </tr></thead>
+      <tbody id="tbodyPorFacturar"></tbody>
+    </table></div>
+    <div class="grid g4" style="margin-top:12px">
+      <div class="totrow"><span>Subtotal seleccionado</span><b class="num" id="facSubtotal">$0.00</b></div>
+      <div class="totrow"><span>IVA</span><b class="num" id="facIvaMonto">$0.00</b></div>
+      <div class="totrow"><span>Retención</span><b class="num" id="facRetMonto">$0.00</b></div>
+      <div class="totrow"><span>Total de la factura</span><b class="num" id="facTotal">$0.00</b></div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+      <button class="btn btn-p" id="btnFacEmitir">🧾 Emitir factura</button>
+      <span class="mini" id="facAviso" style="align-self:center"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>Facturas emitidas</h2>
+    <div class="grid g4" style="margin-bottom:12px">
+      <div style="grid-column:1/3"><label>Buscar</label><input id="facBusca" placeholder="🔍 Serie, folio, UUID, cliente…"></div>
+      <div><label>Estado</label><select id="facEstado">
+        <option value="todos">Todas</option><option>EMITIDA</option><option>PAGADA</option><option>CANCELADA</option>
+      </select></div>
+    </div>
+    <div class="twrap" style="max-height:420px;overflow-y:auto"><table>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
+        <th>Serie-Folio</th><th>Fecha</th><th>Cliente</th><th>Cartas porte</th><th>UUID</th>
+        <th class="right">Total</th><th>Estado</th><th>Archivos</th><th></th>
+      </tr></thead>
+      <tbody id="tbodyFacturas"></tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============ CARTAS PORTE TIMBRADAS ============ -->
+<section class="sec" id="sec-cartasporte">
+  <div class="card">
+    <h2>Cartas porte timbradas</h2>
+    <div class="sub">El CFDI de traslado de cada viaje: su folio fiscal (UUID), el IdCCP del complemento Carta Porte, las fechas y las ligas al XML y al PDF. Aquí se ve, de un vistazo, qué servicios ya se timbraron y cuáles no.</div>
+    <div class="kpis" style="margin-top:14px">
+      <div class="kpi"><div class="v num" id="kCpTimbradas">0</div><div class="l">Timbradas</div></div>
+      <div class="kpi"><div class="v num" id="kCpPendientes">0</div><div class="l">Servicios sin timbrar</div></div>
+      <div class="kpi"><div class="v num" id="kCpCanceladas">0</div><div class="l">Canceladas</div></div>
+    </div>
+
+    <div id="cpForm" style="background:var(--surface2);border:1px dashed var(--road);border-radius:10px;padding:14px;margin:14px 0">
+      <h3 style="margin-bottom:10px">Registrar timbrado</h3>
+      <div class="grid g4" style="margin-bottom:12px">
+        <div><label>Carta porte del servicio</label><input id="cpServicio" placeholder="Número de carta porte"></div>
+        <div><label>Serie</label><input id="cpSerie" placeholder="CP"></div>
+        <div><label>Folio</label><input id="cpFolio"></div>
+        <div><label>Fecha de timbrado</label><input id="cpFecha" type="datetime-local"></div>
+        <div style="grid-column:1/3"><label>UUID (folio fiscal)</label><input id="cpUuid" placeholder="00000000-0000-0000-0000-000000000000"></div>
+        <div style="grid-column:3/5"><label>IdCCP (complemento Carta Porte)</label><input id="cpIdccp" placeholder="CCC…"></div>
+        <div><label>RFC emisor</label><input id="cpRfcEmisor"></div>
+        <div><label>RFC receptor</label><input id="cpRfcReceptor"></div>
+        <div><label>Tipo de CFDI</label><select id="cpTipo"><option>TRASLADO</option><option>INGRESO</option></select></div>
+        <div><label>Total del CFDI</label><input id="cpTotal" type="number" min="0" step="0.01" value="0"></div>
+        <div style="grid-column:1/3"><label>Liga al XML</label><input id="cpXml" placeholder="https://…"></div>
+        <div style="grid-column:3/5"><label>Liga al PDF</label><input id="cpPdf" placeholder="https://…"></div>
+      </div>
+      <div class="mini" id="cpAvisoServicio" style="margin-bottom:10px"></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-p" id="btnCpGuardar">💾 Guardar timbrado</button>
+        <button class="btn btn-s" id="btnCpLimpiar">Limpiar</button>
+      </div>
+    </div>
+
+    <div class="grid g4" style="margin-bottom:12px">
+      <div style="grid-column:1/3"><label>Buscar</label><input id="cpBusca" placeholder="🔍 Carta porte, UUID, cliente…"></div>
+      <div><label>Estado</label><select id="cpEstado">
+        <option value="todos">Todas</option><option>TIMBRADA</option><option>CANCELADA</option>
+        <option value="sintimbrar">Servicios sin timbrar</option>
+      </select></div>
+    </div>
+    <div class="twrap" style="max-height:460px;overflow-y:auto"><table>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
+        <th>Carta porte</th><th>Cliente</th><th>Serie-Folio</th><th>UUID</th><th>Timbrado</th>
+        <th class="right">Total</th><th>Estado</th><th>Archivos</th><th></th>
+      </tr></thead>
+      <tbody id="tbodyCartasPorte"></tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============ COBROS Y PAGOS ============ -->
+<section class="sec" id="sec-caja">
+  <div class="card">
+    <h2>Cobros y pagos</h2>
+    <div class="sub">El movimiento de dinero: lo que entra por facturas cobradas y lo que sale por dispersiones, gastos extra, órdenes de compra y nóminas. Se alimenta solo desde las demás pantallas.</div>
+    <div class="kpis" style="margin-top:14px">
+      <div class="kpi"><div class="v num" id="kCajaCobros">$0</div><div class="l">Cobrado</div></div>
+      <div class="kpi"><div class="v num" id="kCajaPagos">$0</div><div class="l">Pagado</div></div>
+      <div class="kpi"><div class="v num" id="kCajaSaldo">$0</div><div class="l">Diferencia</div></div>
+      <div class="kpi"><div class="v num" id="kCajaMovs">0</div><div class="l">Movimientos</div></div>
+    </div>
+    <div class="grid g4" style="margin:14px 0 12px">
+      <div style="grid-column:1/3"><label>Buscar</label><input id="cajaBusca" placeholder="🔍 Folio, contraparte, notas…"></div>
+      <div><label>Tipo</label><select id="cajaTipo"><option value="todos">Todos</option><option>COBRO</option><option>PAGO</option></select></div>
+      <div><label>Origen</label><select id="cajaOrigen"><option value="todos">Todos</option></select></div>
+    </div>
+    <div class="twrap" style="max-height:520px;overflow-y:auto"><table>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
+        <th>Fecha</th><th>Tipo</th><th>Origen</th><th>Folio</th><th>Contraparte</th>
+        <th class="right">Monto</th><th>Método</th><th>Notas</th>
+      </tr></thead>
+      <tbody id="tbodyCaja"></tbody>
+    </table></div>
   </div>
 </section>
 
@@ -2031,7 +2256,8 @@ const TOLERANCIA_KM = 15;
 const DB = { UNIDADES:[], OPERADORES:[], EJECUTIVOS:[], REMOLQUES:[], CLIENTES:[], RUTAS:[], SOLICITUDES:[], NOMINAS:[], LIQUIDACION:[], CASETAS:[], USUARIOS:[], BITACORA:[], SOLICITUDES_CANCELADAS:[], PAGO_X_KM:[],
   SERVICIOS:[], TIPO_NEGOCIO:[], ADUANAS:[], ESTADOS:[], CIUDADES:[], PROVEEDORES:[],
   TIPOS_INCIDENCIA:[], INCIDENCIAS:[], UBICACIONES:[], EVIDENCIAS:[], GASTOS_EXTRA:[],
-  TICKETS_CALIDAD:[], SEGUIMIENTOS_CALIDAD:[], TARIFAS:[], CXC:[], CONFIG:{} };
+  TICKETS_CALIDAD:[], SEGUIMIENTOS_CALIDAD:[], TARIFAS:[], CXC:[],
+  ORDENES_COMPRA:[], CARTAS_PORTE:[], FACTURAS:[], PAGOS:[], LIBERACIONES:[], CONFIG:{} };
 
 const $  = id => document.getElementById(id);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
@@ -2146,7 +2372,8 @@ const HOJAS_APP = ['UNIDADES','OPERADORES','EJECUTIVOS','REMOLQUES','CLIENTES','
   'NOMINAS','LIQUIDACION','CASETAS','USUARIOS','BITACORA','SOLICITUDES_CANCELADAS','PAGO_X_KM',
   'SERVICIOS','TIPO_NEGOCIO','ADUANAS','ESTADOS','CIUDADES','PROVEEDORES',
   'TIPOS_INCIDENCIA','INCIDENCIAS','UBICACIONES','EVIDENCIAS','GASTOS_EXTRA',
-  'TICKETS_CALIDAD','SEGUIMIENTOS_CALIDAD','TARIFAS','CXC'];
+  'TICKETS_CALIDAD','SEGUIMIENTOS_CALIDAD','TARIFAS','CXC',
+  'ORDENES_COMPRA','CARTAS_PORTE','FACTURAS','PAGOS','LIBERACIONES'];
 const hojasPedidas = new Set();
 
 /* Refleja en memoria lo que el guardado acaba de escribir, sin esperar a que
@@ -2335,6 +2562,11 @@ document.querySelectorAll('.tab[data-sec]').forEach(b=>b.addEventListener('click
   if(b.dataset.sec==='incidencias') pintarPantallaIncidencias();
   if(b.dataset.sec==='cxc') pintarCxc();
   if(b.dataset.sec==='cxp') pintarCxp();
+  if(b.dataset.sec==='ordenes') pintarOrdenes();
+  if(b.dataset.sec==='liberaciones') pintarLiberaciones();
+  if(b.dataset.sec==='facturacion') pintarFacturacion();
+  if(b.dataset.sec==='cartasporte') pintarCartasPorte();
+  if(b.dataset.sec==='caja') pintarCaja();
   if(b.dataset.sec==='operadores') pintarOperadores();
   if(b.dataset.sec==='tarifarios') pintarTarifas();
   if(b.dataset.sec==='nuevoservicio') pintarServicios();
@@ -3182,6 +3414,20 @@ function aFecha(v){
   const d = new Date(t.replace(' ','T'));
   return isNaN(d)? null : d;
 }
+/* Parte un sello "dd/mm/aaaa hh:mm" en sus dos mitades, para poder mostrar
+   la fecha y la hora por separado y que ninguna se pierda de vista. */
+function partesFechaHora(v){
+  const t = String(v||'').trim();
+  if(!t) return { fecha:'—', hora:'—' };
+  const m = t.match(/^(\d{2}\/\d{2}\/\d{4})[ T](\d{2}:\d{2})/);
+  if(m) return { fecha:m[1], hora:m[2] };
+  const f = aFecha(t);
+  if(!f) return { fecha:t, hora:'—' };
+  const p = n=>String(n).padStart(2,'0');
+  return { fecha:`${p(f.getDate())}/${p(f.getMonth()+1)}/${f.getFullYear()}`,
+           hora:`${p(f.getHours())}:${p(f.getMinutes())}` };
+}
+
 /* "ON TIME" si el arribo fue a la cita o antes */
 function cumplimiento(arribo, cita){
   const a = aFecha(arribo), c = aFecha(cita);
@@ -3338,12 +3584,16 @@ function pintarHitos(s){
     const faltan = HITOS.slice(0,-1).filter(x=>!s[x.campo]);
     const puede = !val && previoListo && (!esFinal || !faltan.length);
     const d=document.createElement('div');
-    // Ya registrado: se queda abierto para corregirlo a mano
+    /* Ya registrado: se queda abierto para corregirlo a mano, y debajo se
+       repite la fecha y la hora en grande, que es lo que se consulta. */
+    const p = partesFechaHora(val);
     d.innerHTML = `<label>${i+1}. ${h.texto}</label>`+
       (val
         ? `<input value="${esc(val)}" data-monedit="${h.campo}" placeholder="dd/mm/aaaa hh:mm"
                   title="Corrige la fecha y hora a mano; se guarda al salir del campo"
-                  style="border-left:5px solid var(--ok)">`
+                  style="border-left:5px solid var(--ok)">
+           <div class="mini" style="margin-top:4px;line-height:1.35">
+             📅 <b>${esc(p.fecha)}</b><br>🕒 <b>${esc(p.hora)}</b> h</div>`
         : `<button class="btn btn-${puede?'p':'s'} btn-sm" style="width:100%" data-monhito="${h.campo}"${puede?'':' disabled'}>Registrar</button>`);
     w.appendChild(d);
   });
@@ -3641,17 +3891,18 @@ function reporteCliente(s){
   const ultima = ubis.length? ubis[ubis.length-1] : null;
   const donde = (u && u.UBICACION_ACTUAL) || (ultima && ultima.UBICACION) || '';
   const cuando = (u && u.UBICACION_ACTUALIZADA) || (ultima && ultima.FECHA_HORA) || '';
-  const horarios = hitosDe(s).filter(h=>s[h.campo]).map(h=>'· '+h.texto+': '+s[h.campo]);
+  // El tracking: cada hito con su fecha y su hora
+  const tracking = hitosDe(s).filter(h=>s[h.campo]).map(h=>{
+    const p = partesFechaHora(s[h.campo]);
+    return '· '+h.texto+': '+p.fecha+' · '+p.hora+' h';
+  });
+  const obs = ($('monObservaciones') && $('monObservaciones').value.trim()) || s.NOTA_MONITOREO || '';
 
   return [
     '*ADL · Estatus de su servicio*',
     '',
-    'Cliente: '+(s.CLIENTE||'—'),
     'Carta porte: '+(s.CP||'—'),
     s.CONTENEDORES? 'Contenedores: '+s.CONTENEDORES : '',
-    s.BOOKING? 'Booking: '+s.BOOKING : '',
-    'Ruta: '+(s.ESTADO_ORIGEN||'—')+' → '+(s.CIUDAD_DESTINO||'—'),
-    '',
     'Unidad: '+(s.ECONOMICO||'—')+(s.PLACAS? ' · Placas '+s.PLACAS : ''),
     'Operador: '+(s.OPERADOR||'—'),
     'Estatus: '+(estatusMonitoreoDe(s)||'sin estatus'),
@@ -3659,11 +3910,12 @@ function reporteCliente(s){
     '',
     s.CITA_CARGA?   'Cita de carga: '+fmtFechaHora(s.CITA_CARGA) : '',
     s.CITA_ENTREGA? 'Cita de descarga: '+fmtFechaHora(s.CITA_ENTREGA) : '',
-    horarios.length? '' : null,
-    horarios.length? '*Horarios registrados*' : null,
-    ...horarios,
+    tracking.length? '' : null,
+    tracking.length? '*Tracking*' : null,
+    ...tracking,
     '',
-    'Reporte generado el '+ahoraTexto()
+    '*Observaciones*',
+    obs || 'Sin observaciones.'
   ].filter(x=>x!==null && x!==undefined).join('\n').replace(/\n{3,}/g,'\n\n');
 }
 $('btnMonCompartir').addEventListener('click', async ()=>{
@@ -3680,6 +3932,7 @@ $('btnMonCompartir').addEventListener('click', async ()=>{
 /* Lo que se ve dentro de la bitácora: histórico de ubicaciones e incidencias */
 function pintarIncidenciasYUbicaciones(s){
   $('monCompartirAviso').innerHTML = '';
+  $('monObservaciones').value = '';
   const ubis = ubicacionesDe(s.ID);
   $('monUbicacion').value = '';
   $('monUbicHist').innerHTML = ubis.length
@@ -4090,7 +4343,8 @@ function pintarCxp(){
       <td class="right num">${i.comprobado? money(i.comprobado) : '—'}</td>
       <td class="right num" style="color:${Math.abs(i.diferencia)>0.5? (i.diferencia>0?'var(--bad)':'var(--ok)') : ''}">${
         i.comprobado? (i.diferencia>=0?'':'−')+money(Math.abs(i.diferencia)) : '—'}</td>
-      <td><span class="tag" style="background:${color};color:#fff">${i.estado}</span></td>`;
+      <td><span class="tag" style="background:${color};color:#fff">${i.estado}</span>
+        ${libLiberado('SOLICITUD', i.sol.ID)? '<br><span class="mini" style="color:var(--ok)">Liberado ✔</span>':''}</td>`;
     tb.appendChild(tr);
   });
   if(!filas.length) tb.innerHTML='<tr><td colspan="10" class="mini">Sin servicios en este filtro.</td></tr>';
@@ -4248,11 +4502,12 @@ function abrirTarifa(id){
   tarEditando = t? t.ID : null;
   $('tarForm').style.display='';
   llenarSelect('tarFCliente', DB.CLIENTES, c=>c.NOMBRE);
-  llenarSelect('tarFRuta', DB.RUTAS, r=>`${r.RUTA}${r.CLIENTE?' ('+r.CLIENTE+')':''}`, '— Todas las rutas —');
+  rutasDelClienteTarifa();
   $('tarFTipo').innerHTML = '<option value="">— Todos los tipos —</option>'+
     TIPOS_UNIDAD_SERVICIO.map(x=>`<option>${esc(x)}</option>`).join('');
   if(t){
     seleccionarPorNombre('tarFCliente','CLIENTES', t.CLIENTE);
+    rutasDelClienteTarifa();
     const r = DB.RUTAS.find(x=>String(x.RUTA||'')===String(t.RUTA||''));
     $('tarFRuta').value = r? r.ID : '';
     $('tarFTipo').value = t.TIPO_UNIDAD||'';
@@ -4265,6 +4520,18 @@ function abrirTarifa(id){
     $('tarFRuta').value=''; $('tarFTipo').value='';
   }
 }
+/* La ruta se elige de las de ESE cliente: un tarifario no mezcla cuentas */
+function rutasDelClienteTarifa(){
+  const cliente = nombreDeSelect('tarFCliente','CLIENTES');
+  const rutas = rutasDeCliente(cliente);
+  const antes = $('tarFRuta').value;
+  llenarSelect('tarFRuta', rutas, r=>`${r.RUTA}${r.TOTAL_KM? ' · '+num(r.TOTAL_KM,0)+' km':''}`, '— Todas las rutas del cliente —');
+  if([...$('tarFRuta').options].some(o=>o.value===antes)) $('tarFRuta').value = antes;
+  $('tarFRuta').title = cliente
+    ? (rutas.length? 'Rutas de '+cliente : cliente+' no tiene rutas dadas de alta')
+    : 'Elige primero el cliente';
+}
+$('tarFCliente').addEventListener('change',()=>{ $('tarFRuta').value=''; rutasDelClienteTarifa(); });
 $('btnTarNueva').addEventListener('click',()=>abrirTarifa(null));
 $('btnTarCancelar').addEventListener('click',()=>{ $('tarForm').style.display='none'; tarEditando=null; });
 $('btnTarGuardar').addEventListener('click', async ()=>{
@@ -4288,6 +4555,676 @@ $('btnTarGuardar').addEventListener('click', async ()=>{
 });
 ['tarBusca','tarCliente'].forEach(id=>$(id).addEventListener('input', pintarTarifas));
 $('tarCliente').addEventListener('change', pintarTarifas);
+
+/* =====================================================
+   ÁREA FINANCIERA
+   Dos carriles, y todo lo demás cuelga de ellos:
+
+     COBRAR   servicio → tarifa → CXC → FACTURAS → PAGOS (cobro)
+     PAGAR    solicitud / gasto extra / orden de compra → LIBERACIONES
+              → dispersión o pago → PAGOS (pago)
+
+   La carta porte timbrada es el respaldo fiscal del viaje y se amarra al
+   servicio por su número de carta porte, que es la llave que ya usa toda la
+   plataforma.
+===================================================== */
+
+/* Folio corrido por hoja: OC-0001, FAC-0001… Se calcula sobre lo que ya
+   existe, así que no depende de un contador guardado aparte. */
+function folioSiguiente(hoja, campo, prefijo){
+  const n = (DB[hoja]||[]).reduce((max,r)=>{
+    const m = String(r[campo]||'').match(/(\d+)\s*$/);
+    return m? Math.max(max, parseInt(m[1],10)) : max;
+  }, 0);
+  return prefijo + String(n+1).padStart(4,'0');
+}
+/* Cada movimiento de dinero deja su renglón en PAGOS. Es lo que lee la
+   pantalla de Cobros y pagos; nadie captura ahí a mano. */
+async function registrarMovimiento(mov){
+  return apiEnviar({action:'upsert', sheet:'PAGOS', record: Object.assign({
+    FECHA: hoyISO(), MONEDA:'MXN', REGISTRADO_POR: nombreUsuario()
+  }, mov)});
+}
+function movimientosDe(refId){
+  return (DB.PAGOS||[]).filter(p=>String(p.REFERENCIA_ID||'')===String(refId));
+}
+
+/* ---------- Órdenes de compra ---------- */
+let ocEditando = null;
+let ocPartidas = [];
+function ocNuevaPartida(){ return { desc:'', cant:1, precio:0 }; }
+function pintarOcPartidas(){
+  const cont = $('ocPartidas'); cont.innerHTML='';
+  if(!ocPartidas.length) ocPartidas = [ocNuevaPartida()];
+  ocPartidas.forEach((p,i)=>{
+    const fila = document.createElement('div');
+    fila.className = 'grid g4'; fila.style.marginBottom='8px';
+    fila.innerHTML = `<div style="grid-column:1/3"><input value="${esc(p.desc)}" data-ocd="${i}" placeholder="Descripción de la partida"></div>
+      <div><input type="number" min="0" step="0.01" value="${p.cant}" data-occ="${i}" title="Cantidad"></div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="number" min="0" step="0.01" value="${p.precio}" data-ocp="${i}" title="Precio unitario">
+        <button class="btn btn-d btn-sm" data-ocx="${i}" title="Quitar partida">✕</button>
+      </div>`;
+    cont.appendChild(fila);
+  });
+  cont.querySelectorAll('[data-ocd]').forEach(e=>e.addEventListener('input',()=>{ ocPartidas[e.dataset.ocd].desc=e.value; }));
+  cont.querySelectorAll('[data-occ]').forEach(e=>e.addEventListener('input',()=>{ ocPartidas[e.dataset.occ].cant=nf(e.value); totalesOc(); }));
+  cont.querySelectorAll('[data-ocp]').forEach(e=>e.addEventListener('input',()=>{ ocPartidas[e.dataset.ocp].precio=nf(e.value); totalesOc(); }));
+  cont.querySelectorAll('[data-ocx]').forEach(e=>e.addEventListener('click',()=>{
+    ocPartidas.splice(Number(e.dataset.ocx),1);
+    if(!ocPartidas.length) ocPartidas=[ocNuevaPartida()];
+    pintarOcPartidas(); totalesOc();
+  }));
+  totalesOc();
+}
+function totalesOc(){
+  const sub = ocPartidas.reduce((a,p)=>a + nf(p.cant)*nf(p.precio), 0);
+  const iva = sub * nf($('ocIva').value)/100;
+  $('ocSubtotal').textContent = money(sub);
+  $('ocIvaMonto').textContent = money(iva);
+  $('ocTotal').textContent    = money(sub+iva);
+  return { sub:r2(sub), iva:r2(iva), total:r2(sub+iva) };
+}
+function abrirOrden(id){
+  const o = id? (DB.ORDENES_COMPRA||[]).find(x=>String(x.ID)===String(id)) : null;
+  ocEditando = o? o.ID : null;
+  $('ocForm').style.display='';
+  $('ocTit').textContent = o? o.FOLIO : 'nueva';
+  llenarSelect('ocProveedor', DB.PROVEEDORES, p=>p.NOMBRE);
+  if(o){
+    seleccionarPorNombre('ocProveedor','PROVEEDORES', o.PROVEEDOR);
+    $('ocFecha').value = String(o.FECHA||'').slice(0,10);
+    $('ocConcepto').value = o.CONCEPTO||'';
+    $('ocCP').value = o.CP||'';
+    $('ocIva').value = nf(o.SUBTOTAL)? r2(nf(o.IVA)/nf(o.SUBTOTAL)*100) : 16;
+    $('ocNotas').value = o.NOTAS||'';
+    try{ ocPartidas = JSON.parse(o.PARTIDAS_JSON||'[]'); }catch(e){ ocPartidas = []; }
+    if(!Array.isArray(ocPartidas) || !ocPartidas.length) ocPartidas=[ocNuevaPartida()];
+    $('ocInfo').innerHTML = `Estado actual: <b>${esc(o.ESTADO)}</b>` +
+      (o.AUTORIZADA_POR? ` · autorizó ${esc(o.AUTORIZADA_POR)} el ${fmtFecha(o.FECHA_AUTORIZACION)}` : '') +
+      (String(o.ESTADO||'')!=='BORRADOR'? '<br><span style="color:var(--accent)">Una orden ya autorizada solo debería corregirse por excepción.</span>' : '');
+  } else {
+    $('ocFecha').value = hoyISO();
+    ['ocConcepto','ocCP','ocNotas'].forEach(x=>$(x).value='');
+    $('ocIva').value = 16;
+    ocPartidas = [ocNuevaPartida()];
+    $('ocInfo').textContent = 'La orden nace en borrador; se autoriza desde la lista.';
+  }
+  pintarOcPartidas();
+}
+async function guardarOrden(){
+  const prov = nombreDeSelect('ocProveedor','PROVEEDORES');
+  if(!prov){ toast('Elige el proveedor.', true); return; }
+  const concepto = $('ocConcepto').value.trim();
+  if(!concepto){ toast('Captura el concepto.', true); $('ocConcepto').focus(); return; }
+  const partidas = ocPartidas.filter(p=>String(p.desc||'').trim() || nf(p.precio));
+  if(!partidas.length){ toast('Agrega al menos una partida.', true); return; }
+  const t = totalesOc();
+  const previo = ocEditando? (DB.ORDENES_COMPRA||[]).find(x=>String(x.ID)===String(ocEditando)) : null;
+  const cp = $('ocCP').value.trim();
+  const srv = cp? DB.SERVICIOS.find(s=>String(s.CP||'').trim().toUpperCase()===cp.toUpperCase()) : null;
+  const reg = Object.assign({}, previo||{}, {
+    FOLIO: (previo && previo.FOLIO) || folioSiguiente('ORDENES_COMPRA','FOLIO','OC-'),
+    FECHA: $('ocFecha').value || hoyISO(),
+    PROVEEDOR: prov, CONCEPTO: concepto,
+    SERVICIO_ID: srv? srv.ID : '', CP: cp,
+    PARTIDAS_JSON: JSON.stringify(partidas),
+    SUBTOTAL: t.sub, IVA: t.iva, TOTAL: t.total, MONEDA:'MXN',
+    ESTADO: (previo && previo.ESTADO) || 'BORRADOR',
+    NOTAS: $('ocNotas').value.trim(),
+    CREADA_POR: (previo && previo.CREADA_POR) || nombreUsuario()
+  });
+  if(ocEditando) reg.ID = ocEditando;
+  if(await apiEnviar({action:'upsert', sheet:'ORDENES_COMPRA', record:reg})){
+    toast(ocEditando? 'Orden actualizada' : 'Orden '+reg.FOLIO+' creada');
+    $('ocForm').style.display='none'; ocEditando=null;
+    pintarOrdenes();
+  }
+}
+/* El paso de estado arrastra lo demás: al autorizar aparece en Liberaciones y
+   en CXP; al pagar deja su renglón en Cobros y pagos. */
+async function moverOrden(id, estado){
+  const o = (DB.ORDENES_COMPRA||[]).find(x=>String(x.ID)===String(id)); if(!o) return;
+  const reg = Object.assign({}, o, { ESTADO: estado });
+  if(estado==='AUTORIZADA'){ reg.AUTORIZADA_POR = nombreUsuario(); reg.FECHA_AUTORIZACION = hoyISO(); }
+  if(estado==='RECIBIDA')  reg.FECHA_RECEPCION = hoyISO();
+  if(estado==='PAGADA'){
+    if(!libLiberado('ORDEN DE COMPRA', o.ID) && libObligatoria()){
+      modal('Falta liberar', `La orden <b>${esc(o.FOLIO)}</b> todavía no está liberada por Finanzas. Libérala en <b>Finanzas → Liberaciones</b> antes de pagarla.`, '🔒');
+      return;
+    }
+    reg.FECHA_PAGO = hoyISO(); reg.PAGADA_POR = nombreUsuario();
+  }
+  if(!await apiEnviar({action:'upsert', sheet:'ORDENES_COMPRA', record:reg})) return;
+  if(estado==='PAGADA'){
+    await registrarMovimiento({ TIPO:'PAGO', ORIGEN:'ORDEN DE COMPRA', REFERENCIA_ID:o.ID,
+      FOLIO:o.FOLIO, CONTRAPARTE:o.PROVEEDOR, MONTO:r2(nf(o.TOTAL)),
+      METODO:'TRANSFERENCIA', NOTAS:o.CONCEPTO||'' });
+  }
+  toast('Orden '+o.FOLIO+' · '+estado);
+  pintarOrdenes();
+}
+const OC_SIGUIENTE = { BORRADOR:'AUTORIZADA', AUTORIZADA:'RECIBIDA', RECIBIDA:'PAGADA' };
+function pintarOrdenes(){
+  const todas = DB.ORDENES_COMPRA||[];
+  const suma = f => todas.filter(f).reduce((a,o)=>a+nf(o.TOTAL),0);
+  $('kOcTotal').textContent      = num(todas.length);
+  $('kOcBorrador').textContent   = money(suma(o=>o.ESTADO==='BORRADOR'));
+  $('kOcAutorizado').textContent = money(suma(o=>o.ESTADO==='AUTORIZADA'||o.ESTADO==='RECIBIDA'));
+  $('kOcPagado').textContent     = money(suma(o=>o.ESTADO==='PAGADA'));
+
+  const q = ($('ocBusca').value||'').trim().toUpperCase();
+  const fEst = $('ocEstado').value;
+  const filas = todas.filter(o=>{
+    if(fEst!=='todos' && String(o.ESTADO||'')!==fEst) return false;
+    if(!q) return true;
+    return [o.FOLIO,o.PROVEEDOR,o.CONCEPTO,o.CP,o.FACTURA_PROVEEDOR]
+      .some(v=>String(v||'').toUpperCase().includes(q));
+  });
+  const color = e => e==='PAGADA'? 'var(--ok)' : e==='CANCELADA'? 'var(--bad)'
+              : e==='BORRADOR'? 'var(--road)' : 'var(--accent)';
+  const tb=$('tbodyOrdenes'); tb.innerHTML='';
+  [...filas].reverse().forEach(o=>{
+    const sig = OC_SIGUIENTE[String(o.ESTADO||'')];
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><b>${esc(o.FOLIO)}</b></td><td>${fmtFecha(o.FECHA)}</td>
+      <td>${esc(o.PROVEEDOR)}</td><td>${esc(o.CONCEPTO)}</td>
+      <td>${esc(o.CP)||'<span class="mini">—</span>'}</td>
+      <td class="right num"><b>${money(o.TOTAL)}</b></td>
+      <td><span class="tag" style="background:${color(o.ESTADO)};color:#fff">${esc(o.ESTADO)}</span>
+        ${libLiberado('ORDEN DE COMPRA',o.ID)? '<br><span class="mini" style="color:var(--ok)">Liberado ✔</span>':''}</td>
+      <td><input value="${esc(o.FACTURA_PROVEEDOR)}" data-ocfac="${o.ID}" placeholder="Folio / UUID" style="max-width:150px"></td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-s btn-sm" data-ocedit="${o.ID}">Ver</button>
+        ${sig? `<button class="btn btn-p btn-sm" data-ocnext="${o.ID}" data-est="${sig}">${sig==='AUTORIZADA'?'Autorizar':sig==='RECIBIDA'?'Recibir':'Pagar'}</button>`:''}
+        ${o.ESTADO!=='PAGADA'&&o.ESTADO!=='CANCELADA'? `<button class="btn btn-d btn-sm" data-occan="${o.ID}">✕</button>`:''}
+      </td>`;
+    tb.appendChild(tr);
+  });
+  if(!filas.length) tb.innerHTML='<tr><td colspan="9" class="mini">Sin órdenes de compra en este filtro.</td></tr>';
+  tb.querySelectorAll('[data-ocedit]').forEach(b=>b.addEventListener('click',()=>abrirOrden(b.dataset.ocedit)));
+  tb.querySelectorAll('[data-ocnext]').forEach(b=>b.addEventListener('click',()=>moverOrden(b.dataset.ocnext, b.dataset.est)));
+  tb.querySelectorAll('[data-occan]').forEach(b=>b.addEventListener('click',()=>moverOrden(b.dataset.occan,'CANCELADA')));
+  tb.querySelectorAll('[data-ocfac]').forEach(e=>e.addEventListener('change', async ()=>{
+    const o = (DB.ORDENES_COMPRA||[]).find(x=>String(x.ID)===String(e.dataset.ocfac)); if(!o) return;
+    if(await apiEnviar({action:'upsert', sheet:'ORDENES_COMPRA',
+      record: Object.assign({}, o, { FACTURA_PROVEEDOR: e.value.trim() })})) toast('Factura del proveedor guardada');
+  }));
+}
+$('btnOcNueva').addEventListener('click',()=>abrirOrden(null));
+$('btnOcCancelar').addEventListener('click',()=>{ $('ocForm').style.display='none'; ocEditando=null; });
+$('btnOcPartida').addEventListener('click',()=>{ ocPartidas.push(ocNuevaPartida()); pintarOcPartidas(); });
+$('btnOcGuardar').addEventListener('click', guardarOrden);
+$('ocIva').addEventListener('input', totalesOc);
+['ocBusca','ocEstado'].forEach(id=>$(id).addEventListener('input', pintarOrdenes));
+$('ocEstado').addEventListener('change', pintarOrdenes);
+
+/* ---------- Liberaciones ----------
+   Junta en una sola bandeja lo que está por salir a pago, venga de donde
+   venga. La regla dura (no dispersar sin liberar) es opcional: se enciende en
+   Administración, y apagada todo sigue funcionando como hasta ahora. */
+function libObligatoria(){ return String(DB.CONFIG.LIBERACION_OBLIGATORIA||'').toUpperCase()==='SI'; }
+function libDe(tipo, refId){
+  return (DB.LIBERACIONES||[]).find(l=>String(l.TIPO||'')===tipo && String(l.REFERENCIA_ID||'')===String(refId)) || null;
+}
+function libLiberado(tipo, refId){ const l=libDe(tipo,refId); return !!(l && String(l.ESTADO||'')==='LIBERADO'); }
+/* Todo lo que puede pedir dinero, normalizado a un mismo renglón */
+function pendientesDeLiberar(){
+  const filas = [];
+  DB.SOLICITUDES.forEach(s=>{
+    if(String(s.DISPERSION||'').toUpperCase()==='SI' && !libDe('SOLICITUD', s.ID)) return;
+    filas.push({ tipo:'SOLICITUD', ref:s.ID, folio:s.FOLIO, concepto:'Gasto de viaje · '+(s.RUTA||''),
+                 quien:s.OPERADOR||'', monto:nf(s.TOTAL) });
+  });
+  (DB.GASTOS_EXTRA||[]).forEach(g=>{
+    if(dispersadoExtra(g) && !libDe('GASTO EXTRA', g.ID)) return;
+    filas.push({ tipo:'GASTO EXTRA', ref:g.ID, folio:g.FOLIO, concepto:(g.TIPO||'Gasto extra')+(g.MOTIVO? ' · '+g.MOTIVO:''),
+                 quien:g.OPERADOR||'', monto:nf(g.MONTO) });
+  });
+  (DB.ORDENES_COMPRA||[]).forEach(o=>{
+    if(o.ESTADO==='BORRADOR' || o.ESTADO==='CANCELADA') return;
+    if(o.ESTADO==='PAGADA' && !libDe('ORDEN DE COMPRA', o.ID)) return;
+    filas.push({ tipo:'ORDEN DE COMPRA', ref:o.ID, folio:o.FOLIO, concepto:o.CONCEPTO||'',
+                 quien:o.PROVEEDOR||'', monto:nf(o.TOTAL) });
+  });
+  return filas.map(f=>Object.assign(f, { lib: libDe(f.tipo, f.ref) }));
+}
+async function resolverLiberacion(tipo, refId, estado){
+  const f = pendientesDeLiberar().find(x=>x.tipo===tipo && String(x.ref)===String(refId)); if(!f) return;
+  let motivo = '';
+  if(estado==='RECHAZADO'){
+    motivo = prompt('¿Por qué se rechaza '+f.folio+'?','') || '';
+    if(!motivo.trim()){ toast('Sin motivo no se rechaza.', true); return; }
+  }
+  const reg = Object.assign({}, f.lib||{}, {
+    FECHA: (f.lib && f.lib.FECHA) || hoyISO(),
+    TIPO: tipo, REFERENCIA_ID: refId, FOLIO: f.folio, CONCEPTO: f.concepto,
+    CONTRAPARTE: f.quien, MONTO: r2(f.monto), ESTADO: estado,
+    LIBERADO_POR: nombreUsuario(), FECHA_LIBERACION: hoyISO(), MOTIVO: motivo.trim()
+  });
+  if(await apiEnviar({action:'upsert', sheet:'LIBERACIONES', record:reg})){
+    toast(estado==='LIBERADO'? f.folio+' liberado' : f.folio+' rechazado');
+    pintarLiberaciones(); pintarResumenDispersion();
+  }
+}
+function pintarLiberaciones(){
+  const filas = pendientesDeLiberar();
+  const pend = filas.filter(f=>!f.lib);
+  $('kLibPend').textContent  = num(pend.length);
+  $('kLibMonto').textContent = money(pend.reduce((a,f)=>a+f.monto,0));
+  $('kLibLiberado').textContent = money(filas.filter(f=>f.lib && f.lib.ESTADO==='LIBERADO').reduce((a,f)=>a+f.monto,0));
+  $('kLibRechazado').textContent = num(filas.filter(f=>f.lib && f.lib.ESTADO==='RECHAZADO').length);
+  $('libAvisoRegla').innerHTML = libObligatoria()
+    ? '🔒 <b>La liberación es obligatoria</b>: no se puede dispersar ni pagar sin pasar por aquí. Se cambia en Administración.'
+    : 'La liberación es <b>informativa</b>: sirve de visto bueno, pero no bloquea la dispersión. Para volverla obligatoria, enciéndela en Administración.';
+
+  const q = ($('libBusca').value||'').trim().toUpperCase();
+  const fTipo = $('libTipo').value, fEst = $('libEstado').value;
+  const vista = filas.filter(f=>{
+    if(fTipo!=='todos' && f.tipo!==fTipo) return false;
+    if(fEst==='pendientes' && f.lib) return false;
+    if(fEst!=='pendientes' && fEst!=='todos' && (!f.lib || f.lib.ESTADO!==fEst)) return false;
+    if(!q) return true;
+    return [f.folio,f.concepto,f.quien].some(v=>String(v||'').toUpperCase().includes(q));
+  });
+  const tb=$('tbodyLiberaciones'); tb.innerHTML='';
+  [...vista].reverse().forEach(f=>{
+    const est = f.lib? f.lib.ESTADO : 'POR LIBERAR';
+    const color = est==='LIBERADO'? 'var(--ok)' : est==='RECHAZADO'? 'var(--bad)' : 'var(--accent)';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><span class="tag">${esc(f.tipo)}</span></td><td><b>${esc(f.folio)}</b></td>
+      <td>${esc(f.concepto)}</td><td>${esc(f.quien)}</td>
+      <td class="right num">${money(f.monto)}</td>
+      <td><span class="tag" style="background:${color};color:#fff">${est}</span>
+        ${f.lib && f.lib.MOTIVO? `<br><span class="mini">${esc(f.lib.MOTIVO)}</span>`:''}</td>
+      <td class="mini">${f.lib? esc(f.lib.LIBERADO_POR)+'<br>'+fmtFecha(f.lib.FECHA_LIBERACION) : '—'}</td>
+      <td style="white-space:nowrap">
+        ${est!=='LIBERADO'? `<button class="btn btn-p btn-sm" data-libok="${f.ref}" data-t="${esc(f.tipo)}">Liberar</button>`:''}
+        ${est!=='RECHAZADO'? `<button class="btn btn-d btn-sm" data-libno="${f.ref}" data-t="${esc(f.tipo)}">Rechazar</button>`:''}
+      </td>`;
+    tb.appendChild(tr);
+  });
+  if(!vista.length) tb.innerHTML='<tr><td colspan="8" class="mini">Nada por liberar en este filtro.</td></tr>';
+  tb.querySelectorAll('[data-libok]').forEach(b=>b.addEventListener('click',()=>resolverLiberacion(b.dataset.t, b.dataset.libok, 'LIBERADO')));
+  tb.querySelectorAll('[data-libno]').forEach(b=>b.addEventListener('click',()=>resolverLiberacion(b.dataset.t, b.dataset.libno, 'RECHAZADO')));
+}
+['libBusca','libTipo','libEstado'].forEach(id=>$(id).addEventListener('input', pintarLiberaciones));
+['libTipo','libEstado'].forEach(id=>$(id).addEventListener('change', pintarLiberaciones));
+
+/* ---------- Facturación ----------
+   Una factura ampara uno o varios servicios POR FACTURAR del mismo cliente.
+   Al emitirla, esos CXC pasan a FACTURADO con el folio; al cobrarla, a
+   COBRADO, y el cobro entra a Cobros y pagos. */
+function facFilasCliente(cliente){
+  return serviciosCobrables().filter(s=>String(s.CLIENTE||'')===cliente).map(s=>{
+    const c = cxcDeServicio(s.ID);
+    const t = tarifaDeServicio(s);
+    const tarifa = c && c.TARIFA!==''? nf(c.TARIFA) : (t? nf(t.TARIFA) : 0);
+    const extras = c? nf(c.EXTRAS) : 0;
+    return { s, c, tarifa, extras, total: tarifa+extras, estado: (c && c.ESTADO) || 'POR FACTURAR' };
+  }).filter(f=>f.estado==='POR FACTURAR');
+}
+function totalesFactura(){
+  const sel = [...document.querySelectorAll('#tbodyPorFacturar [data-facsel]:checked')];
+  const sub = sel.reduce((a,e)=>a+nf(e.dataset.monto), 0);
+  const iva = sub * nf($('facIva').value)/100;
+  const ret = sub * nf($('facRet').value)/100;
+  $('facSubtotal').textContent = money(sub);
+  $('facIvaMonto').textContent = money(iva);
+  $('facRetMonto').textContent = money(ret);
+  $('facTotal').textContent    = money(sub+iva-ret);
+  $('facAviso').textContent = sel.length? sel.length+' servicio(s) seleccionado(s)' : 'Selecciona los servicios que ampara la factura.';
+  return { sub:r2(sub), iva:r2(iva), ret:r2(ret), total:r2(sub+iva-ret),
+           ids: sel.map(e=>e.dataset.facsel) };
+}
+function pintarFacturacion(){
+  const facturas = DB.FACTURAS||[];
+  const vivas = facturas.filter(f=>String(f.ESTADO||'')!=='CANCELADA');
+  $('kFacEmitidas').textContent = num(vivas.length);
+  $('kFacPorCobrar').textContent = money(vivas.filter(f=>f.ESTADO!=='PAGADA').reduce((a,f)=>a+nf(f.TOTAL),0));
+  $('kFacCobrado').textContent   = money(vivas.filter(f=>f.ESTADO==='PAGADA').reduce((a,f)=>a+nf(f.TOTAL),0));
+  const hoy = new Date();
+  $('kFacVencidas').textContent = num(vivas.filter(f=>{
+    if(f.ESTADO==='PAGADA' || !f.FECHA) return false;
+    return (hoy - new Date(String(f.FECHA).slice(0,10)+'T12:00:00'))/86400000 > 30;
+  }).length);
+
+  // Clientes con algo por facturar
+  const selC = $('facCliente');
+  const clientes = [...new Set(serviciosCobrables().map(s=>String(s.CLIENTE||'').trim()).filter(Boolean))].sort();
+  if(selC.options.length !== clientes.length+1){
+    const antes = selC.value;
+    selC.innerHTML = '<option value="">— Elige el cliente —</option>'+clientes.map(c=>`<option>${esc(c)}</option>`).join('');
+    if(clientes.includes(antes)) selC.value = antes;
+  }
+  const cliente = selC.value;
+  if(cliente && !$('facRfc').value){
+    const c = DB.CLIENTES.find(x=>String(x.NOMBRE||'')===cliente);
+    if(c && c.RFC) $('facRfc').value = c.RFC;
+  }
+  if(!$('facFecha').value) $('facFecha').value = hoyISO();
+  if(!$('facFolio').value && cliente) $('facFolio').value = folioSiguiente('FACTURAS','FOLIO','').replace(/^0+/,'') || '1';
+
+  const tb=$('tbodyPorFacturar'); tb.innerHTML='';
+  const filas = cliente? facFilasCliente(cliente) : [];
+  filas.forEach(f=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><input type="checkbox" data-facsel="${f.s.ID}" data-monto="${f.total}"></td>
+      <td><b>${esc(f.s.CP)}</b></td><td>${esc(f.s.RUTA)||'<span class="mini">sin ruta</span>'}</td>
+      <td>${fmtFecha(String(f.s.CITA_CARGA||'').slice(0,10))}</td>
+      <td class="right num">${f.tarifa? money(f.tarifa) : '<span style="color:var(--bad)">sin tarifa</span>'}</td>
+      <td class="right num">${f.extras? money(f.extras) : '—'}</td>
+      <td class="right num"><b>${money(f.total)}</b></td>`;
+    tb.appendChild(tr);
+  });
+  if(!filas.length) tb.innerHTML = `<tr><td colspan="7" class="mini">${cliente? 'Este cliente no tiene servicios por facturar.' : 'Elige el cliente para ver sus servicios por facturar.'}</td></tr>`;
+  tb.querySelectorAll('[data-facsel]').forEach(e=>e.addEventListener('change', totalesFactura));
+  $('facTodos').checked = false;
+  totalesFactura();
+  pintarFacturas();
+}
+function pintarFacturas(){
+  const q = ($('facBusca').value||'').trim().toUpperCase();
+  const fEst = $('facEstado').value;
+  const filas = (DB.FACTURAS||[]).filter(f=>{
+    if(fEst!=='todos' && String(f.ESTADO||'')!==fEst) return false;
+    if(!q) return true;
+    return [f.SERIE,f.FOLIO,f.UUID,f.CLIENTE,f.CARTAS_PORTE].some(v=>String(v||'').toUpperCase().includes(q));
+  });
+  const tb=$('tbodyFacturas'); tb.innerHTML='';
+  [...filas].reverse().forEach(f=>{
+    const color = f.ESTADO==='PAGADA'? 'var(--ok)' : f.ESTADO==='CANCELADA'? 'var(--bad)' : 'var(--accent)';
+    const arch = [f.XML_URL? `<a href="${esc(f.XML_URL)}" target="_blank" rel="noopener">XML</a>`:'',
+                  f.PDF_URL? `<a href="${esc(f.PDF_URL)}" target="_blank" rel="noopener">PDF</a>`:'']
+                 .filter(Boolean).join(' · ') || '<span class="mini">—</span>';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><b>${esc(f.SERIE)}${f.SERIE?'-':''}${esc(f.FOLIO)}</b></td><td>${fmtFecha(f.FECHA)}</td>
+      <td>${esc(f.CLIENTE)}</td><td class="mini">${esc(f.CARTAS_PORTE)}</td>
+      <td class="mini">${esc(f.UUID)||'—'}</td>
+      <td class="right num"><b>${money(f.TOTAL)}</b></td>
+      <td><span class="tag" style="background:${color};color:#fff">${esc(f.ESTADO)}</span>
+        ${f.FECHA_PAGO? `<br><span class="mini">cobrada ${fmtFecha(f.FECHA_PAGO)}</span>`:''}</td>
+      <td>${arch}</td>
+      <td style="white-space:nowrap">
+        ${f.ESTADO==='EMITIDA'? `<button class="btn btn-p btn-sm" data-faccob="${f.ID}">Registrar cobro</button>
+          <button class="btn btn-d btn-sm" data-faccan="${f.ID}">✕</button>`:''}
+      </td>`;
+    tb.appendChild(tr);
+  });
+  if(!filas.length) tb.innerHTML='<tr><td colspan="9" class="mini">Sin facturas en este filtro.</td></tr>';
+  tb.querySelectorAll('[data-faccob]').forEach(b=>b.addEventListener('click',()=>registrarCobro(b.dataset.faccob)));
+  tb.querySelectorAll('[data-faccan]').forEach(b=>b.addEventListener('click',()=>cancelarFactura(b.dataset.faccan)));
+}
+async function emitirFactura(){
+  const cliente = $('facCliente').value;
+  if(!cliente){ toast('Elige el cliente.', true); return; }
+  const t = totalesFactura();
+  if(!t.ids.length){ toast('Selecciona los servicios que ampara la factura.', true); return; }
+  const folio = $('facFolio').value.trim();
+  if(!folio){ toast('Captura el folio de la factura.', true); $('facFolio').focus(); return; }
+  const servicios = t.ids.map(id=>DB.SERVICIOS.find(s=>String(s.ID)===String(id))).filter(Boolean);
+  const cps = servicios.map(s=>s.CP).filter(Boolean).join(', ');
+  const reg = {
+    SERIE: $('facSerie').value.trim(), FOLIO: folio, UUID: $('facUuid').value.trim(),
+    FECHA: $('facFecha').value || hoyISO(), CLIENTE: cliente, RFC: $('facRfc').value.trim(),
+    CONCEPTO: 'Servicio de autotransporte de carga', CXC_IDS: t.ids.join(','), CARTAS_PORTE: cps,
+    SUBTOTAL: t.sub, IVA: t.iva, RETENCION: t.ret, TOTAL: t.total, MONEDA:'MXN',
+    METODO_PAGO:'PPD', FORMA_PAGO:'99', USO_CFDI:'G03', ESTADO:'EMITIDA',
+    XML_URL: $('facXml').value.trim(), PDF_URL: $('facPdf').value.trim(),
+    REGISTRADO_POR: nombreUsuario()
+  };
+  if(!await apiEnviar({action:'upsert', sheet:'FACTURAS', record:reg})) return;
+  // Los CXC de esos servicios quedan facturados con el folio
+  const folioFac = (reg.SERIE? reg.SERIE+'-':'')+reg.FOLIO;
+  const registros = servicios.map(s=>{
+    const previo = cxcDeServicio(s.ID);
+    const tar = tarifaDeServicio(s);
+    const tarifa = previo && previo.TARIFA!==''? nf(previo.TARIFA) : (tar? nf(tar.TARIFA) : 0);
+    const extras = previo? nf(previo.EXTRAS) : 0;
+    return Object.assign({}, previo||{}, {
+      SERVICIO_ID: s.ID, CP: s.CP, CLIENTE: s.CLIENTE, RUTA: s.RUTA||'',
+      TIPO_UNIDAD: s.TIPO_UNIDAD, FECHA_SERVICIO: String(s.CITA_CARGA||'').slice(0,10),
+      TARIFA: r2(tarifa), EXTRAS: r2(extras), TOTAL: r2(tarifa+extras),
+      ESTADO:'FACTURADO', FACTURA: folioFac, FECHA_FACTURA: reg.FECHA,
+      REGISTRADO_POR: nombreUsuario()
+    });
+  });
+  await apiEnviar({action:'bulkUpsert', sheet:'CXC', records:registros});
+  toast('Factura '+folioFac+' emitida por '+money(t.total));
+  ['facUuid','facXml','facPdf'].forEach(x=>$(x).value='');
+  $('facFolio').value='';
+  pintarFacturacion();
+}
+async function registrarCobro(id){
+  const f = (DB.FACTURAS||[]).find(x=>String(x.ID)===String(id)); if(!f) return;
+  const ok = await preguntar('Registrar cobro',
+    `Se marca la factura <b>${esc((f.SERIE?f.SERIE+'-':'')+f.FOLIO)}</b> de ${esc(f.CLIENTE)} como <b>pagada</b> por ${money(f.TOTAL)}, `+
+    `y sus servicios pasan a <b>Cobrado</b>. ¿Se recibió el pago?`, '💵');
+  if(!ok) return;
+  if(!await apiEnviar({action:'upsert', sheet:'FACTURAS',
+    record: Object.assign({}, f, { ESTADO:'PAGADA', FECHA_PAGO: hoyISO() })})) return;
+  const ids = String(f.CXC_IDS||'').split(',').map(x=>x.trim()).filter(Boolean);
+  const registros = ids.map(sid=>{
+    const previo = cxcDeServicio(sid); if(!previo) return null;
+    return Object.assign({}, previo, { ESTADO:'COBRADO', FECHA_COBRO: hoyISO() });
+  }).filter(Boolean);
+  if(registros.length) await apiEnviar({action:'bulkUpsert', sheet:'CXC', records:registros});
+  await registrarMovimiento({ TIPO:'COBRO', ORIGEN:'FACTURA', REFERENCIA_ID:f.ID,
+    FOLIO:(f.SERIE?f.SERIE+'-':'')+f.FOLIO, CONTRAPARTE:f.CLIENTE, MONTO:r2(nf(f.TOTAL)),
+    METODO:'TRANSFERENCIA', NOTAS:f.CARTAS_PORTE||'' });
+  toast('Cobro registrado');
+  pintarFacturacion();
+}
+async function cancelarFactura(id){
+  const f = (DB.FACTURAS||[]).find(x=>String(x.ID)===String(id)); if(!f) return;
+  const ok = await preguntar('Cancelar factura',
+    `La factura <b>${esc((f.SERIE?f.SERIE+'-':'')+f.FOLIO)}</b> queda cancelada y sus servicios regresan a <b>Por facturar</b>. ¿Continuar?`, '⚠');
+  if(!ok) return;
+  if(!await apiEnviar({action:'upsert', sheet:'FACTURAS',
+    record: Object.assign({}, f, { ESTADO:'CANCELADA', FECHA_CANCELACION: hoyISO() })})) return;
+  const ids = String(f.CXC_IDS||'').split(',').map(x=>x.trim()).filter(Boolean);
+  const registros = ids.map(sid=>{
+    const previo = cxcDeServicio(sid); if(!previo) return null;
+    return Object.assign({}, previo, { ESTADO:'POR FACTURAR', FACTURA:'', FECHA_FACTURA:'', FECHA_COBRO:'' });
+  }).filter(Boolean);
+  if(registros.length) await apiEnviar({action:'bulkUpsert', sheet:'CXC', records:registros});
+  toast('Factura cancelada');
+  pintarFacturacion();
+}
+$('facTodos').addEventListener('change',()=>{
+  document.querySelectorAll('#tbodyPorFacturar [data-facsel]').forEach(e=>{ e.checked = $('facTodos').checked; });
+  totalesFactura();
+});
+$('facCliente').addEventListener('change', pintarFacturacion);
+['facIva','facRet'].forEach(id=>$(id).addEventListener('input', totalesFactura));
+$('btnFacEmitir').addEventListener('click', emitirFactura);
+['facBusca','facEstado'].forEach(id=>$(id).addEventListener('input', pintarFacturas));
+$('facEstado').addEventListener('change', pintarFacturas);
+
+/* ---------- Cartas porte timbradas ---------- */
+let cpEditando = null;
+function cpDeServicio(cp){
+  return (DB.CARTAS_PORTE||[]).find(x=>String(x.CP||'').trim().toUpperCase()===String(cp||'').trim().toUpperCase()) || null;
+}
+function serviciosSinTimbrar(){
+  return serviciosVisibles().filter(s=>{
+    if(String(s.ESTATUS||'').toUpperCase()==='CANCELADO') return false;
+    if(!String(s.CP||'').trim()) return false;
+    const t = cpDeServicio(s.CP);
+    return !t || String(t.ESTADO||'')==='CANCELADA';
+  });
+}
+function limpiarCp(){
+  cpEditando = null;
+  ['cpServicio','cpSerie','cpFolio','cpUuid','cpIdccp','cpRfcReceptor','cpXml','cpPdf'].forEach(x=>$(x).value='');
+  $('cpTotal').value = 0;
+  $('cpSerie').value = 'CP';
+  $('cpRfcEmisor').value = DB.CONFIG.RFC_EMISOR || '';
+  $('cpTipo').value = 'TRASLADO';
+  $('cpAvisoServicio').textContent = '';
+}
+function avisoServicioCp(){
+  const cp = $('cpServicio').value.trim();
+  const s = cp? DB.SERVICIOS.find(x=>String(x.CP||'').trim().toUpperCase()===cp.toUpperCase()) : null;
+  const el = $('cpAvisoServicio');
+  if(!cp){ el.textContent=''; return; }
+  if(!s){ el.innerHTML = '<span style="color:var(--bad)">No se encontró esa carta porte en los servicios.</span>'; return; }
+  el.innerHTML = `Servicio de <b>${esc(s.CLIENTE)}</b> · ${esc(s.RUTA||s.ORIGEN+' → '+s.DESTINO)} · unidad ${esc(s.ECONOMICO)||'—'}`;
+  if(!$('cpRfcReceptor').value){
+    const c = DB.CLIENTES.find(x=>String(x.NOMBRE||'')===String(s.CLIENTE||''));
+    if(c && c.RFC) $('cpRfcReceptor').value = c.RFC;
+  }
+}
+async function guardarTimbrado(){
+  const cp = $('cpServicio').value.trim();
+  if(!cp){ toast('Captura la carta porte.', true); $('cpServicio').focus(); return; }
+  const uuid = $('cpUuid').value.trim();
+  if(!uuid){ toast('Sin UUID no hay timbrado.', true); $('cpUuid').focus(); return; }
+  const s = DB.SERVICIOS.find(x=>String(x.CP||'').trim().toUpperCase()===cp.toUpperCase());
+  const previo = cpEditando? (DB.CARTAS_PORTE||[]).find(x=>String(x.ID)===String(cpEditando)) : cpDeServicio(cp);
+  const reg = Object.assign({}, previo||{}, {
+    CP: cp, SERVICIO_ID: s? s.ID : '', CLIENTE: s? s.CLIENTE : '',
+    SERIE: $('cpSerie').value.trim(), FOLIO: $('cpFolio').value.trim(),
+    UUID: uuid, IDCCP: $('cpIdccp').value.trim(),
+    FECHA_TIMBRADO: $('cpFecha').value || '',
+    RFC_EMISOR: $('cpRfcEmisor').value.trim(), RFC_RECEPTOR: $('cpRfcReceptor').value.trim(),
+    TIPO_CFDI: $('cpTipo').value, TOTAL: r2(nf($('cpTotal').value)),
+    ESTADO:'TIMBRADA', FECHA_CANCELACION:'', MOTIVO_CANCELACION:'',
+    XML_URL: $('cpXml').value.trim(), PDF_URL: $('cpPdf').value.trim(),
+    REGISTRADO_POR: nombreUsuario()
+  });
+  if(await apiEnviar({action:'upsert', sheet:'CARTAS_PORTE', record:reg})){
+    toast('Carta porte '+cp+' timbrada');
+    limpiarCp(); pintarCartasPorte();
+  }
+}
+async function cancelarTimbrado(id){
+  const t = (DB.CARTAS_PORTE||[]).find(x=>String(x.ID)===String(id)); if(!t) return;
+  const motivo = prompt('Motivo de la cancelación del CFDI '+t.CP+':','') || '';
+  if(!motivo.trim()){ toast('Sin motivo no se cancela.', true); return; }
+  if(await apiEnviar({action:'upsert', sheet:'CARTAS_PORTE',
+    record: Object.assign({}, t, { ESTADO:'CANCELADA', FECHA_CANCELACION: hoyISO(), MOTIVO_CANCELACION: motivo.trim() })})){
+    toast('CFDI cancelado'); pintarCartasPorte();
+  }
+}
+function abrirTimbrado(id){
+  const t = (DB.CARTAS_PORTE||[]).find(x=>String(x.ID)===String(id)); if(!t) return;
+  cpEditando = t.ID;
+  $('cpServicio').value = t.CP||''; $('cpSerie').value = t.SERIE||'';
+  $('cpFolio').value = t.FOLIO||''; $('cpFecha').value = String(t.FECHA_TIMBRADO||'').slice(0,16);
+  $('cpUuid').value = t.UUID||''; $('cpIdccp').value = t.IDCCP||'';
+  $('cpRfcEmisor').value = t.RFC_EMISOR||''; $('cpRfcReceptor').value = t.RFC_RECEPTOR||'';
+  $('cpTipo').value = t.TIPO_CFDI||'TRASLADO'; $('cpTotal').value = nf(t.TOTAL);
+  $('cpXml').value = t.XML_URL||''; $('cpPdf').value = t.PDF_URL||'';
+  avisoServicioCp();
+  $('cpForm').scrollIntoView({behavior:'smooth', block:'center'});
+}
+function pintarCartasPorte(){
+  const todas = DB.CARTAS_PORTE||[];
+  const sinTimbrar = serviciosSinTimbrar();
+  $('kCpTimbradas').textContent  = num(todas.filter(t=>t.ESTADO==='TIMBRADA').length);
+  $('kCpPendientes').textContent = num(sinTimbrar.length);
+  $('kCpCanceladas').textContent = num(todas.filter(t=>t.ESTADO==='CANCELADA').length);
+  if(!$('cpRfcEmisor').value) $('cpRfcEmisor').value = DB.CONFIG.RFC_EMISOR || '';
+
+  const q = ($('cpBusca').value||'').trim().toUpperCase();
+  const fEst = $('cpEstado').value;
+  const tb=$('tbodyCartasPorte'); tb.innerHTML='';
+
+  if(fEst==='sintimbrar'){
+    const vista = sinTimbrar.filter(s=>!q || [s.CP,s.CLIENTE,s.RUTA].some(v=>String(v||'').toUpperCase().includes(q)));
+    [...vista].reverse().forEach(s=>{
+      const tr=document.createElement('tr');
+      tr.innerHTML=`<td><b>${esc(s.CP)}</b></td><td>${esc(s.CLIENTE)}</td><td class="mini">—</td>
+        <td class="mini">—</td><td class="mini">—</td><td class="right num">—</td>
+        <td><span class="tag" style="background:var(--accent);color:#fff">SIN TIMBRAR</span></td>
+        <td class="mini">—</td>
+        <td><button class="btn btn-p btn-sm" data-cptim="${esc(s.CP)}">Timbrar</button></td>`;
+      tb.appendChild(tr);
+    });
+    if(!vista.length) tb.innerHTML='<tr><td colspan="9" class="mini">Todos los servicios están timbrados.</td></tr>';
+    tb.querySelectorAll('[data-cptim]').forEach(b=>b.addEventListener('click',()=>{
+      limpiarCp(); $('cpServicio').value = b.dataset.cptim; avisoServicioCp();
+      $('cpForm').scrollIntoView({behavior:'smooth', block:'center'});
+    }));
+    return;
+  }
+
+  const filas = todas.filter(t=>{
+    if(fEst!=='todos' && String(t.ESTADO||'')!==fEst) return false;
+    if(!q) return true;
+    return [t.CP,t.UUID,t.CLIENTE,t.IDCCP,t.FOLIO].some(v=>String(v||'').toUpperCase().includes(q));
+  });
+  [...filas].reverse().forEach(t=>{
+    const color = t.ESTADO==='CANCELADA'? 'var(--bad)' : 'var(--ok)';
+    const arch = [t.XML_URL? `<a href="${esc(t.XML_URL)}" target="_blank" rel="noopener">XML</a>`:'',
+                  t.PDF_URL? `<a href="${esc(t.PDF_URL)}" target="_blank" rel="noopener">PDF</a>`:'']
+                 .filter(Boolean).join(' · ') || '<span class="mini">—</span>';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><b>${esc(t.CP)}</b></td><td>${esc(t.CLIENTE)}</td>
+      <td>${esc(t.SERIE)}${t.SERIE?'-':''}${esc(t.FOLIO)}</td>
+      <td class="mini">${esc(t.UUID)}</td><td class="mini">${fmtFechaHora(t.FECHA_TIMBRADO)}</td>
+      <td class="right num">${money(t.TOTAL)}</td>
+      <td><span class="tag" style="background:${color};color:#fff">${esc(t.ESTADO)}</span>
+        ${t.MOTIVO_CANCELACION? `<br><span class="mini">${esc(t.MOTIVO_CANCELACION)}</span>`:''}</td>
+      <td>${arch}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-s btn-sm" data-cped="${t.ID}">Ver</button>
+        ${t.ESTADO==='TIMBRADA'? `<button class="btn btn-d btn-sm" data-cpcan="${t.ID}">✕</button>`:''}
+      </td>`;
+    tb.appendChild(tr);
+  });
+  if(!filas.length) tb.innerHTML='<tr><td colspan="9" class="mini">Sin cartas porte timbradas en este filtro.</td></tr>';
+  tb.querySelectorAll('[data-cped]').forEach(b=>b.addEventListener('click',()=>abrirTimbrado(b.dataset.cped)));
+  tb.querySelectorAll('[data-cpcan]').forEach(b=>b.addEventListener('click',()=>cancelarTimbrado(b.dataset.cpcan)));
+}
+$('btnCpGuardar').addEventListener('click', guardarTimbrado);
+$('btnCpLimpiar').addEventListener('click', limpiarCp);
+$('cpServicio').addEventListener('change', avisoServicioCp);
+['cpBusca','cpEstado'].forEach(id=>$(id).addEventListener('input', pintarCartasPorte));
+$('cpEstado').addEventListener('change', pintarCartasPorte);
+
+/* ---------- Cobros y pagos ----------
+   Solo lectura: es el reflejo de lo que hicieron las demás pantallas. */
+function pintarCaja(){
+  const movs = DB.PAGOS||[];
+  const cobros = movs.filter(m=>String(m.TIPO||'')==='COBRO').reduce((a,m)=>a+nf(m.MONTO),0);
+  const pagos  = movs.filter(m=>String(m.TIPO||'')==='PAGO').reduce((a,m)=>a+nf(m.MONTO),0);
+  $('kCajaCobros').textContent = money(cobros);
+  $('kCajaPagos').textContent  = money(pagos);
+  $('kCajaSaldo').textContent  = money(cobros-pagos);
+  $('kCajaMovs').textContent   = num(movs.length);
+
+  const selO = $('cajaOrigen');
+  const origenes = [...new Set(movs.map(m=>String(m.ORIGEN||'').trim()).filter(Boolean))].sort();
+  if(selO.options.length !== origenes.length+1){
+    const antes = selO.value;
+    selO.innerHTML = '<option value="todos">Todos</option>'+origenes.map(o=>`<option>${esc(o)}</option>`).join('');
+    if(origenes.includes(antes)) selO.value = antes;
+  }
+  const q = ($('cajaBusca').value||'').trim().toUpperCase();
+  const fTipo = $('cajaTipo').value, fOri = selO.value;
+  const filas = movs.filter(m=>{
+    if(fTipo!=='todos' && String(m.TIPO||'')!==fTipo) return false;
+    if(fOri!=='todos' && String(m.ORIGEN||'')!==fOri) return false;
+    if(!q) return true;
+    return [m.FOLIO,m.CONTRAPARTE,m.NOTAS].some(v=>String(v||'').toUpperCase().includes(q));
+  });
+  const tb=$('tbodyCaja'); tb.innerHTML='';
+  [...filas].reverse().forEach(m=>{
+    const cobro = String(m.TIPO||'')==='COBRO';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${fmtFecha(m.FECHA)}</td>
+      <td><span class="tag" style="background:${cobro?'var(--ok)':'var(--bad)'};color:#fff">${esc(m.TIPO)}</span></td>
+      <td>${esc(m.ORIGEN)}</td><td><b>${esc(m.FOLIO)}</b></td><td>${esc(m.CONTRAPARTE)}</td>
+      <td class="right num" style="color:${cobro?'var(--ok)':'var(--bad)'}"><b>${cobro?'+':'−'}${money(m.MONTO)}</b></td>
+      <td>${esc(m.METODO)}</td><td class="mini">${esc(m.NOTAS)}</td>`;
+    tb.appendChild(tr);
+  });
+  if(!filas.length) tb.innerHTML='<tr><td colspan="8" class="mini">Sin movimientos en este filtro.</td></tr>';
+}
+['cajaBusca','cajaTipo','cajaOrigen'].forEach(id=>$(id).addEventListener('input', pintarCaja));
+['cajaTipo','cajaOrigen'].forEach(id=>$(id).addEventListener('change', pintarCaja));
 
 /* ---------- Calidad · Seguimiento ----------
    La misma información de los tickets, en su propia pantalla. Abrir un ticket
@@ -5571,10 +6508,17 @@ function pintarDispersionExtras(){
 async function dispersarExtra(id){
   if(!puedeDispersar()){ modal('Sin permiso','Solo un <b>auditor</b> o un <b>administrador</b> puede confirmar la dispersión.','🔒'); return; }
   const g = (DB.GASTOS_EXTRA||[]).find(x=>String(x.ID)===String(id)); if(!g) return;
+  if(libObligatoria() && !libLiberado('GASTO EXTRA', g.ID)){
+    modal('Falta liberar', `El gasto extra <b>${esc(g.FOLIO)}</b> no está liberado por Finanzas. Libéralo en <b>Finanzas → Liberaciones</b> antes de dispersarlo.`, '🔒');
+    return;
+  }
   const reg = Object.assign({}, g, {
     DISPERSION:'SI', DISPERSADO_POR: nombreUsuario(), FECHA_DISPERSION: ahoraTexto()
   });
   if(await apiEnviar({action:'upsert', sheet:'GASTOS_EXTRA', record:reg})){
+    await registrarMovimiento({ TIPO:'PAGO', ORIGEN:'GASTO EXTRA', REFERENCIA_ID:g.ID,
+      FOLIO:g.FOLIO, CONTRAPARTE:g.OPERADOR||'', MONTO:r2(nf(g.MONTO)),
+      METODO:'DISPERSIÓN', NOTAS:(g.TIPO||'')+(g.MOTIVO? ' · '+g.MOTIVO:'') });
     toast('Gasto extra dispersado: '+money(g.MONTO));
     pintarTablaDispersiones(); pintarGastosExtra();
   }
@@ -5731,6 +6675,10 @@ $('btnDispersarSol').addEventListener('click', async ()=>{
     `Casetas: ${money(casDisp)}\n`+
     gastosDisp.map(g=>`${g.CONCEPTO}: ${money(g.MONTO)}`).join('\n')+(gastosDisp.length?'\n':'')+
     `Total dispersado: ${money(totalDisp)}`;
+  if(libObligatoria() && !libLiberado('SOLICITUD', s.ID)){
+    modal('Falta liberar', `La solicitud <b>${esc(s.FOLIO)}</b> no está liberada por Finanzas. Libérala en <b>Finanzas → Liberaciones</b> antes de dispersarla.`, '🔒');
+    return;
+  }
   if(!confirm('Confirmar dispersión al operador '+s.OPERADOR+' — Folio '+s.FOLIO+'\n\n'+resumen+'\n\n¿Los montos son correctos?')) return;
 
   const reg = Object.assign({}, s, {
@@ -5738,6 +6686,9 @@ $('btnDispersarSol').addEventListener('click', async ()=>{
     DISP_GASTOS_ADICIONALES_JSON: JSON.stringify(gastosDisp), DISP_TOTAL: totalDisp,
     DISPERSION:'SI', DISPERSADO_POR: nombreUsuario(), FECHA_DISPERSION: hoyISO() });
   if(await apiEnviar({action:'upsert', sheet:'SOLICITUDES', record:reg})){
+    await registrarMovimiento({ TIPO:'PAGO', ORIGEN:'DISPERSIÓN', REFERENCIA_ID:s.ID,
+      FOLIO:s.FOLIO, CONTRAPARTE:s.OPERADOR||'', MONTO:totalDisp,
+      METODO:'DISPERSIÓN', NOTAS:s.RUTA||'' });
     toast('Dispersión confirmada para el folio '+s.FOLIO);
     abrirDispersion(dispEditando);
     pintarTablaDispersiones();
@@ -6507,6 +7458,13 @@ function pintarResumenDispersion(){
   }
   const n = pendientesDispersion();
   const el = $('dispPend');
+  const sinLiberar = libObligatoria()
+    ? pendientesDeLiberar().filter(f=>!f.lib && f.tipo!=='ORDEN DE COMPRA').length : 0;
+  if(sinLiberar && elX){
+    elX.style.display='';
+    elX.innerHTML = (elX.innerHTML && extras.length? elX.innerHTML+'<hr class="sep">' : '')+
+      `<b>🔒 ${sinLiberar} concepto(s) sin liberar</b> — con la liberación obligatoria encendida no se pueden dispersar hasta que Finanzas los libere en <b>Liberaciones</b>.`;
+  }
   el.textContent = n>0
     ? `⏳ ${n} solicitud${n>1?'es':''} pendiente${n>1?'s':''} de dispersar`
     : 'Sin pendientes de dispersar';
@@ -7219,7 +8177,10 @@ const ADMIN = {
   EJECUTIVOS:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
   REMOLQUES:{ cols:[{k:'ECONOMICO'},{k:'PLACAS'},{k:'TIPO',opts:['REMOLQUE','PORTACONTENEDOR','DOLLY']}],
     csv:'ECONOMICO, PLACAS, TIPO' },
-  CLIENTES:{ cols:[{k:'NOMBRE'},{k:'EJECUTIVO',t:'Ejecutivo de la cuenta'}], csv:'NOMBRE, EJECUTIVO' },
+  /* El RFC del cliente es el que se propone al facturar y al timbrar la
+     carta porte, para no capturarlo cada vez. */
+  CLIENTES:{ cols:[{k:'NOMBRE'},{k:'RFC',raw:true},{k:'EJECUTIVO',t:'Ejecutivo de la cuenta'}],
+    csv:'NOMBRE, RFC, EJECUTIVO' },
   /* Catálogos que alimentan el alta de Nuevo Servicio */
   /* Accesos a la plataforma de rastreo del proveedor: se ven en la bitácora
      del viaje cuando el servicio va con esa línea. */
@@ -7247,6 +8208,22 @@ const ADMIN = {
   CXC:{ soloLectura:true, invertido:true, sinBorrarMasivo:true,
     cols:[{k:'CP'},{k:'CLIENTE'},{k:'RUTA'},{k:'FECHA_SERVICIO'},{k:'TARIFA'},{k:'EXTRAS'},
           {k:'TOTAL'},{k:'ESTADO'},{k:'FACTURA'}] },
+  /* Área financiera: se captura en sus pantallas, aquí solo se consulta */
+  ORDENES_COMPRA:{ soloLectura:true, invertido:true, sinBorrarMasivo:true,
+    cols:[{k:'FOLIO'},{k:'FECHA'},{k:'PROVEEDOR'},{k:'CONCEPTO'},{k:'CP'},
+          {k:'TOTAL'},{k:'ESTADO'},{k:'FACTURA_PROVEEDOR'},{k:'FECHA_PAGO'}] },
+  CARTAS_PORTE:{ soloLectura:true, invertido:true, sinBorrarMasivo:true,
+    cols:[{k:'CP'},{k:'CLIENTE'},{k:'SERIE'},{k:'FOLIO'},{k:'UUID'},{k:'IDCCP'},
+          {k:'FECHA_TIMBRADO'},{k:'TOTAL'},{k:'ESTADO'}] },
+  FACTURAS:{ soloLectura:true, invertido:true, sinBorrarMasivo:true,
+    cols:[{k:'SERIE'},{k:'FOLIO'},{k:'FECHA'},{k:'CLIENTE'},{k:'UUID'},
+          {k:'CARTAS_PORTE'},{k:'TOTAL'},{k:'ESTADO'},{k:'FECHA_PAGO'}] },
+  PAGOS:{ soloLectura:true, sinBorrar:true, invertido:true,
+    cols:[{k:'FECHA'},{k:'TIPO'},{k:'ORIGEN'},{k:'FOLIO'},{k:'CONTRAPARTE'},
+          {k:'MONTO'},{k:'METODO'},{k:'REGISTRADO_POR'}] },
+  LIBERACIONES:{ soloLectura:true, invertido:true, sinBorrarMasivo:true,
+    cols:[{k:'FECHA'},{k:'TIPO'},{k:'FOLIO'},{k:'CONCEPTO'},{k:'CONTRAPARTE'},
+          {k:'MONTO'},{k:'ESTADO'},{k:'LIBERADO_POR'},{k:'MOTIVO'}] },
   TICKETS_CALIDAD:{ soloLectura:true, invertido:true, sinBorrarMasivo:true,
     cols:[{k:'FOLIO'},{k:'FECHA_ALTA'},{k:'TIPO'},{k:'TITULO'},{k:'CP'},
           {k:'RESPONSABLE'},{k:'FECHA_COMPROMISO'},{k:'PRIORIDAD'},{k:'ESTADO'}] },
@@ -7286,14 +8263,17 @@ const SECCIONES_INFO = {
   solicitud:'Solicitud de Gasto', dispersiones:'Dispersiones', monitoreo:'Monitoreo',
   incidencias:'Incidencias', calidad:'Calidad · Levantar ticket',
   calidadseg:'Calidad · Seguimiento', liquidacion:'Liquidación', prenomina:'Hoja de Servicio',
-  cxc:'Cuentas por cobrar', cxp:'Cuentas por pagar', liberaciones:'Liberaciones',
-  facturacion:'Facturación', operadores:'RRHH · Operadores', capacitaciones:'RRHH · Capacitaciones',
+  cxc:'Cuentas por cobrar', cxp:'Cuentas por pagar', ordenes:'Órdenes de compra',
+  liberaciones:'Liberaciones', facturacion:'Facturación',
+  cartasporte:'Cartas porte timbradas', caja:'Cobros y pagos',
+  operadores:'RRHH · Operadores', capacitaciones:'RRHH · Capacitaciones',
   reclutamiento:'RRHH · Reclutamiento', administrativos:'RRHH · Administrativos',
   tarifarios:'Comercial · Tarifarios', cotizaciones:'Comercial · Cotizaciones',
   prospectos:'Comercial · Prospectos', indicadores:'Indicadores', rutas:'Rutas'
 };
 const TODAS_LAS_SECCIONES = Object.keys(SECCIONES_INFO);
-const SECCIONES_AUDITOR = ['dispersiones','cxc','cxp','liquidacion','prenomina','monitoreo',
+const SECCIONES_AUDITOR = ['dispersiones','cxc','cxp','ordenes','liberaciones','facturacion',
+                           'cartasporte','caja','liquidacion','prenomina','monitoreo',
                            'calidad','calidadseg','indicadores'];
 /* El comercial (y el ejecutivo) trabajan su cartera: dan de alta servicios,
    los siguen y los ven en TDC/FWD. Todo filtrado a SUS clientes. */
@@ -7371,7 +8351,16 @@ function cargarConfigAdmin(){
   $('cfgGpsEco').value    = DB.CONFIG.GPS_CAMPO_ECO || '';
   $('cfgGpsUbic').value   = DB.CONFIG.GPS_CAMPO_UBIC || '';
   $('cfgGpsLatLon').value = DB.CONFIG.GPS_CAMPO_LATLON || '';
+  $('cfgRfcEmisor').value = DB.CONFIG.RFC_EMISOR || '';
+  $('cfgLibObliga').checked = libObligatoria();
 }
+$('btnGuardarFin').addEventListener('click', async ()=>{
+  const rfc = $('cfgRfcEmisor').value.trim().toUpperCase();
+  const obliga = $('cfgLibObliga').checked? 'SI' : 'NO';
+  await apiEnviar({action:'setConfig', clave:'RFC_EMISOR', valor:rfc});
+  await apiEnviar({action:'setConfig', clave:'LIBERACION_OBLIGATORIA', valor:obliga});
+  toast('Ajustes financieros guardados');
+});
 const CFG_GPS = [['GPS_NOMBRE','cfgGpsNombre'],['GPS_URL','cfgGpsUrl'],['GPS_TOKEN','cfgGpsToken'],
   ['GPS_HEADER','cfgGpsHeader'],['GPS_LISTA','cfgGpsLista'],['GPS_CAMPO_ECO','cfgGpsEco'],
   ['GPS_CAMPO_UBIC','cfgGpsUbic'],['GPS_CAMPO_LATLON','cfgGpsLatLon']];
@@ -7781,6 +8770,11 @@ function refrescarTodo(){
   if(document.querySelector('#sec-incidencias.active')) pintarPantallaIncidencias();
   if(document.querySelector('#sec-cxc.active')) pintarCxc();
   if(document.querySelector('#sec-cxp.active')) pintarCxp();
+  if(document.querySelector('#sec-ordenes.active')) pintarOrdenes();
+  if(document.querySelector('#sec-liberaciones.active')) pintarLiberaciones();
+  if(document.querySelector('#sec-facturacion.active')) pintarFacturacion();
+  if(document.querySelector('#sec-cartasporte.active')) pintarCartasPorte();
+  if(document.querySelector('#sec-caja.active')) pintarCaja();
   if(document.querySelector('#sec-operadores.active')) pintarOperadores();
   if(document.querySelector('#sec-tarifarios.active')) pintarTarifas();
   if(document.querySelector('#sec-nuevoservicio.active')) pintarServicios();

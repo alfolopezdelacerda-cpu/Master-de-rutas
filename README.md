@@ -46,7 +46,9 @@ nueva (o actualizar la existente) para que la URL `/exec` sirva la versión nuev
 `configurarHojas()` las crea solo, pero conviene saber qué espera cada una.
 Además de las que ya usabas (`UNIDADES`, `OPERADORES`, `EJECUTIVOS`,
 `REMOLQUES`, `CLIENTES`, `RUTAS`, `SOLICITUDES`, `NOMINAS`, `LIQUIDACION`,
-`CONFIG`), la app lee y escribe estas hojas:
+`CONFIG`), la app lee y escribe estas hojas. Las del área financiera
+—`TARIFAS`, `CXC`, `ORDENES_COMPRA`, `LIBERACIONES`, `FACTURAS`,
+`CARTAS_PORTE` y `PAGOS`— se describen en *El área financiera*:
 
 ### Hoja `CASETAS`
 
@@ -1127,17 +1129,107 @@ se abre y se cierra, y al entrar a una pantalla se abre sola la suya:
 | **Histórico de viajes** | TDC · FWD |
 | **Operaciones** | Asignación de unidad · Solicitud de gasto · Liquidación · Hoja de servicio |
 | **Monitoreo** | Monitoreo · Incidencias · Rutas |
-| **Finanzas** | Dispersiones · CXC · CXP · Liberaciones · Facturación |
+| **Finanzas** | Dispersiones · CXC · CXP · Órdenes de compra · Liberaciones · Facturación · Cartas porte timbradas · Cobros y pagos |
 | **Calidad** | Levantar ticket · Seguimiento |
 | **RRHH** | Operadores · Capacitaciones · Reclutamiento · Administrativos |
 | **Comercial** | Tarifarios · Cotizaciones · Prospectos |
 | **Dirección** | Indicadores · Administración |
 
-Las pantallas que todavía no tienen contenido —Liberaciones, Facturación,
-Capacitaciones, Reclutamiento, Administrativos, Cotizaciones y Prospectos—
-existen y se abren, marcadas como **En desarrollo**; en el menú llevan una
+Las pantallas que todavía no tienen contenido —Capacitaciones, Reclutamiento,
+Administrativos, Cotizaciones y Prospectos— existen y se abren, marcadas como **En desarrollo**; en el menú llevan una
 etiqueta *dev*. Un área que se quede sin pantallas permitidas para el usuario
 no se muestra.
+
+## El área financiera
+
+Toda Finanzas está enlazada en dos carriles, y cada pantalla es un paso de uno
+de ellos:
+
+```
+COBRAR   servicio → tarifa → CXC → Facturación → Cobros y pagos
+PAGAR    solicitud / gasto extra / orden de compra → Liberaciones
+         → dispersión o pago → Cobros y pagos
+```
+
+La **carta porte timbrada** es el respaldo fiscal del viaje y se amarra al
+servicio por su número de carta porte, que es la misma llave que usa el resto
+de la plataforma.
+
+### Órdenes de compra
+
+Lo que se le compra a un proveedor: refacciones, taller, fletes de terceros.
+Una orden se captura con su **proveedor**, su **concepto**, sus **partidas**
+(descripción, cantidad y precio unitario), el IVA y, si aplica, la **carta
+porte** del servicio al que pertenece —con eso queda amarrada a ese servicio.
+
+El folio es corrido (`OC-0001`) y la orden avanza por estados:
+
+**Borrador → Autorizada → Recibida → Pagada**, o **Cancelada**.
+
+En cuanto se **autoriza**, aparece en Liberaciones. Al marcarla **pagada**
+queda registrado quién y cuándo, y el pago deja su renglón en **Cobros y
+pagos**. La factura del proveedor se captura en la misma lista.
+
+### Liberaciones
+
+Una sola bandeja con todo lo que puede salir a pago, venga de donde venga:
+**solicitudes de gasto**, **gastos extra** y **órdenes de compra autorizadas**.
+De cada renglón se ve el folio, el concepto, a quién se le paga y el monto, y se
+resuelve con **Liberar** o **Rechazar** —el rechazo pide su motivo—. Queda
+guardado quién liberó y cuándo, en la hoja `LIBERACIONES`.
+
+Lo liberado se marca con un *Liberado ✔* en **Cuentas por pagar** y en
+**Órdenes de compra**.
+
+La regla puede ser blanda o dura, y se elige en **Administración → Área
+financiera**:
+
+- **Apagada** (por omisión): la liberación es un visto bueno informativo y no
+  detiene nada.
+- **Encendida**: sin liberar no se puede dispersar al operador ni pagar una
+  orden de compra. La app lo avisa con una ventana emergente, y Dispersiones
+  muestra cuántos conceptos están esperando liberación.
+
+### Facturación
+
+Se factura contra **Cuentas por cobrar**. Se elige el cliente, se marcan los
+servicios **Por facturar** que ampara la factura —pueden ser varios— y la
+pantalla calcula **subtotal**, **IVA** (16 % por omisión) y **retención de IVA**
+(4 %, la de autotransporte de carga), y de ahí el total.
+
+Al **emitir**, se guarda la factura con su serie, folio, UUID, RFC y las ligas
+al XML y al PDF, y esos servicios pasan a **Facturado** con el folio de la
+factura. Al **registrar el cobro**, la factura queda **Pagada**, sus servicios
+pasan a **Cobrado** y el cobro entra a Cobros y pagos. Si se **cancela**, los
+servicios regresan a *Por facturar*.
+
+Arriba, cuánto hay emitido, por cobrar, cobrado y cuántas facturas llevan más de
+30 días sin cobrarse.
+
+### Cartas porte timbradas
+
+El CFDI de traslado de cada viaje: **UUID** (folio fiscal), **IdCCP** del
+complemento Carta Porte, serie y folio, RFC emisor y receptor, fecha de
+timbrado, total y las ligas al **XML** y al **PDF**.
+
+Al capturar la carta porte, la pantalla reconoce el servicio y propone el RFC
+del cliente; el RFC emisor sale de Administración. El filtro **Servicios sin
+timbrar** lista lo que falta, con un botón que lleva el dato al formulario. Un
+CFDI se puede **cancelar** dejando su motivo.
+
+### Cobros y pagos
+
+El movimiento de dinero, solo de lectura: es el reflejo de lo que hicieron las
+demás pantallas. Entra un **cobro** cuando se cobra una factura, y sale un
+**pago** cuando se dispersa una solicitud, se dispersa un gasto extra o se paga
+una orden de compra. Con sus filtros por tipo y origen, y los totales de
+cobrado, pagado y la diferencia.
+
+### Hojas y parámetros nuevos
+
+Hojas: `ORDENES_COMPRA`, `LIBERACIONES`, `FACTURAS`, `CARTAS_PORTE` y `PAGOS`.
+`CLIENTES` gana **RFC**, que es el que se propone al facturar y al timbrar.
+Parámetros: `RFC_EMISOR` y `LIBERACION_OBLIGATORIA`.
 
 ## Cuentas por pagar (CXP)
 

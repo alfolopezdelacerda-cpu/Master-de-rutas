@@ -59,7 +59,7 @@ var HOJAS = {
 
   /* EJECUTIVO: de quién es la cuenta. Un usuario con rol EJECUTIVO solo ve
      los servicios de los clientes que trae asignados aquí. */
-  CLIENTES: ['ID','NOMBRE','EJECUTIVO'],
+  CLIENTES: ['ID','NOMBRE','RFC','EJECUTIVO'],
 
   /* Catálogos del alta de servicios (Nuevo Servicio) */
   TIPO_NEGOCIO: ['ID','NOMBRE'],
@@ -103,6 +103,45 @@ var HOJAS = {
      POR FACTURAR | FACTURADO | COBRADO. */
   CXC: ['ID','SERVICIO_ID','CP','CLIENTE','RUTA','TIPO_UNIDAD','FECHA_SERVICIO',
         'TARIFA','EXTRAS','TOTAL','ESTADO','FACTURA','FECHA_FACTURA','FECHA_COBRO','NOTAS','REGISTRADO_POR'],
+
+  /* ------------------------------------------------------------------
+     FINANZAS
+     El dinero de un servicio corre por dos carriles:
+       COBRAR  → CXC (lo que se le cobra al cliente) → FACTURAS → PAGOS
+       PAGAR   → SOLICITUDES / GASTOS_EXTRA / ORDENES_COMPRA → LIBERACIONES
+                 → dispersión o pago → PAGOS
+     Y aparte va el CFDI de traslado de cada viaje: CARTAS_PORTE.
+     ------------------------------------------------------------------ */
+
+  /* Órdenes de compra a proveedores. PARTIDAS_JSON guarda los renglones
+     (concepto, cantidad, precio). ESTADO: BORRADOR | AUTORIZADA | RECIBIDA |
+     PAGADA | CANCELADA. */
+  ORDENES_COMPRA: ['ID','FOLIO','FECHA','PROVEEDOR','CONCEPTO','SERVICIO_ID','CP',
+                   'PARTIDAS_JSON','SUBTOTAL','IVA','TOTAL','MONEDA','ESTADO',
+                   'AUTORIZADA_POR','FECHA_AUTORIZACION','FACTURA_PROVEEDOR','UUID_PROVEEDOR',
+                   'FECHA_RECEPCION','FECHA_PAGO','PAGADA_POR','NOTAS','CREADA_POR'],
+
+  /* Cartas porte timbradas (CFDI de traslado). Una por servicio: guarda el
+     folio fiscal (UUID), el IdCCP del complemento y las ligas al XML y al PDF. */
+  CARTAS_PORTE: ['ID','CP','SERVICIO_ID','CLIENTE','SERIE','FOLIO','UUID','IDCCP',
+                 'FECHA_TIMBRADO','RFC_EMISOR','RFC_RECEPTOR','TIPO_CFDI','TOTAL',
+                 'ESTADO','FECHA_CANCELACION','MOTIVO_CANCELACION',
+                 'XML_URL','PDF_URL','NOTAS','REGISTRADO_POR'],
+
+  /* Facturas al cliente (CFDI de ingreso). CXC_IDS lista los servicios que
+     ampara. ESTADO: EMITIDA | PAGADA | CANCELADA. */
+  FACTURAS: ['ID','SERIE','FOLIO','UUID','FECHA','CLIENTE','RFC','CONCEPTO','CXC_IDS','CARTAS_PORTE',
+             'SUBTOTAL','IVA','RETENCION','TOTAL','MONEDA','METODO_PAGO','FORMA_PAGO','USO_CFDI',
+             'ESTADO','FECHA_PAGO','FECHA_CANCELACION','XML_URL','PDF_URL','NOTAS','REGISTRADO_POR'],
+
+  /* Movimientos de caja: COBRO (entra) o PAGO (sale) */
+  PAGOS: ['ID','FECHA','TIPO','ORIGEN','REFERENCIA_ID','FOLIO','CONTRAPARTE',
+          'MONTO','METODO','CUENTA','NOTAS','REGISTRADO_POR'],
+
+  /* Liberación de pagos: finanzas autoriza que algo pueda salir a pago.
+     TIPO: SOLICITUD | GASTO EXTRA | ORDEN DE COMPRA | NOMINA. */
+  LIBERACIONES: ['ID','FECHA','TIPO','REFERENCIA_ID','FOLIO','CONCEPTO','CONTRAPARTE',
+                 'MONTO','ESTADO','LIBERADO_POR','FECHA_LIBERACION','MOTIVO'],
 
   /* Tickets del área de calidad: desviaciones del proceso, quejas, hallazgos.
      El seguimiento de cada uno vive en SEGUIMIENTOS_CALIDAD, un renglón por
