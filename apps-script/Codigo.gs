@@ -57,9 +57,18 @@ var HOJAS = {
 
   REMOLQUES: ['ID','ECONOMICO','PLACAS','TIPO'],
 
-  /* EJECUTIVO: de quién es la cuenta. Un usuario con rol EJECUTIVO solo ve
+  /* Expediente del cliente: además de su nombre comercial —que es la llave
+     que usa toda la plataforma— lleva sus datos fiscales para facturar, sus
+     condiciones comerciales y su documentación con vigencias.
+     EJECUTIVO: de quién es la cuenta. Un usuario con rol EJECUTIVO solo ve
      los servicios de los clientes que trae asignados aquí. */
-  CLIENTES: ['ID','NOMBRE','RFC','EJECUTIVO'],
+  CLIENTES: ['ID','NOMBRE','RAZON_SOCIAL','RFC','REGIMEN_FISCAL','CP_FISCAL',
+             'USO_CFDI','METODO_PAGO','FORMA_PAGO','MONEDA','DIAS_CREDITO','LIMITE_CREDITO',
+             'DOMICILIO','CIUDAD','ESTADO','PAIS',
+             'CONTACTO','CONTACTO_TEL','CONTACTO_MAIL','MAIL_FACTURACION',
+             'PORTAL_ENLACE','PORTAL_USUARIO','PORTAL_PASSWORD',
+             'CONSTANCIA_URL','ACTA_URL','PODER_URL','OPINION_SAT_URL','OPINION_SAT_VENCE',
+             'CONTRATO_URL','CONTRATO_VENCE','NOTAS','ACTIVO','EJECUTIVO'],
 
   /* Catálogos del alta de servicios (Nuevo Servicio) */
   TIPO_NEGOCIO: ['ID','NOMBRE'],
@@ -71,7 +80,14 @@ var HOJAS = {
   /* Los proveedores (líneas transportistas de FWD) traen los accesos a su
      plataforma de rastreo. Se ven en la bitácora del viaje cuando el servicio
      va con ese proveedor; si la línea es ADL no se muestra nada. */
-  PROVEEDORES: ['ID','NOMBRE','PLATAFORMA_USUARIO','PLATAFORMA_PASSWORD','PLATAFORMA_ENLACE'],
+  PROVEEDORES: ['ID','NOMBRE','RAZON_SOCIAL','RFC','REGIMEN_FISCAL','CP_FISCAL','TIPO',
+                'DOMICILIO','CIUDAD','ESTADO',
+                'CONTACTO','CONTACTO_TEL','CONTACTO_MAIL','MAIL_FACTURACION',
+                'BANCO','CUENTA','CLABE','DIAS_CREDITO',
+                'CONSTANCIA_URL','OPINION_SAT_URL','OPINION_SAT_VENCE',
+                'POLIZA_SEGURO','POLIZA_VENCE','PERMISO_SCT','PERMISO_SCT_VENCE','REPSE',
+                'CONTRATO_URL','CONTRATO_VENCE','NOTAS','ACTIVO',
+                'PLATAFORMA_USUARIO','PLATAFORMA_PASSWORD','PLATAFORMA_ENLACE'],
   /* Catálogo de incidencias que el monitorista puede reportar en ruta
      (desvío de ruta, estadía no autorizada, etc.) */
   TIPOS_INCIDENCIA: ['ID','NOMBRE'],

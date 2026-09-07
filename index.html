@@ -314,6 +314,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       <button class="tab" data-sec="dispersiones">Dispersiones</button>
       <button class="tab" data-sec="cxc">CXC</button>
       <button class="tab" data-sec="cxp">CXP</button>
+      <button class="tab" data-sec="proveedores">Proveedores</button>
       <button class="tab" data-sec="ordenes">Órdenes de compra</button>
       <button class="tab" data-sec="liberaciones">Liberaciones</button>
       <button class="tab" data-sec="facturacion">Facturación</button>
@@ -340,6 +341,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
   <div class="area" data-area="comercial">
     <button class="ah"><span class="ai">📈</span>Comercial<span class="ac">▸</span></button>
     <div class="subs">
+      <button class="tab" data-sec="clientes">Clientes</button>
       <button class="tab" data-sec="tarifarios">Tarifarios</button>
       <button class="tab" data-sec="cotizaciones">Cotizaciones<span class="pt">dev</span></button>
       <button class="tab" data-sec="prospectos">Prospectos<span class="pt">dev</span></button>
@@ -1806,6 +1808,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <div><label>Fecha</label><input id="ocFecha" type="date"></div>
         <div style="grid-column:3/5"><label>Concepto</label><input id="ocConcepto" placeholder="Para qué es la compra"></div>
         <div><label>Carta porte (opcional)</label><input id="ocCP" placeholder="Liga la orden a un servicio"></div>
+        <div style="grid-column:2/5;display:flex;align-items:flex-end"><div class="mini" id="ocProvInfo"></div></div>
         <div><label>IVA (%)</label><input id="ocIva" type="number" min="0" step="0.5" value="16"></div>
         <div style="grid-column:3/5"><label>Notas</label><input id="ocNotas" placeholder="Condiciones, tiempo de entrega…"></div>
       </div>
@@ -1890,6 +1893,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       <div style="grid-column:1/3"><label>Liga al XML</label><input id="facXml" placeholder="https://…"></div>
       <div style="grid-column:3/5"><label>Liga al PDF</label><input id="facPdf" placeholder="https://…"></div>
     </div>
+    <div class="mini" id="facFiscal" style="margin-bottom:12px"></div>
     <div class="twrap" style="max-height:300px;overflow-y:auto"><table>
       <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
         <th><input type="checkbox" id="facTodos"></th><th>Carta porte</th><th>Ruta</th><th>Fecha</th>
@@ -1975,6 +1979,215 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       </tr></thead>
       <tbody id="tbodyCartasPorte"></tbody>
     </table></div>
+  </div>
+</section>
+
+<!-- ============ CLIENTES ============ -->
+<section class="sec" id="sec-clientes">
+  <div class="card">
+    <h2>Clientes</h2>
+    <div class="sub">El expediente de cada cuenta: sus <b>datos fiscales</b> para facturar, sus condiciones comerciales, sus contactos y su documentación con vigencias. Es de aquí de donde Facturación y las cartas porte toman el RFC, el régimen y el uso de CFDI.</div>
+    <div id="cliChips" style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0"></div>
+    <div class="grid g4" style="margin-bottom:12px">
+      <div style="grid-column:1/3"><label>Buscar</label><input id="cliBusca" placeholder="🔍 Nombre, razón social, RFC, contacto…"></div>
+      <div><label>Estado</label><select id="cliFiltro">
+        <option value="activos">Activos</option><option value="todos">Todos</option>
+        <option value="vencidos">Con documento vencido</option><option value="porvencer">Por vencer (30 días)</option>
+        <option value="sinfiscal">Sin datos fiscales</option>
+      </select></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn btn-p" id="btnCliNuevo" style="width:100%">＋ Nuevo cliente</button></div>
+    </div>
+    <div class="twrap" style="max-height:440px;overflow-y:auto"><table>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
+        <th>Cliente</th><th>Razón social</th><th>RFC</th><th>Crédito</th><th>Contacto</th>
+        <th>Opinión SAT</th><th>Contrato</th><th>Expediente</th><th></th>
+      </tr></thead>
+      <tbody id="tbodyClientes"></tbody>
+    </table></div>
+  </div>
+
+  <div class="card" id="cliDetalle" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+      <div>
+        <h3 style="margin-bottom:4px">Expediente · <span id="cliTit">nuevo</span></h3>
+        <div class="mini" id="cliInfo"></div>
+      </div>
+      <button class="btn btn-s btn-sm" id="btnCliCerrar">Cerrar</button>
+    </div>
+
+    <h3 style="margin-top:14px">Identificación</h3>
+    <div class="sub" style="margin-bottom:10px">El <b>nombre comercial</b> es la llave que usa toda la plataforma: es el que aparece en los servicios, las rutas y los tarifarios. Cambiarlo aquí no cambia los servicios ya capturados.</div>
+    <div class="grid g4" style="margin-bottom:14px">
+      <div><label>Nombre comercial</label><input id="cliNombre"></div>
+      <div style="grid-column:2/4"><label>Razón social</label><input id="cliRazon" placeholder="Como aparece en la constancia"></div>
+      <div><label>Activo</label><select id="cliActivo"><option>SI</option><option>NO</option></select></div>
+      <div><label>Ejecutivo de la cuenta</label><input id="cliEjecutivo"></div>
+    </div>
+
+    <h3>Datos fiscales</h3>
+    <div class="sub" style="margin-bottom:10px">Es lo que se propone solo al emitir una factura o al timbrar la carta porte de un servicio de este cliente.</div>
+    <div class="grid g4" style="margin-bottom:14px">
+      <div><label>RFC</label><input id="cliRfc" placeholder="XAXX010101000"></div>
+      <div><label>Código postal fiscal</label><input id="cliCpFiscal" placeholder="44100"></div>
+      <div style="grid-column:3/5"><label>Régimen fiscal</label><select id="cliRegimen"></select></div>
+      <div style="grid-column:1/3"><label>Uso del CFDI</label><select id="cliUsoCfdi"></select></div>
+      <div><label>Método de pago</label><select id="cliMetodo">
+        <option value="PPD">PPD · en parcialidades o diferido</option>
+        <option value="PUE">PUE · en una sola exhibición</option>
+      </select></div>
+      <div><label>Forma de pago</label><select id="cliForma"></select></div>
+      <div style="grid-column:1/4"><label>Domicilio fiscal</label><input id="cliDomicilio"></div>
+      <div><label>País</label><input id="cliPais" value="MÉXICO"></div>
+      <div><label>Ciudad</label><input id="cliCiudad"></div>
+      <div><label>Estado</label><input id="cliEstado"></div>
+      <div><label>Moneda</label><select id="cliMoneda"><option>MXN</option><option>USD</option></select></div>
+    </div>
+
+    <h3>Condiciones comerciales</h3>
+    <div class="grid g4" style="margin-bottom:14px">
+      <div><label>Días de crédito</label><input id="cliDiasCredito" type="number" min="0" step="1" value="0"></div>
+      <div><label>Límite de crédito</label><input id="cliLimite" type="number" min="0" step="0.01" value="0"></div>
+      <div style="grid-column:3/5"><label>Correo para facturación</label><input id="cliMailFac" placeholder="facturas@cliente.com"></div>
+    </div>
+
+    <h3>Contacto</h3>
+    <div class="grid g4" style="margin-bottom:14px">
+      <div><label>Nombre del contacto</label><input id="cliContacto"></div>
+      <div><label>Teléfono</label><input id="cliContactoTel"></div>
+      <div style="grid-column:3/5"><label>Correo</label><input id="cliContactoMail"></div>
+    </div>
+
+    <h3>Portal del cliente</h3>
+    <div class="sub" style="margin-bottom:10px">Si el cliente pide subir la factura o el evidencia a su propio portal, aquí quedan los accesos.</div>
+    <div class="grid g4" style="margin-bottom:14px">
+      <div style="grid-column:1/3"><label>Enlace del portal</label><input id="cliPortalUrl" placeholder="https://…"></div>
+      <div><label>Usuario</label><input id="cliPortalUsuario"></div>
+      <div><label>Contraseña</label><input id="cliPortalPass"></div>
+    </div>
+
+    <h3>Documentación</h3>
+    <div class="sub" style="margin-bottom:10px">Las ligas van a donde tengas guardado el archivo (Drive, por ejemplo). Las fechas de vencimiento pintan la lista de arriba: rojo lo vencido, ámbar lo que vence dentro de 30 días.</div>
+    <div class="grid g4" style="margin-bottom:14px">
+      <div style="grid-column:1/3"><label>Constancia de situación fiscal</label><input id="cliConstancia" placeholder="https://…"></div>
+      <div style="grid-column:3/5"><label>Acta constitutiva</label><input id="cliActa" placeholder="https://…"></div>
+      <div style="grid-column:1/3"><label>Poder del representante legal</label><input id="cliPoder" placeholder="https://…"></div>
+      <div style="grid-column:3/5"><label>Opinión de cumplimiento (32-D)</label><input id="cliOpinion" placeholder="https://…"></div>
+      <div><label>Vence opinión</label><input id="cliOpinionVence" type="date"></div>
+      <div style="grid-column:2/4"><label>Contrato</label><input id="cliContrato" placeholder="https://…"></div>
+      <div><label>Vence contrato</label><input id="cliContratoVence" type="date"></div>
+    </div>
+
+    <div style="margin-bottom:14px">
+      <label>Notas</label>
+      <textarea id="cliNotas" rows="2" placeholder="Lo que haya que dejar asentado de la cuenta…"></textarea>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-p" id="btnCliGuardar">💾 Guardar expediente</button>
+      <button class="btn btn-s" id="btnCliCancelar">Cancelar</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PROVEEDORES ============ -->
+<section class="sec" id="sec-proveedores">
+  <div class="card">
+    <h2>Proveedores</h2>
+    <div class="sub">A quién le compramos y a quién le pagamos: líneas transportistas, talleres, refacciones, combustible y servicios. Trae sus <b>datos fiscales</b>, sus <b>datos bancarios</b> para pagarle, su documentación con vigencias y —si es línea transportista— los accesos a su plataforma de rastreo.</div>
+    <div id="provChips" style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0"></div>
+    <div class="grid g4" style="margin-bottom:12px">
+      <div style="grid-column:1/3"><label>Buscar</label><input id="provBusca" placeholder="🔍 Nombre, razón social, RFC, contacto…"></div>
+      <div><label>Estado</label><select id="provFiltro">
+        <option value="activos">Activos</option><option value="todos">Todos</option>
+        <option value="vencidos">Con documento vencido</option><option value="porvencer">Por vencer (30 días)</option>
+        <option value="sinfiscal">Sin datos fiscales</option>
+      </select></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn btn-p" id="btnProvNuevo" style="width:100%">＋ Nuevo proveedor</button></div>
+    </div>
+    <div class="twrap" style="max-height:440px;overflow-y:auto"><table>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
+        <th>Proveedor</th><th>Tipo</th><th>RFC</th><th>Banco / CLABE</th><th>Contacto</th>
+        <th>Opinión SAT</th><th>Póliza</th><th>Expediente</th><th></th>
+      </tr></thead>
+      <tbody id="tbodyProveedores"></tbody>
+    </table></div>
+  </div>
+
+  <div class="card" id="provDetalle" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+      <div>
+        <h3 style="margin-bottom:4px">Expediente · <span id="provTit">nuevo</span></h3>
+        <div class="mini" id="provInfo"></div>
+      </div>
+      <button class="btn btn-s btn-sm" id="btnProvCerrar">Cerrar</button>
+    </div>
+
+    <h3 style="margin-top:14px">Identificación</h3>
+    <div class="sub" style="margin-bottom:10px">El <b>nombre</b> es el que aparece como línea transportista en los servicios FWD y en las órdenes de compra.</div>
+    <div class="grid g4" style="margin-bottom:14px">
+      <div><label>Nombre</label><input id="provNombre"></div>
+      <div style="grid-column:2/4"><label>Razón social</label><input id="provRazon"></div>
+      <div><label>Activo</label><select id="provActivo"><option>SI</option><option>NO</option></select></div>
+      <div><label>Tipo de proveedor</label><select id="provTipo"></select></div>
+    </div>
+
+    <h3>Datos fiscales</h3>
+    <div class="grid g4" style="margin-bottom:14px">
+      <div><label>RFC</label><input id="provRfc"></div>
+      <div><label>Código postal fiscal</label><input id="provCpFiscal"></div>
+      <div style="grid-column:3/5"><label>Régimen fiscal</label><select id="provRegimen"></select></div>
+      <div style="grid-column:1/4"><label>Domicilio fiscal</label><input id="provDomicilio"></div>
+      <div><label>Días de crédito</label><input id="provDiasCredito" type="number" min="0" step="1" value="0"></div>
+      <div><label>Ciudad</label><input id="provCiudad"></div>
+      <div><label>Estado</label><input id="provEstado"></div>
+      <div style="grid-column:3/5"><label>Correo para facturación</label><input id="provMailFac"></div>
+    </div>
+
+    <h3>Datos bancarios</h3>
+    <div class="sub" style="margin-bottom:10px">Es a donde se le paga: lo que usa Órdenes de compra al marcar una orden como pagada.</div>
+    <div class="grid g4" style="margin-bottom:14px">
+      <div><label>Banco</label><input id="provBanco"></div>
+      <div><label>Cuenta</label><input id="provCuenta"></div>
+      <div style="grid-column:3/5"><label>CLABE interbancaria</label><input id="provClabe" placeholder="18 dígitos"></div>
+    </div>
+
+    <h3>Contacto</h3>
+    <div class="grid g4" style="margin-bottom:14px">
+      <div><label>Nombre del contacto</label><input id="provContacto"></div>
+      <div><label>Teléfono</label><input id="provContactoTel"></div>
+      <div style="grid-column:3/5"><label>Correo</label><input id="provContactoMail"></div>
+    </div>
+
+    <h3>Documentación</h3>
+    <div class="sub" style="margin-bottom:10px">Rojo lo vencido, ámbar lo que vence dentro de 30 días. Para una línea transportista, la póliza de seguro y el permiso SCT son los que no pueden faltar.</div>
+    <div class="grid g4" style="margin-bottom:14px">
+      <div style="grid-column:1/3"><label>Constancia de situación fiscal</label><input id="provConstancia" placeholder="https://…"></div>
+      <div style="grid-column:3/5"><label>Opinión de cumplimiento (32-D)</label><input id="provOpinion" placeholder="https://…"></div>
+      <div><label>Vence opinión</label><input id="provOpinionVence" type="date"></div>
+      <div><label>Póliza de seguro</label><input id="provPoliza" placeholder="Número de póliza"></div>
+      <div><label>Vence póliza</label><input id="provPolizaVence" type="date"></div>
+      <div><label>Permiso SCT</label><input id="provPermiso"></div>
+      <div><label>Vence permiso SCT</label><input id="provPermisoVence" type="date"></div>
+      <div><label>Registro REPSE</label><input id="provRepse"></div>
+      <div style="grid-column:2/4"><label>Contrato</label><input id="provContrato" placeholder="https://…"></div>
+      <div><label>Vence contrato</label><input id="provContratoVence" type="date"></div>
+    </div>
+
+    <h3>Plataforma de rastreo</h3>
+    <div class="sub" style="margin-bottom:10px">Solo para líneas transportistas. Se muestra en la bitácora del viaje cuando el servicio va con este proveedor; si la línea es ADL no aparece nada.</div>
+    <div class="grid g4" style="margin-bottom:14px">
+      <div style="grid-column:1/3"><label>Enlace de su plataforma</label><input id="provPlatUrl" placeholder="https://…"></div>
+      <div><label>Usuario</label><input id="provPlatUsuario"></div>
+      <div><label>Contraseña</label><input id="provPlatPass"></div>
+    </div>
+
+    <div style="margin-bottom:14px">
+      <label>Notas</label>
+      <textarea id="provNotas" rows="2"></textarea>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-p" id="btnProvGuardar">💾 Guardar expediente</button>
+      <button class="btn btn-s" id="btnProvCancelar">Cancelar</button>
+    </div>
   </div>
 </section>
 
@@ -2562,6 +2775,8 @@ document.querySelectorAll('.tab[data-sec]').forEach(b=>b.addEventListener('click
   if(b.dataset.sec==='incidencias') pintarPantallaIncidencias();
   if(b.dataset.sec==='cxc') pintarCxc();
   if(b.dataset.sec==='cxp') pintarCxp();
+  if(b.dataset.sec==='clientes') pintarClientes();
+  if(b.dataset.sec==='proveedores') pintarProveedores();
   if(b.dataset.sec==='ordenes') pintarOrdenes();
   if(b.dataset.sec==='liberaciones') pintarLiberaciones();
   if(b.dataset.sec==='facturacion') pintarFacturacion();
@@ -4589,6 +4804,357 @@ function movimientosDe(refId){
   return (DB.PAGOS||[]).filter(p=>String(p.REFERENCIA_ID||'')===String(refId));
 }
 
+/* ---------- Catálogos del SAT ----------
+   Los que se usan al facturar. Se guardan con su clave, que es lo que pide el
+   CFDI, y se muestran con su descripción para no tener que recordarlas. */
+const REGIMENES_SAT = [
+  ['601','General de Ley Personas Morales'],
+  ['603','Personas Morales con Fines no Lucrativos'],
+  ['605','Sueldos y Salarios e Ingresos Asimilados a Salarios'],
+  ['606','Arrendamiento'],
+  ['608','Demás ingresos'],
+  ['612','Personas Físicas con Actividades Empresariales y Profesionales'],
+  ['616','Sin obligaciones fiscales'],
+  ['621','Incorporación Fiscal'],
+  ['622','Actividades Agrícolas, Ganaderas, Silvícolas y Pesqueras'],
+  ['626','Régimen Simplificado de Confianza'],
+  ['628','Hidrocarburos']
+];
+const USOS_CFDI = [
+  ['G01','Adquisición de mercancías'],
+  ['G03','Gastos en general'],
+  ['I04','Equipo de computo y accesorios'],
+  ['P01','Por definir'],
+  ['S01','Sin efectos fiscales'],
+  ['CP01','Pagos']
+];
+const FORMAS_PAGO = [
+  ['01','Efectivo'], ['02','Cheque nominativo'], ['03','Transferencia electrónica'],
+  ['04','Tarjeta de crédito'], ['28','Tarjeta de débito'], ['99','Por definir']
+];
+const TIPOS_PROVEEDOR = ['LÍNEA TRANSPORTISTA','TALLER','REFACCIONES','COMBUSTIBLE',
+                         'CASETAS','SERVICIOS','ARRENDAMIENTO','OTRO'];
+/* Llena un select con pares [clave, descripción] guardando la clave */
+function llenarClaves(sel, pares, vacio){
+  const s = $(sel); const antes = s.value;
+  s.innerHTML = `<option value="">${vacio||'— Selecciona —'}</option>`+
+    pares.map(([c,d])=>`<option value="${c}">${c} · ${esc(d)}</option>`).join('');
+  if([...s.options].some(o=>o.value===antes)) s.value = antes;
+}
+const descClave = (pares, clave) => {
+  const p = pares.find(x=>x[0]===String(clave||'')); return p? p[1] : '';
+};
+
+/* ---------- Expediente de clientes ----------
+   El nombre comercial es la llave de toda la plataforma; lo demás es el
+   expediente fiscal, comercial y documental de la cuenta. */
+const DOCS_CLIENTE = [{campo:'OPINION_SAT_VENCE',t:'Opinión de cumplimiento'},
+                      {campo:'CONTRATO_VENCE',   t:'Contrato'}];
+const DOCS_PROVEEDOR = [{campo:'OPINION_SAT_VENCE',t:'Opinión de cumplimiento'},
+                        {campo:'POLIZA_VENCE',     t:'Póliza de seguro'},
+                        {campo:'PERMISO_SCT_VENCE',t:'Permiso SCT'},
+                        {campo:'CONTRATO_VENCE',   t:'Contrato'}];
+/* Mismo semáforo que el expediente del operador, sobre otras vigencias */
+function estadoVigencias(reg, docs){
+  let vencidos=0, porVencer=0, faltantes=0;
+  docs.forEach(d=>{
+    const dias = diasPara(reg[d.campo]);
+    if(dias===null){ faltantes++; return; }
+    if(dias < 0) vencidos++; else if(dias <= 30) porVencer++;
+  });
+  return { vencidos, porVencer, faltantes, alDia: !vencidos && !porVencer && !faltantes };
+}
+/* Sin RFC o sin régimen no se puede facturar: es lo primero que se revisa */
+function sinDatosFiscales(reg){ return !String(reg.RFC||'').trim() || !String(reg.REGIMEN_FISCAL||'').trim(); }
+function clientePorNombre(nombre){
+  return DB.CLIENTES.find(c=>String(c.NOMBRE||'').trim().toUpperCase()===String(nombre||'').trim().toUpperCase()) || null;
+}
+function proveedorPorNombre(nombre){
+  return (DB.PROVEEDORES||[]).find(p=>String(p.NOMBRE||'').trim().toUpperCase()===String(nombre||'').trim().toUpperCase()) || null;
+}
+
+let cliEditando = null;
+function pintarClientes(){
+  const todos = DB.CLIENTES.filter(c=>{
+    if(!esEjecutivo()) return true;
+    return clientesDelUsuario().some(x=>String(x.ID)===String(c.ID));
+  });
+  const est = todos.map(c=>({ c, e: estadoVigencias(c, DOCS_CLIENTE) }));
+
+  const chips=$('cliChips'); chips.innerHTML='';
+  const mk=(txt,color)=>{ const s=document.createElement('span'); s.className='tag';
+    if(color){ s.style.background=color; s.style.color='#fff'; } s.textContent=txt; chips.appendChild(s); };
+  mk(todos.length+' cliente(s)');
+  mk(todos.filter(c=>String(c.ACTIVO||'SI').toUpperCase()!=='NO').length+' activos','var(--ok)');
+  const sinFis = todos.filter(sinDatosFiscales).length;
+  if(sinFis) mk(sinFis+' sin datos fiscales','var(--bad)');
+  const nVenc = est.filter(x=>x.e.vencidos).length, nPor = est.filter(x=>!x.e.vencidos && x.e.porVencer).length;
+  if(nVenc) mk(nVenc+' con documento vencido','var(--bad)');
+  if(nPor)  mk(nPor+' por vencer (30 días)','var(--accent)');
+
+  const q = ($('cliBusca').value||'').trim().toUpperCase();
+  const filtro = $('cliFiltro').value;
+  const filas = est.filter(({c,e})=>{
+    const activo = String(c.ACTIVO||'SI').toUpperCase()!=='NO';
+    if(filtro==='activos'  && !activo) return false;
+    if(filtro==='vencidos' && !e.vencidos) return false;
+    if(filtro==='porvencer'&& !e.porVencer) return false;
+    if(filtro==='sinfiscal'&& !sinDatosFiscales(c)) return false;
+    if(!q) return true;
+    return [c.NOMBRE,c.RAZON_SOCIAL,c.RFC,c.CONTACTO,c.MAIL_FACTURACION]
+      .some(v=>String(v||'').toUpperCase().includes(q));
+  });
+
+  const tb=$('tbodyClientes'); tb.innerHTML='';
+  filas.forEach(({c,e})=>{
+    const exp = sinDatosFiscales(c)? '<span class="tag" style="background:var(--bad);color:#fff">Sin datos fiscales</span>'
+      : e.vencidos? `<span class="tag" style="background:var(--bad);color:#fff">${e.vencidos} vencido(s)</span>`
+      : e.porVencer? `<span class="tag" style="background:var(--accent);color:var(--accent-ink)">${e.porVencer} por vencer</span>`
+      : e.faltantes? `<span class="tag">${e.faltantes} sin capturar</span>`
+      : '<span class="tag ok">Al día</span>';
+    const credito = nf(c.DIAS_CREDITO)? nf(c.DIAS_CREDITO)+' días'+(nf(c.LIMITE_CREDITO)? ' · '+money(c.LIMITE_CREDITO):'') : '<span class="mini">contado</span>';
+    const tr=document.createElement('tr');
+    if(String(c.ACTIVO||'SI').toUpperCase()==='NO') tr.style.opacity='.55';
+    tr.innerHTML=`<td><b>${esc(c.NOMBRE)}</b></td><td>${esc(c.RAZON_SOCIAL)||'<span class="mini">—</span>'}</td>
+      <td>${esc(c.RFC)||'<span style="color:var(--bad)">sin RFC</span>'}
+        ${c.REGIMEN_FISCAL? `<br><span class="mini">${esc(c.REGIMEN_FISCAL)}</span>`:''}</td>
+      <td>${credito}</td>
+      <td>${esc(c.CONTACTO)||'<span class="mini">—</span>'}
+        ${c.CONTACTO_TEL? `<br><span class="mini">${esc(c.CONTACTO_TEL)}</span>`:''}</td>
+      <td>${etiquetaVence(c.OPINION_SAT_VENCE)}</td>
+      <td>${etiquetaVence(c.CONTRATO_VENCE)}</td>
+      <td>${exp}</td>
+      <td><button class="btn btn-p btn-sm" data-cliver="${c.ID}">Expediente</button></td>`;
+    tb.appendChild(tr);
+  });
+  if(!filas.length) tb.innerHTML='<tr><td colspan="9" class="mini">Sin clientes en este filtro.</td></tr>';
+  tb.querySelectorAll('[data-cliver]').forEach(b=>b.addEventListener('click',()=>abrirCliente(b.dataset.cliver)));
+}
+function abrirCliente(id){
+  const c = id? DB.CLIENTES.find(x=>String(x.ID)===String(id)) : null;
+  cliEditando = c? c.ID : null;
+  $('cliDetalle').style.display='';
+  $('cliTit').textContent = c? (c.NOMBRE||c.ID) : 'nuevo cliente';
+  llenarClaves('cliRegimen', REGIMENES_SAT, '— Sin capturar —');
+  llenarClaves('cliUsoCfdi', USOS_CFDI, '— Sin capturar —');
+  llenarClaves('cliForma', FORMAS_PAGO, '— Sin capturar —');
+  const p = (idc, v) => { $(idc).value = v==null? '' : v; };
+  if(c){
+    const e = estadoVigencias(c, DOCS_CLIENTE);
+    $('cliInfo').innerHTML = [
+      sinDatosFiscales(c)? '<span style="color:var(--bad)">Faltan datos fiscales: sin RFC y régimen no se puede facturar.</span>':'',
+      e.vencidos? `<span style="color:var(--bad)">${e.vencidos} documento(s) vencido(s)</span>`:'',
+      e.porVencer? `<span style="color:var(--accent)">${e.porVencer} por vencer</span>`:'',
+      (!sinDatosFiscales(c) && e.alDia)? '<span style="color:var(--ok)">Expediente completo.</span>':''
+    ].filter(Boolean).join(' · ');
+    p('cliNombre',c.NOMBRE); p('cliRazon',c.RAZON_SOCIAL); p('cliEjecutivo',c.EJECUTIVO);
+    $('cliActivo').value = String(c.ACTIVO||'SI').toUpperCase()==='NO'? 'NO':'SI';
+    p('cliRfc',c.RFC); p('cliCpFiscal',c.CP_FISCAL);
+    $('cliRegimen').value = c.REGIMEN_FISCAL||''; $('cliUsoCfdi').value = c.USO_CFDI||'';
+    $('cliMetodo').value = c.METODO_PAGO||'PPD'; $('cliForma').value = c.FORMA_PAGO||'';
+    p('cliDomicilio',c.DOMICILIO); p('cliCiudad',c.CIUDAD); p('cliEstado',c.ESTADO);
+    $('cliPais').value = c.PAIS||'MÉXICO'; $('cliMoneda').value = c.MONEDA||'MXN';
+    $('cliDiasCredito').value = nf(c.DIAS_CREDITO); $('cliLimite').value = nf(c.LIMITE_CREDITO);
+    p('cliMailFac',c.MAIL_FACTURACION);
+    p('cliContacto',c.CONTACTO); p('cliContactoTel',c.CONTACTO_TEL); p('cliContactoMail',c.CONTACTO_MAIL);
+    p('cliPortalUrl',c.PORTAL_ENLACE); p('cliPortalUsuario',c.PORTAL_USUARIO); p('cliPortalPass',c.PORTAL_PASSWORD);
+    p('cliConstancia',c.CONSTANCIA_URL); p('cliActa',c.ACTA_URL); p('cliPoder',c.PODER_URL);
+    p('cliOpinion',c.OPINION_SAT_URL); p('cliOpinionVence',c.OPINION_SAT_VENCE);
+    p('cliContrato',c.CONTRATO_URL); p('cliContratoVence',c.CONTRATO_VENCE);
+    p('cliNotas',c.NOTAS);
+  } else {
+    $('cliInfo').textContent = 'Se da de alta al guardar. El nombre comercial es el que verá toda la plataforma.';
+    ['cliNombre','cliRazon','cliEjecutivo','cliRfc','cliCpFiscal','cliDomicilio','cliCiudad','cliEstado',
+     'cliMailFac','cliContacto','cliContactoTel','cliContactoMail','cliPortalUrl','cliPortalUsuario',
+     'cliPortalPass','cliConstancia','cliActa','cliPoder','cliOpinion','cliOpinionVence','cliContrato',
+     'cliContratoVence','cliNotas'].forEach(x=>$(x).value='');
+    $('cliActivo').value='SI'; $('cliPais').value='MÉXICO'; $('cliMoneda').value='MXN';
+    $('cliMetodo').value='PPD'; $('cliDiasCredito').value=0; $('cliLimite').value=0;
+    $('cliRegimen').value=''; $('cliUsoCfdi').value='G03'; $('cliForma').value='99';
+  }
+  $('cliDetalle').scrollIntoView({behavior:'smooth', block:'start'});
+}
+async function guardarCliente(){
+  const nombre = $('cliNombre').value.trim();
+  if(!nombre){ toast('Captura el nombre comercial.', true); $('cliNombre').focus(); return; }
+  const repetido = DB.CLIENTES.find(c=>String(c.NOMBRE||'').trim().toUpperCase()===nombre.toUpperCase() &&
+                                       String(c.ID)!==String(cliEditando||''));
+  if(repetido){ toast('Ya hay un cliente con ese nombre.', true); return; }
+  const previo = cliEditando? DB.CLIENTES.find(x=>String(x.ID)===String(cliEditando)) : null;
+  const reg = Object.assign({}, previo||{}, {
+    NOMBRE: nombre, RAZON_SOCIAL: $('cliRazon').value.trim(),
+    RFC: $('cliRfc').value.trim().toUpperCase(), REGIMEN_FISCAL: $('cliRegimen').value,
+    CP_FISCAL: $('cliCpFiscal').value.trim(), USO_CFDI: $('cliUsoCfdi').value,
+    METODO_PAGO: $('cliMetodo').value, FORMA_PAGO: $('cliForma').value,
+    MONEDA: $('cliMoneda').value,
+    DIAS_CREDITO: nf($('cliDiasCredito').value), LIMITE_CREDITO: r2(nf($('cliLimite').value)),
+    DOMICILIO: $('cliDomicilio').value.trim(), CIUDAD: $('cliCiudad').value.trim(),
+    ESTADO: $('cliEstado').value.trim(), PAIS: $('cliPais').value.trim(),
+    CONTACTO: $('cliContacto').value.trim(), CONTACTO_TEL: $('cliContactoTel').value.trim(),
+    CONTACTO_MAIL: $('cliContactoMail').value.trim(), MAIL_FACTURACION: $('cliMailFac').value.trim(),
+    PORTAL_ENLACE: $('cliPortalUrl').value.trim(), PORTAL_USUARIO: $('cliPortalUsuario').value.trim(),
+    PORTAL_PASSWORD: $('cliPortalPass').value.trim(),
+    CONSTANCIA_URL: $('cliConstancia').value.trim(), ACTA_URL: $('cliActa').value.trim(),
+    PODER_URL: $('cliPoder').value.trim(), OPINION_SAT_URL: $('cliOpinion').value.trim(),
+    OPINION_SAT_VENCE: $('cliOpinionVence').value, CONTRATO_URL: $('cliContrato').value.trim(),
+    CONTRATO_VENCE: $('cliContratoVence').value, NOTAS: $('cliNotas').value.trim(),
+    ACTIVO: $('cliActivo').value, EJECUTIVO: $('cliEjecutivo').value.trim()
+  });
+  if(cliEditando) reg.ID = cliEditando;
+  if(await apiEnviar({action:'upsert', sheet:'CLIENTES', record:reg})){
+    toast(cliEditando? 'Expediente actualizado' : 'Cliente dado de alta');
+    $('cliDetalle').style.display='none'; cliEditando=null;
+    pintarClientes();
+  }
+}
+$('btnCliNuevo').addEventListener('click',()=>abrirCliente(null));
+$('btnCliGuardar').addEventListener('click', guardarCliente);
+['btnCliCancelar','btnCliCerrar'].forEach(id=>$(id).addEventListener('click',()=>{
+  $('cliDetalle').style.display='none'; cliEditando=null;
+}));
+['cliBusca','cliFiltro'].forEach(id=>$(id).addEventListener('input', pintarClientes));
+$('cliFiltro').addEventListener('change', pintarClientes);
+
+/* ---------- Expediente de proveedores ---------- */
+let provEditando = null;
+function pintarProveedores(){
+  const todos = DB.PROVEEDORES||[];
+  const est = todos.map(p=>({ p, e: estadoVigencias(p, DOCS_PROVEEDOR) }));
+
+  const chips=$('provChips'); chips.innerHTML='';
+  const mk=(txt,color)=>{ const s=document.createElement('span'); s.className='tag';
+    if(color){ s.style.background=color; s.style.color='#fff'; } s.textContent=txt; chips.appendChild(s); };
+  mk(todos.length+' proveedor(es)');
+  mk(todos.filter(p=>String(p.ACTIVO||'SI').toUpperCase()!=='NO').length+' activos','var(--ok)');
+  const sinFis = todos.filter(sinDatosFiscales).length;
+  if(sinFis) mk(sinFis+' sin datos fiscales','var(--bad)');
+  const nVenc = est.filter(x=>x.e.vencidos).length, nPor = est.filter(x=>!x.e.vencidos && x.e.porVencer).length;
+  if(nVenc) mk(nVenc+' con documento vencido','var(--bad)');
+  if(nPor)  mk(nPor+' por vencer (30 días)','var(--accent)');
+
+  const q = ($('provBusca').value||'').trim().toUpperCase();
+  const filtro = $('provFiltro').value;
+  const filas = est.filter(({p,e})=>{
+    const activo = String(p.ACTIVO||'SI').toUpperCase()!=='NO';
+    if(filtro==='activos'  && !activo) return false;
+    if(filtro==='vencidos' && !e.vencidos) return false;
+    if(filtro==='porvencer'&& !e.porVencer) return false;
+    if(filtro==='sinfiscal'&& !sinDatosFiscales(p)) return false;
+    if(!q) return true;
+    return [p.NOMBRE,p.RAZON_SOCIAL,p.RFC,p.CONTACTO,p.TIPO].some(v=>String(v||'').toUpperCase().includes(q));
+  });
+
+  const tb=$('tbodyProveedores'); tb.innerHTML='';
+  filas.forEach(({p,e})=>{
+    const exp = sinDatosFiscales(p)? '<span class="tag" style="background:var(--bad);color:#fff">Sin datos fiscales</span>'
+      : e.vencidos? `<span class="tag" style="background:var(--bad);color:#fff">${e.vencidos} vencido(s)</span>`
+      : e.porVencer? `<span class="tag" style="background:var(--accent);color:var(--accent-ink)">${e.porVencer} por vencer</span>`
+      : e.faltantes? `<span class="tag">${e.faltantes} sin capturar</span>`
+      : '<span class="tag ok">Al día</span>';
+    const banco = p.BANCO || p.CLABE
+      ? `${esc(p.BANCO)}${p.CLABE? '<br><span class="mini">'+esc(p.CLABE)+'</span>':''}`
+      : '<span class="mini">—</span>';
+    const tr=document.createElement('tr');
+    if(String(p.ACTIVO||'SI').toUpperCase()==='NO') tr.style.opacity='.55';
+    tr.innerHTML=`<td><b>${esc(p.NOMBRE)}</b>${p.RAZON_SOCIAL? `<br><span class="mini">${esc(p.RAZON_SOCIAL)}</span>`:''}</td>
+      <td>${esc(p.TIPO)||'<span class="mini">—</span>'}</td>
+      <td>${esc(p.RFC)||'<span style="color:var(--bad)">sin RFC</span>'}</td>
+      <td>${banco}</td>
+      <td>${esc(p.CONTACTO)||'<span class="mini">—</span>'}
+        ${p.CONTACTO_TEL? `<br><span class="mini">${esc(p.CONTACTO_TEL)}</span>`:''}</td>
+      <td>${etiquetaVence(p.OPINION_SAT_VENCE)}</td>
+      <td>${etiquetaVence(p.POLIZA_VENCE)}</td>
+      <td>${exp}</td>
+      <td><button class="btn btn-p btn-sm" data-provver="${p.ID}">Expediente</button></td>`;
+    tb.appendChild(tr);
+  });
+  if(!filas.length) tb.innerHTML='<tr><td colspan="9" class="mini">Sin proveedores en este filtro.</td></tr>';
+  tb.querySelectorAll('[data-provver]').forEach(b=>b.addEventListener('click',()=>abrirProveedor(b.dataset.provver)));
+}
+function abrirProveedor(id){
+  const p = id? (DB.PROVEEDORES||[]).find(x=>String(x.ID)===String(id)) : null;
+  provEditando = p? p.ID : null;
+  $('provDetalle').style.display='';
+  $('provTit').textContent = p? (p.NOMBRE||p.ID) : 'nuevo proveedor';
+  llenarClaves('provRegimen', REGIMENES_SAT, '— Sin capturar —');
+  $('provTipo').innerHTML = '<option value="">— Sin capturar —</option>'+
+    TIPOS_PROVEEDOR.map(t=>`<option>${esc(t)}</option>`).join('');
+  const v = (idc, val) => { $(idc).value = val==null? '' : val; };
+  if(p){
+    const e = estadoVigencias(p, DOCS_PROVEEDOR);
+    $('provInfo').innerHTML = [
+      sinDatosFiscales(p)? '<span style="color:var(--bad)">Faltan datos fiscales: sin RFC y régimen no se le puede pagar contra factura.</span>':'',
+      e.vencidos? `<span style="color:var(--bad)">${e.vencidos} documento(s) vencido(s)</span>`:'',
+      e.porVencer? `<span style="color:var(--accent)">${e.porVencer} por vencer</span>`:'',
+      (!sinDatosFiscales(p) && e.alDia)? '<span style="color:var(--ok)">Expediente completo.</span>':''
+    ].filter(Boolean).join(' · ');
+    v('provNombre',p.NOMBRE); v('provRazon',p.RAZON_SOCIAL);
+    $('provActivo').value = String(p.ACTIVO||'SI').toUpperCase()==='NO'? 'NO':'SI';
+    $('provTipo').value = p.TIPO||'';
+    v('provRfc',p.RFC); v('provCpFiscal',p.CP_FISCAL);
+    $('provRegimen').value = p.REGIMEN_FISCAL||'';
+    v('provDomicilio',p.DOMICILIO); v('provCiudad',p.CIUDAD); v('provEstado',p.ESTADO);
+    $('provDiasCredito').value = nf(p.DIAS_CREDITO); v('provMailFac',p.MAIL_FACTURACION);
+    v('provBanco',p.BANCO); v('provCuenta',p.CUENTA); v('provClabe',p.CLABE);
+    v('provContacto',p.CONTACTO); v('provContactoTel',p.CONTACTO_TEL); v('provContactoMail',p.CONTACTO_MAIL);
+    v('provConstancia',p.CONSTANCIA_URL); v('provOpinion',p.OPINION_SAT_URL); v('provOpinionVence',p.OPINION_SAT_VENCE);
+    v('provPoliza',p.POLIZA_SEGURO); v('provPolizaVence',p.POLIZA_VENCE);
+    v('provPermiso',p.PERMISO_SCT); v('provPermisoVence',p.PERMISO_SCT_VENCE); v('provRepse',p.REPSE);
+    v('provContrato',p.CONTRATO_URL); v('provContratoVence',p.CONTRATO_VENCE);
+    v('provPlatUrl',p.PLATAFORMA_ENLACE); v('provPlatUsuario',p.PLATAFORMA_USUARIO); v('provPlatPass',p.PLATAFORMA_PASSWORD);
+    v('provNotas',p.NOTAS);
+  } else {
+    $('provInfo').textContent = 'Se da de alta al guardar.';
+    ['provNombre','provRazon','provRfc','provCpFiscal','provDomicilio','provCiudad','provEstado',
+     'provMailFac','provBanco','provCuenta','provClabe','provContacto','provContactoTel','provContactoMail',
+     'provConstancia','provOpinion','provOpinionVence','provPoliza','provPolizaVence','provPermiso',
+     'provPermisoVence','provRepse','provContrato','provContratoVence','provPlatUrl','provPlatUsuario',
+     'provPlatPass','provNotas'].forEach(x=>$(x).value='');
+    $('provActivo').value='SI'; $('provTipo').value=''; $('provRegimen').value=''; $('provDiasCredito').value=0;
+  }
+  $('provDetalle').scrollIntoView({behavior:'smooth', block:'start'});
+}
+async function guardarProveedor(){
+  const nombre = $('provNombre').value.trim();
+  if(!nombre){ toast('Captura el nombre del proveedor.', true); $('provNombre').focus(); return; }
+  const repetido = (DB.PROVEEDORES||[]).find(p=>String(p.NOMBRE||'').trim().toUpperCase()===nombre.toUpperCase() &&
+                                               String(p.ID)!==String(provEditando||''));
+  if(repetido){ toast('Ya hay un proveedor con ese nombre.', true); return; }
+  const previo = provEditando? (DB.PROVEEDORES||[]).find(x=>String(x.ID)===String(provEditando)) : null;
+  const reg = Object.assign({}, previo||{}, {
+    NOMBRE: nombre, RAZON_SOCIAL: $('provRazon').value.trim(), TIPO: $('provTipo').value,
+    RFC: $('provRfc').value.trim().toUpperCase(), REGIMEN_FISCAL: $('provRegimen').value,
+    CP_FISCAL: $('provCpFiscal').value.trim(), DOMICILIO: $('provDomicilio').value.trim(),
+    CIUDAD: $('provCiudad').value.trim(), ESTADO: $('provEstado').value.trim(),
+    CONTACTO: $('provContacto').value.trim(), CONTACTO_TEL: $('provContactoTel').value.trim(),
+    CONTACTO_MAIL: $('provContactoMail').value.trim(), MAIL_FACTURACION: $('provMailFac').value.trim(),
+    BANCO: $('provBanco').value.trim(), CUENTA: $('provCuenta').value.trim(),
+    CLABE: $('provClabe').value.trim(), DIAS_CREDITO: nf($('provDiasCredito').value),
+    CONSTANCIA_URL: $('provConstancia').value.trim(), OPINION_SAT_URL: $('provOpinion').value.trim(),
+    OPINION_SAT_VENCE: $('provOpinionVence').value,
+    POLIZA_SEGURO: $('provPoliza').value.trim(), POLIZA_VENCE: $('provPolizaVence').value,
+    PERMISO_SCT: $('provPermiso').value.trim(), PERMISO_SCT_VENCE: $('provPermisoVence').value,
+    REPSE: $('provRepse').value.trim(),
+    CONTRATO_URL: $('provContrato').value.trim(), CONTRATO_VENCE: $('provContratoVence').value,
+    NOTAS: $('provNotas').value.trim(), ACTIVO: $('provActivo').value,
+    PLATAFORMA_ENLACE: $('provPlatUrl').value.trim(), PLATAFORMA_USUARIO: $('provPlatUsuario').value.trim(),
+    PLATAFORMA_PASSWORD: $('provPlatPass').value.trim()
+  });
+  if(provEditando) reg.ID = provEditando;
+  if(await apiEnviar({action:'upsert', sheet:'PROVEEDORES', record:reg})){
+    toast(provEditando? 'Expediente actualizado' : 'Proveedor dado de alta');
+    $('provDetalle').style.display='none'; provEditando=null;
+    pintarProveedores();
+  }
+}
+$('btnProvNuevo').addEventListener('click',()=>abrirProveedor(null));
+$('btnProvGuardar').addEventListener('click', guardarProveedor);
+['btnProvCancelar','btnProvCerrar'].forEach(id=>$(id).addEventListener('click',()=>{
+  $('provDetalle').style.display='none'; provEditando=null;
+}));
+['provBusca','provFiltro'].forEach(id=>$(id).addEventListener('input', pintarProveedores));
+$('provFiltro').addEventListener('change', pintarProveedores);
+
 /* ---------- Órdenes de compra ---------- */
 let ocEditando = null;
 let ocPartidas = [];
@@ -4625,6 +5191,25 @@ function totalesOc(){
   $('ocTotal').textContent    = money(sub+iva);
   return { sub:r2(sub), iva:r2(iva), total:r2(sub+iva) };
 }
+/* Al elegir el proveedor se muestra a quién y a dónde se le va a pagar, y si
+   le falta algo del expediente. */
+function infoProveedorOc(){
+  const nombre = nombreDeSelect('ocProveedor','PROVEEDORES');
+  const p = nombre? proveedorPorNombre(nombre) : null;
+  const el = $('ocProvInfo');
+  if(!p){ el.textContent=''; return; }
+  const faltas = [];
+  if(sinDatosFiscales(p)) faltas.push('sin RFC o régimen fiscal');
+  if(!String(p.CLABE||'').trim() && !String(p.CUENTA||'').trim()) faltas.push('sin datos bancarios');
+  const e = estadoVigencias(p, DOCS_PROVEEDOR);
+  if(e.vencidos)  faltas.push(e.vencidos+' documento(s) vencido(s)');
+  if(e.porVencer) faltas.push(e.porVencer+' por vencer');
+  if(e.faltantes) faltas.push(e.faltantes+' documento(s) sin capturar');
+  el.innerHTML = (p.RFC? esc(p.RFC)+' · ' : '')+
+    (p.BANCO||p.CLABE? `Pago a ${esc(p.BANCO)} ${esc(p.CLABE||p.CUENTA)}` : 'Sin datos bancarios')+
+    (nf(p.DIAS_CREDITO)? ` · crédito a ${num(p.DIAS_CREDITO)} días` : '')+
+    (faltas.length? `<br><span style="color:var(--bad)">${esc(nombre)}: ${esc(faltas.join(' · '))}</span> — complétalo en <b>Finanzas → Proveedores</b>.` : '');
+}
 function abrirOrden(id){
   const o = id? (DB.ORDENES_COMPRA||[]).find(x=>String(x.ID)===String(id)) : null;
   ocEditando = o? o.ID : null;
@@ -4650,6 +5235,7 @@ function abrirOrden(id){
     ocPartidas = [ocNuevaPartida()];
     $('ocInfo').textContent = 'La orden nace en borrador; se autoriza desde la lista.';
   }
+  infoProveedorOc();
   pintarOcPartidas();
 }
 async function guardarOrden(){
@@ -4751,6 +5337,7 @@ function pintarOrdenes(){
       record: Object.assign({}, o, { FACTURA_PROVEEDOR: e.value.trim() })})) toast('Factura del proveedor guardada');
   }));
 }
+$('ocProveedor').addEventListener('change', infoProveedorOc);
 $('btnOcNueva').addEventListener('click',()=>abrirOrden(null));
 $('btnOcCancelar').addEventListener('click',()=>{ $('ocForm').style.display='none'; ocEditando=null; });
 $('btnOcPartida').addEventListener('click',()=>{ ocPartidas.push(ocNuevaPartida()); pintarOcPartidas(); });
@@ -4898,10 +5485,17 @@ function pintarFacturacion(){
     if(clientes.includes(antes)) selC.value = antes;
   }
   const cliente = selC.value;
-  if(cliente && !$('facRfc').value){
-    const c = DB.CLIENTES.find(x=>String(x.NOMBRE||'')===cliente);
-    if(c && c.RFC) $('facRfc').value = c.RFC;
-  }
+  // Los datos fiscales salen del expediente del cliente (Comercial → Clientes)
+  const exp = cliente? clientePorNombre(cliente) : null;
+  if(exp && !$('facRfc').value && exp.RFC) $('facRfc').value = exp.RFC;
+  $('facFiscal').innerHTML = !cliente? ''
+    : !exp? '<span style="color:var(--bad)">Este cliente no tiene expediente. Dalo de alta en <b>Comercial → Clientes</b>.</span>'
+    : sinDatosFiscales(exp)
+      ? `<span style="color:var(--bad)">A <b>${esc(cliente)}</b> le faltan datos fiscales</span> — captura su RFC y su régimen en <b>Comercial → Clientes</b>.`
+      : `Facturando a <b>${esc(exp.RAZON_SOCIAL||cliente)}</b> · ${esc(exp.RFC)} · Régimen ${esc(exp.REGIMEN_FISCAL)} ${esc(descClave(REGIMENES_SAT, exp.REGIMEN_FISCAL))}`+
+        ` · Uso ${esc(exp.USO_CFDI||'G03')} · ${esc(exp.METODO_PAGO||'PPD')}`+
+        (nf(exp.DIAS_CREDITO)? ` · crédito a ${num(exp.DIAS_CREDITO)} días` : ' · de contado')+
+        (exp.MAIL_FACTURACION? `<br>Se envía a ${esc(exp.MAIL_FACTURACION)}`:'');
   if(!$('facFecha').value) $('facFecha').value = hoyISO();
   if(!$('facFolio').value && cliente) $('facFolio').value = folioSiguiente('FACTURAS','FOLIO','').replace(/^0+/,'') || '1';
 
@@ -4958,6 +5552,13 @@ function pintarFacturas(){
 async function emitirFactura(){
   const cliente = $('facCliente').value;
   if(!cliente){ toast('Elige el cliente.', true); return; }
+  const exp = clientePorNombre(cliente);
+  if(!exp || sinDatosFiscales(exp)){
+    modal('Faltan datos fiscales',
+      `Para facturar a <b>${esc(cliente)}</b> hace falta su <b>RFC</b> y su <b>régimen fiscal</b>. `+
+      `Captúralos en su expediente, en <b>Comercial → Clientes</b>.`, '🧾');
+    return;
+  }
   const t = totalesFactura();
   if(!t.ids.length){ toast('Selecciona los servicios que ampara la factura.', true); return; }
   const folio = $('facFolio').value.trim();
@@ -4968,8 +5569,11 @@ async function emitirFactura(){
     SERIE: $('facSerie').value.trim(), FOLIO: folio, UUID: $('facUuid').value.trim(),
     FECHA: $('facFecha').value || hoyISO(), CLIENTE: cliente, RFC: $('facRfc').value.trim(),
     CONCEPTO: 'Servicio de autotransporte de carga', CXC_IDS: t.ids.join(','), CARTAS_PORTE: cps,
-    SUBTOTAL: t.sub, IVA: t.iva, RETENCION: t.ret, TOTAL: t.total, MONEDA:'MXN',
-    METODO_PAGO:'PPD', FORMA_PAGO:'99', USO_CFDI:'G03', ESTADO:'EMITIDA',
+    SUBTOTAL: t.sub, IVA: t.iva, RETENCION: t.ret, TOTAL: t.total,
+    MONEDA: (exp && exp.MONEDA) || 'MXN',
+    METODO_PAGO: (exp && exp.METODO_PAGO) || 'PPD',
+    FORMA_PAGO: (exp && exp.FORMA_PAGO) || '99',
+    USO_CFDI: (exp && exp.USO_CFDI) || 'G03', ESTADO:'EMITIDA',
     XML_URL: $('facXml').value.trim(), PDF_URL: $('facPdf').value.trim(),
     REGISTRADO_POR: nombreUsuario()
   };
@@ -5070,9 +5674,10 @@ function avisoServicioCp(){
   if(!cp){ el.textContent=''; return; }
   if(!s){ el.innerHTML = '<span style="color:var(--bad)">No se encontró esa carta porte en los servicios.</span>'; return; }
   el.innerHTML = `Servicio de <b>${esc(s.CLIENTE)}</b> · ${esc(s.RUTA||s.ORIGEN+' → '+s.DESTINO)} · unidad ${esc(s.ECONOMICO)||'—'}`;
-  if(!$('cpRfcReceptor').value){
-    const c = DB.CLIENTES.find(x=>String(x.NOMBRE||'')===String(s.CLIENTE||''));
-    if(c && c.RFC) $('cpRfcReceptor').value = c.RFC;
+  const c = clientePorNombre(s.CLIENTE);
+  if(!$('cpRfcReceptor').value && c && c.RFC) $('cpRfcReceptor').value = c.RFC;
+  if(c && sinDatosFiscales(c)){
+    el.innerHTML += `<br><span style="color:var(--bad)">${esc(s.CLIENTE)} no tiene RFC en su expediente</span> — captúralo en <b>Comercial → Clientes</b>.`;
   }
 }
 async function guardarTimbrado(){
@@ -8177,18 +8782,24 @@ const ADMIN = {
   EJECUTIVOS:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
   REMOLQUES:{ cols:[{k:'ECONOMICO'},{k:'PLACAS'},{k:'TIPO',opts:['REMOLQUE','PORTACONTENEDOR','DOLLY']}],
     csv:'ECONOMICO, PLACAS, TIPO' },
-  /* El RFC del cliente es el que se propone al facturar y al timbrar la
-     carta porte, para no capturarlo cada vez. */
-  CLIENTES:{ cols:[{k:'NOMBRE'},{k:'RFC',raw:true},{k:'EJECUTIVO',t:'Ejecutivo de la cuenta'}],
-    csv:'NOMBRE, RFC, EJECUTIVO' },
+  /* El expediente completo del cliente se trabaja en Comercial → Clientes.
+     Aquí queda la vista de catálogo, para altas rápidas y para importar. */
+  CLIENTES:{ cols:[{k:'NOMBRE'},{k:'RAZON_SOCIAL',t:'Razón social'},{k:'RFC',raw:true},
+      {k:'REGIMEN_FISCAL',t:'Régimen',raw:true},{k:'DIAS_CREDITO',t:'Días crédito',tipo:'number'},
+      {k:'MAIL_FACTURACION',t:'Correo de facturación',raw:true},
+      {k:'EJECUTIVO',t:'Ejecutivo de la cuenta'},{k:'ACTIVO',opts:['SI','NO']}],
+    csv:'NOMBRE, RAZON_SOCIAL, RFC, REGIMEN_FISCAL, DIAS_CREDITO, MAIL_FACTURACION, EJECUTIVO, ACTIVO' },
   /* Catálogos que alimentan el alta de Nuevo Servicio */
   /* Accesos a la plataforma de rastreo del proveedor: se ven en la bitácora
      del viaje cuando el servicio va con esa línea. */
-  PROVEEDORES:{ cols:[{k:'NOMBRE'},
+  /* Igual que los clientes: el expediente vive en Finanzas → Proveedores */
+  PROVEEDORES:{ cols:[{k:'NOMBRE'},{k:'RAZON_SOCIAL',t:'Razón social'},{k:'RFC',raw:true},
+      {k:'TIPO'},{k:'CLABE',raw:true},
       {k:'PLATAFORMA_ENLACE',t:'Enlace de su plataforma'},
       {k:'PLATAFORMA_USUARIO',t:'Usuario',raw:true},
-      {k:'PLATAFORMA_PASSWORD',t:'Contraseña',raw:true}],
-    csv:'NOMBRE, PLATAFORMA_ENLACE, PLATAFORMA_USUARIO, PLATAFORMA_PASSWORD' },
+      {k:'PLATAFORMA_PASSWORD',t:'Contraseña',raw:true},
+      {k:'ACTIVO',opts:['SI','NO']}],
+    csv:'NOMBRE, RAZON_SOCIAL, RFC, TIPO, CLABE, PLATAFORMA_ENLACE, PLATAFORMA_USUARIO, PLATAFORMA_PASSWORD, ACTIVO' },
   TIPO_NEGOCIO:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
   ADUANAS:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
   ESTADOS:{ cols:[{k:'NOMBRE'}], csv:'NOMBRE' },
@@ -8263,22 +8874,24 @@ const SECCIONES_INFO = {
   solicitud:'Solicitud de Gasto', dispersiones:'Dispersiones', monitoreo:'Monitoreo',
   incidencias:'Incidencias', calidad:'Calidad · Levantar ticket',
   calidadseg:'Calidad · Seguimiento', liquidacion:'Liquidación', prenomina:'Hoja de Servicio',
-  cxc:'Cuentas por cobrar', cxp:'Cuentas por pagar', ordenes:'Órdenes de compra',
+  cxc:'Cuentas por cobrar', cxp:'Cuentas por pagar', proveedores:'Proveedores',
+  ordenes:'Órdenes de compra',
   liberaciones:'Liberaciones', facturacion:'Facturación',
   cartasporte:'Cartas porte timbradas', caja:'Cobros y pagos',
   operadores:'RRHH · Operadores', capacitaciones:'RRHH · Capacitaciones',
   reclutamiento:'RRHH · Reclutamiento', administrativos:'RRHH · Administrativos',
-  tarifarios:'Comercial · Tarifarios', cotizaciones:'Comercial · Cotizaciones',
+  clientes:'Comercial · Clientes', tarifarios:'Comercial · Tarifarios',
+  cotizaciones:'Comercial · Cotizaciones',
   prospectos:'Comercial · Prospectos', indicadores:'Indicadores', rutas:'Rutas'
 };
 const TODAS_LAS_SECCIONES = Object.keys(SECCIONES_INFO);
-const SECCIONES_AUDITOR = ['dispersiones','cxc','cxp','ordenes','liberaciones','facturacion',
+const SECCIONES_AUDITOR = ['dispersiones','cxc','cxp','proveedores','ordenes','liberaciones','facturacion',
                            'cartasporte','caja','liquidacion','prenomina','monitoreo',
                            'calidad','calidadseg','indicadores'];
 /* El comercial (y el ejecutivo) trabajan su cartera: dan de alta servicios,
    los siguen y los ven en TDC/FWD. Todo filtrado a SUS clientes. */
 const SECCIONES_EJECUTIVO = ['nuevoservicio','tdc','fwd','monitoreo','incidencias',
-                             'calidad','calidadseg','cotizaciones','prospectos','indicadores'];
+                             'calidad','calidadseg','clientes','cotizaciones','prospectos','indicadores'];
 function seccionesPorDefecto(rol){
   const r = String(rol||'').toUpperCase();
   if(r==='AUDITOR')  return SECCIONES_AUDITOR;
@@ -8770,6 +9383,8 @@ function refrescarTodo(){
   if(document.querySelector('#sec-incidencias.active')) pintarPantallaIncidencias();
   if(document.querySelector('#sec-cxc.active')) pintarCxc();
   if(document.querySelector('#sec-cxp.active')) pintarCxp();
+  if(document.querySelector('#sec-clientes.active')) pintarClientes();
+  if(document.querySelector('#sec-proveedores.active')) pintarProveedores();
   if(document.querySelector('#sec-ordenes.active')) pintarOrdenes();
   if(document.querySelector('#sec-liberaciones.active')) pintarLiberaciones();
   if(document.querySelector('#sec-facturacion.active')) pintarFacturacion();

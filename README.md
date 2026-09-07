@@ -1129,16 +1129,75 @@ se abre y se cierra, y al entrar a una pantalla se abre sola la suya:
 | **Histórico de viajes** | TDC · FWD |
 | **Operaciones** | Asignación de unidad · Solicitud de gasto · Liquidación · Hoja de servicio |
 | **Monitoreo** | Monitoreo · Incidencias · Rutas |
-| **Finanzas** | Dispersiones · CXC · CXP · Órdenes de compra · Liberaciones · Facturación · Cartas porte timbradas · Cobros y pagos |
+| **Finanzas** | Dispersiones · CXC · CXP · Proveedores · Órdenes de compra · Liberaciones · Facturación · Cartas porte timbradas · Cobros y pagos |
 | **Calidad** | Levantar ticket · Seguimiento |
 | **RRHH** | Operadores · Capacitaciones · Reclutamiento · Administrativos |
-| **Comercial** | Tarifarios · Cotizaciones · Prospectos |
+| **Comercial** | Clientes · Tarifarios · Cotizaciones · Prospectos |
 | **Dirección** | Indicadores · Administración |
 
 Las pantallas que todavía no tienen contenido —Capacitaciones, Reclutamiento,
 Administrativos, Cotizaciones y Prospectos— existen y se abren, marcadas como **En desarrollo**; en el menú llevan una
 etiqueta *dev*. Un área que se quede sin pantallas permitidas para el usuario
 no se muestra.
+
+## Clientes y proveedores
+
+Los dos expedientes de a quién le cobramos y a quién le pagamos. Es de aquí de
+donde Facturación y las cartas porte toman los datos fiscales: no se vuelven a
+capturar en cada documento.
+
+### Clientes (Comercial → Clientes)
+
+El **nombre comercial** es la llave que usa toda la plataforma —es el que
+aparece en los servicios, las rutas y los tarifarios—, y alrededor de él va el
+expediente:
+
+- **Datos fiscales**: RFC, razón social, código postal fiscal, **régimen
+  fiscal**, **uso del CFDI**, **método de pago** (PUE/PPD), **forma de pago** y
+  moneda. Los catálogos del SAT vienen cargados, y se guarda la clave.
+- **Condiciones comerciales**: días y límite de crédito, y el correo a donde se
+  le envían las facturas.
+- **Contacto** y, si el cliente tiene su propio portal para subir facturas o
+  evidencia, sus **accesos**.
+- **Documentación**: constancia de situación fiscal, acta constitutiva, poder
+  del representante legal, opinión de cumplimiento (32-D) y contrato, cada uno
+  con su liga y su vigencia.
+
+La lista pinta el semáforo de siempre: **rojo** lo vencido, **ámbar** lo que
+vence dentro de 30 días. Un cliente sin RFC o sin régimen sale marcado como
+**Sin datos fiscales**, con su propio filtro, porque es el que no se va a poder
+facturar.
+
+### Proveedores (Finanzas → Proveedores)
+
+A quién le compramos: líneas transportistas, talleres, refacciones,
+combustible, casetas, servicios y arrendamiento —el **tipo** los separa—. Trae:
+
+- **Datos fiscales**: RFC, razón social, régimen, CP fiscal, domicilio y días
+  de crédito.
+- **Datos bancarios**: banco, cuenta y **CLABE**. Es lo que muestra Órdenes de
+  compra al momento de pagar.
+- **Contacto** y correo para facturación.
+- **Documentación**: constancia, opinión de cumplimiento, **póliza de seguro**,
+  **permiso SCT**, registro **REPSE** y contrato, con sus vigencias.
+- **Plataforma de rastreo** (usuario, contraseña y enlace), que es lo que se
+  muestra en la bitácora del viaje cuando el servicio va con esa línea.
+
+### Cómo se enlazan con el resto
+
+- Al elegir el cliente en **Facturación**, la pantalla dice a quién se le
+  factura, con qué régimen, uso de CFDI y método de pago, qué crédito tiene y a
+  qué correo se manda. La factura hereda esos datos. **Sin RFC y régimen no
+  deja emitir**, y la ventana dice dónde capturarlos.
+- Al capturar una **carta porte**, el RFC receptor sale del expediente del
+  cliente, y si no lo tiene, lo avisa.
+- Al elegir el proveedor en una **orden de compra**, se ve su RFC, a qué banco y
+  CLABE se le paga y su crédito; si le falta algo del expediente —datos
+  fiscales, datos bancarios o documentos vencidos— lo dice ahí mismo.
+
+En **Administración** siguen estando los dos como catálogo, para altas rápidas
+e importación por CSV, con sus columnas principales; el expediente completo se
+trabaja en las pantallas de arriba.
 
 ## El área financiera
 
@@ -1228,7 +1287,8 @@ cobrado, pagado y la diferencia.
 ### Hojas y parámetros nuevos
 
 Hojas: `ORDENES_COMPRA`, `LIBERACIONES`, `FACTURAS`, `CARTAS_PORTE` y `PAGOS`.
-`CLIENTES` gana **RFC**, que es el que se propone al facturar y al timbrar.
+`CLIENTES` y `PROVEEDORES` crecen con todo su expediente fiscal, comercial y
+documental (ver *Clientes y proveedores*).
 Parámetros: `RFC_EMISOR` y `LIBERACION_OBLIGATORIA`.
 
 ## Cuentas por pagar (CXP)
