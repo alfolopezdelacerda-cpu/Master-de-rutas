@@ -52,12 +52,34 @@ header{background:var(--primary);color:var(--primary-ink);position:sticky;top:0;
 .pill.on .dot{background:var(--ok)}
 .hbtn{background:rgba(255,255,255,.12);border:none;color:var(--primary-ink);border-radius:8px;padding:7px 11px;font-size:14px;font-weight:600}
 .roadline{height:5px;background:repeating-linear-gradient(90deg,var(--accent) 0 26px,transparent 26px 44px),var(--primary)}
-nav{background:var(--surface);border-bottom:1px solid var(--line)}
-.tabs{display:flex;gap:4px;margin:0 auto;padding:0 16px;overflow-x:auto}
-.tab{font-family:'Barlow Condensed';font-size:17px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;background:none;border:none;color:var(--ink2);padding:13px 15px;border-bottom:3px solid transparent;white-space:nowrap}
-.tab.active{color:var(--ink);border-bottom-color:var(--accent)}
-
-main{margin:0 auto;padding:22px 22px 70px}
+/* Menú lateral, por áreas de la empresa */
+.wrap{display:flex;align-items:flex-start;min-height:calc(100vh - 64px)}
+nav{background:var(--surface);border-right:1px solid var(--line);width:232px;flex:none;
+    position:sticky;top:0;max-height:100vh;overflow-y:auto;padding:10px 0 40px}
+.area{border-bottom:1px solid var(--line)}
+.area>.ah{display:flex;align-items:center;gap:8px;width:100%;background:none;border:none;
+  font-family:'Barlow Condensed';font-size:15px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink);padding:12px 14px;text-align:left}
+.area>.ah .ai{font-size:15px;width:18px;text-align:center}
+.area>.ah .ac{margin-left:auto;font-size:11px;color:var(--ink2);transition:transform .15s}
+.area.abierta>.ah .ac{transform:rotate(90deg)}
+.area .subs{display:none;padding:0 0 8px}
+.area.abierta .subs{display:block}
+.tab{display:block;width:100%;font-family:'Barlow',sans-serif;font-size:14px;font-weight:600;
+  background:none;border:none;color:var(--ink2);padding:8px 14px 8px 40px;text-align:left;
+  border-left:3px solid transparent;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tab:hover{color:var(--ink);background:var(--surface2)}
+.tab.active{color:var(--ink);border-left-color:var(--accent);background:var(--surface2)}
+.tab .pt{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  background:var(--chip);color:var(--ink2);border-radius:99px;padding:1px 6px;margin-left:6px}
+#navToggle{display:none}
+@media(max-width:900px){
+  .wrap{flex-direction:column}
+  nav{width:100%;position:static;max-height:none;border-right:none;border-bottom:1px solid var(--line)}
+  #navToggle{display:block}
+  nav.oculto .area{display:none}
+}
+main{flex:1;min-width:0;padding:22px 22px 70px}
 .sec{display:none}.sec.active{display:block}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px;box-shadow:var(--shadow);margin-bottom:18px}
 .card h2{font-size:22px;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
@@ -254,21 +276,80 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
   <div class="roadline"></div>
 </header>
 
-<nav><div class="tabs">
-  <button class="tab active" data-sec="nuevoservicio">Nuevo Servicio</button>
-  <button class="tab" data-sec="asignacion">Asignación de Unidad</button>
-  <button class="tab" data-sec="tdc">TDC</button>
-  <button class="tab" data-sec="fwd">FWD</button>
-  <button class="tab" data-sec="solicitud">Solicitud de Gasto</button>
-  <button class="tab" data-sec="dispersiones">Dispersiones</button>
-  <button class="tab" data-sec="monitoreo">Monitoreo</button>
-  <button class="tab" data-sec="calidad">Calidad</button>
-  <button class="tab" data-sec="liquidacion">Liquidación</button>
-  <button class="tab" data-sec="prenomina">Hoja de Servicio</button>
-  <button class="tab" data-sec="indicadores">Indicadores</button>
-  <button class="tab" data-sec="rutas">Rutas</button>
-  <button class="tab tab-admin" data-sec="admin">Administración</button>
-</div></nav>
+<div class="wrap">
+<nav id="nav">
+  <div class="area abierta" data-area="trafico">
+    <button class="ah"><span class="ai">🚦</span>Tráfico<span class="ac">▸</span></button>
+    <div class="subs">
+      <button class="tab active" data-sec="nuevoservicio">Nuevo Servicio</button>
+    </div>
+  </div>
+  <div class="area" data-area="historico">
+    <button class="ah"><span class="ai">📚</span>Histórico de viajes<span class="ac">▸</span></button>
+    <div class="subs">
+      <button class="tab" data-sec="tdc">TDC</button>
+      <button class="tab" data-sec="fwd">FWD</button>
+    </div>
+  </div>
+  <div class="area" data-area="operaciones">
+    <button class="ah"><span class="ai">🚛</span>Operaciones<span class="ac">▸</span></button>
+    <div class="subs">
+      <button class="tab" data-sec="asignacion">Asignación de unidad</button>
+      <button class="tab" data-sec="solicitud">Solicitud de gasto</button>
+      <button class="tab" data-sec="liquidacion">Liquidación</button>
+      <button class="tab" data-sec="prenomina">Hoja de servicio</button>
+    </div>
+  </div>
+  <div class="area" data-area="monitoreo">
+    <button class="ah"><span class="ai">📡</span>Monitoreo<span class="ac">▸</span></button>
+    <div class="subs">
+      <button class="tab" data-sec="monitoreo">Monitoreo</button>
+      <button class="tab" data-sec="incidencias">Incidencias</button>
+      <button class="tab" data-sec="rutas">Rutas</button>
+    </div>
+  </div>
+  <div class="area" data-area="finanzas">
+    <button class="ah"><span class="ai">💵</span>Finanzas<span class="ac">▸</span></button>
+    <div class="subs">
+      <button class="tab" data-sec="dispersiones">Dispersiones</button>
+      <button class="tab" data-sec="cxc">CXC</button>
+      <button class="tab" data-sec="cxp">CXP</button>
+      <button class="tab" data-sec="liberaciones">Liberaciones<span class="pt">dev</span></button>
+      <button class="tab" data-sec="facturacion">Facturación<span class="pt">dev</span></button>
+    </div>
+  </div>
+  <div class="area" data-area="calidad">
+    <button class="ah"><span class="ai">✅</span>Calidad<span class="ac">▸</span></button>
+    <div class="subs">
+      <button class="tab" data-sec="calidad">Levantar ticket</button>
+      <button class="tab" data-sec="calidadseg">Seguimiento</button>
+    </div>
+  </div>
+  <div class="area" data-area="rrhh">
+    <button class="ah"><span class="ai">👥</span>RRHH<span class="ac">▸</span></button>
+    <div class="subs">
+      <button class="tab" data-sec="operadores">Operadores</button>
+      <button class="tab" data-sec="capacitaciones">Capacitaciones<span class="pt">dev</span></button>
+      <button class="tab" data-sec="reclutamiento">Reclutamiento<span class="pt">dev</span></button>
+      <button class="tab" data-sec="administrativos">Administrativos<span class="pt">dev</span></button>
+    </div>
+  </div>
+  <div class="area" data-area="comercial">
+    <button class="ah"><span class="ai">📈</span>Comercial<span class="ac">▸</span></button>
+    <div class="subs">
+      <button class="tab" data-sec="tarifarios">Tarifarios</button>
+      <button class="tab" data-sec="cotizaciones">Cotizaciones<span class="pt">dev</span></button>
+      <button class="tab" data-sec="prospectos">Prospectos<span class="pt">dev</span></button>
+    </div>
+  </div>
+  <div class="area" data-area="direccion">
+    <button class="ah"><span class="ai">📊</span>Dirección<span class="ac">▸</span></button>
+    <div class="subs">
+      <button class="tab" data-sec="indicadores">Indicadores</button>
+      <button class="tab tab-admin" data-sec="admin">Administración</button>
+    </div>
+  </div>
+</nav>
 
 <main>
 
@@ -294,6 +375,9 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       <div><label>Equipo de arrastre</label><select id="rEquipo"><option>SECA</option><option>REFRIGERADA</option><option>CONTENEDOR</option></select></div>
       <div><label>Total de KM (automático)</label><input id="rTotalKm" class="num" readonly></div>
       <div><label>Costo de casetas ($) (automático)</label><input id="rCostoCasetas" class="num" readonly></div>
+      <div style="grid-column:1/-1"><label>Enlace de la ruta</label>
+        <input id="rEnlace" placeholder="Pega aquí la liga del trazo (Google Maps, Waze…)">
+        <div class="mini" style="margin-top:4px">Se guarda con la ruta y se puede abrir desde la lista.</div></div>
     </div>
 
     <hr class="sep">
@@ -671,6 +755,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     <h2>Dispersión de gastos</h2>
     <div class="sub">El auditor revisa la solicitud de gasto y confirma la dispersión al operador. Mientras esté pendiente, el área de operaciones puede seguir modificando la solicitud (operador, unidad, ruta, etc.). Una vez dispersada, la solicitud queda bloqueada.</div>
     <div class="mini" id="dispPend" style="margin-bottom:10px"></div>
+    <div id="dispPendExtra" class="mini" style="display:none;background:var(--surface2);border-left:4px solid var(--bad);border-radius:8px;padding:12px 14px;margin-bottom:12px"></div>
     <div class="grid g3">
       <div style="grid-column:1/3"><label>Buscar</label><input id="dxBusca" placeholder="🔍 Folio, operador, ruta…"></div>
       <div><label>Estado</label><select id="dxEstado"><option value="todos">Todos</option><option value="pendientes">Pendientes</option><option value="dispersados">Dispersados</option></select></div>
@@ -776,6 +861,18 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       <div><label>Cumplimiento de carga</label><input id="monCumpleCarga" readonly></div>
       <div><label>Cita de descarga</label><input id="monCitaDescarga" readonly></div>
       <div><label>Cumplimiento de descarga</label><input id="monCumpleDescarga" readonly></div>
+    </div>
+
+    <div id="monFwdBox" style="display:none;background:var(--surface2);border:1px dashed var(--road);border-radius:10px;padding:14px;margin:14px 0">
+      <h3 style="margin-bottom:4px">Unidad del servicio FWD</h3>
+      <div class="sub" style="margin-bottom:10px">Un servicio <b>FWD</b> no pasa por asignación ni por solicitud de gasto: la unidad, el operador y el medio de comunicación se capturan aquí.</div>
+      <div class="grid g4" style="margin-bottom:12px">
+        <div><label>Económico</label><input id="monFwdEco" placeholder="Económico de la unidad"></div>
+        <div><label>Placas</label><input id="monFwdPlacas" placeholder="Placas"></div>
+        <div><label>Operador</label><input id="monFwdOperador" placeholder="Nombre del operador"></div>
+        <div><label>Medio de comunicación</label><input id="monFwdMedio" placeholder="WhatsApp, radio…"></div>
+      </div>
+      <button class="btn btn-p btn-sm" id="btnMonFwd">💾 Guardar unidad y operador</button>
     </div>
 
     <h3>Datos del servicio</h3>
@@ -1053,10 +1150,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
   <div class="card">
     <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
       <h2 style="margin:0">Hoja de servicio de operadores</h2>
-      <label class="switch" title="Cambia al esquema de sueldo fijo: sin objetivo de kilómetros, sin objetivo de rendimiento y sin apoyo para viaje.">
-        <input type="checkbox" id="pTipoPagoFijo"><span class="sw"></span>
-        <span class="swtx">Pago de nómina fija</span>
-      </label>
+      <label class="switch" style="display:none"><input type="checkbox" id="pTipoPagoFijo" checked><span class="sw"></span></label>
     </div>
     <div class="sub" style="margin-top:6px">Las semanas de nómina corren de <b>jueves a miércoles</b>. Marca las casillas de los periodos que quieras incluir.</div>
     <div class="grid g3" style="margin-bottom:14px">
@@ -1090,18 +1184,16 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       </div>
 
       <div class="card">
-        <h3>Objetivos de cumplimiento</h3>
-        <div class="sub" style="margin-bottom:10px">Se marcan a mano. Las incidencias del periodo aparecen abajo solo como información.</div>
-        <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:8px">
-          <label style="display:flex;gap:10px;align-items:center;font-size:14px;text-transform:none;letter-spacing:0"><input type="checkbox" id="ob1" style="width:auto"> Llegada en tiempo</label>
-          <label style="display:flex;gap:10px;align-items:center;font-size:14px;text-transform:none;letter-spacing:0"><input type="checkbox" id="ob2" style="width:auto"> Evidencia en tiempo</label>
-          <label style="display:flex;gap:10px;align-items:center;font-size:14px;text-transform:none;letter-spacing:0"><input type="checkbox" id="ob3" style="width:auto"> Sin incidencias en ruta</label>
-        </div>
+        <h3>Incidencias del periodo</h3>
+        <div class="sub" style="margin-bottom:10px">Lo que el monitorista reportó en los viajes del periodo. Es informativo: no cambia el pago.</div>
         <div class="mini" id="pObjSegNota" style="margin-bottom:8px;color:var(--ink2)"></div>
-        <div class="totrow"><span>Bono por cumplimiento (sobre neto)</span><b class="num pos" id="pBono">$0.00</b></div>
+        <div style="display:none">
+          <input type="checkbox" id="ob1"><input type="checkbox" id="ob2"><input type="checkbox" id="ob3">
+          <b id="pBono">$0.00</b>
+        </div>
       </div>
 
-      <div class="card" id="pCardObjKm">
+      <div class="card" id="pCardObjKm" style="display:none">
         <h3>Objetivo de kilómetros</h3>
         <div class="grid g4" style="margin-bottom:10px">
           <div><label>Tipo de unidad</label><select id="pTipoU"></select></div>
@@ -1117,7 +1209,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <div class="totrow"><span>Pago por km extra</span><b class="num pos" id="pPagoKm">$0.00</b></div>
       </div>
 
-      <div class="card" id="pCardApoyo">
+      <div class="card" id="pCardApoyo" style="display:none">
         <h3>Apoyo para viaje</h3>
         <div class="sub">Se paga completo con <b>60%</b> o más del objetivo de KM; al <b>50%</b> entre 30% y 59%; al <b>20%</b> por debajo de 30%. Sin viajes en el periodo, no se paga.</div>
         <div class="grid g2" style="margin-bottom:10px">
@@ -1134,7 +1226,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <div class="totrow"><span>Apoyo para viaje</span><b class="num pos" id="pApoyo">$0.00</b></div>
       </div>
 
-      <div class="card" id="pCardRend">
+      <div class="card" id="pCardRend" style="display:none">
         <h3>Objetivo de rendimiento</h3>
         <div class="grid g3" style="margin-bottom:10px">
           <div><label>Rendimiento objetivo (km/l)</label><input id="pRendObj" type="number" min="0" step="0.1"></div>
@@ -1146,9 +1238,9 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <div class="totrow"><span>Pago por rendimiento eficiente</span><b class="num pos" id="pPagoRend">$0.00</b></div>
       </div>
 
-      <div class="card" id="pCardPagoKm" style="display:none">
-        <h3>Pago por KM</h3>
-        <div class="sub" style="margin-bottom:10px">Cada viaje liquidado del periodo se cotiza en la tabla <b>Pago x KM</b> con sus <b>km proyectados</b> y su <b>tipo de unidad</b>. Si los km no están exactos en la tabla, se toma el siguiente renglón hacia arriba.</div>
+      <div class="card" id="pCardPagoKm">
+        <h3>Pago del periodo</h3>
+        <div class="sub" style="margin-bottom:10px">El pago es <b>sueldo + pago por servicio + apoyo para viaje</b>, y si no llega al piso del tipo de unidad se completa la diferencia. Cada viaje liquidado se cotiza en la tabla <b>Pago x KM</b> con sus <b>km proyectados</b> y su <b>tipo de unidad</b>; si los km no están exactos, se toma el siguiente renglón hacia arriba.</div>
         <div class="twrap"><table>
           <thead><tr><th>Folio</th><th>Ruta</th><th>Unidad</th><th class="right">KM proy.</th><th class="right">KM tabla</th><th class="right">Pago</th></tr></thead>
           <tbody id="tbodyPagoKm"></tbody>
@@ -1274,7 +1366,16 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <div><label>$ litro ahorrado (diésel)</label><input id="cfgBLD" type="number" step="0.5"></div>
         <div><label>$ litro ahorrado (gasolina)</label><input id="cfgBLG" type="number" step="0.5"></div>
       </div>
-      <h3 style="margin-top:18px">Piso de pago por tipo de unidad (esquema de pago fijo)</h3>
+      <h3 style="margin-top:18px">Apoyo para viaje por tipo de unidad</h3>
+      <div class="sub" style="margin-bottom:12px">Se paga por periodo con viajes liquidados, según el tipo de unidad del operador.</div>
+      <div class="grid g4">
+        <div><label>Full</label><input id="cfgApoyoFull" type="number" step="50"></div>
+        <div><label>Sencillo</label><input id="cfgApoyoSen" type="number" step="50"></div>
+        <div><label>Rabón</label><input id="cfgApoyoRab" type="number" step="50"></div>
+        <div><label>3.5 T</label><input id="cfgApoyo35" type="number" step="50"></div>
+      </div>
+
+      <h3 style="margin-top:18px">Piso de pago por tipo de unidad</h3>
       <div class="sub" style="margin-bottom:12px">Si el pago del periodo —sueldo + pago por servicio + apoyo— no llega a este monto, la diferencia se paga como <b>complemento de pago</b>.</div>
       <div class="grid g4">
         <div><label>Full</label><input id="cfgPisoFull" type="number" step="100"></div>
@@ -1363,6 +1464,8 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <button class="tab atab" data-adm="PAGO_X_KM">Pago x KM</button>
         <button class="tab atab" data-adm="NOMINAS">Nóminas</button>
         <button class="tab atab" data-adm="LIQUIDACION">Liquidación</button>
+        <button class="tab atab" data-adm="TARIFAS">Tarifas</button>
+        <button class="tab atab" data-adm="CXC">Cuentas por cobrar</button>
         <button class="tab atab" data-adm="TICKETS_CALIDAD">Calidad</button>
         <button class="tab atab" data-adm="SEGUIMIENTOS_CALIDAD">Seguimiento de calidad</button>
         <button class="tab atab" data-adm="INCIDENCIAS">Incidencias</button>
@@ -1383,7 +1486,301 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
   </div>
 </section>
 
+
+<!-- ============ INCIDENCIAS (Monitoreo) ============ -->
+<section class="sec" id="sec-incidencias">
+  <div class="card">
+    <h2>Incidencias</h2>
+    <div class="sub">Todo lo que el monitorista reportó en ruta, en un solo lugar. Se levantan desde la bitácora del viaje, en Monitoreo.</div>
+    <div id="incChips" style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0"></div>
+    <div class="grid g3" style="margin-bottom:12px">
+      <div style="grid-column:1/3"><label>Buscar</label><input id="incBusca" placeholder="🔍 Carta porte, operador, unidad, tipo, descripción…"></div>
+      <div><label>Tipo</label><select id="incFiltro"><option value="todos">Todos</option></select></div>
+    </div>
+    <div class="twrap" style="max-height:560px;overflow-y:auto"><table>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
+        <th>Fecha</th><th>Tipo</th><th>Carta porte</th><th>Cliente</th><th>Unidad</th><th>Operador</th>
+        <th>Descripción</th><th>Reportó</th>
+      </tr></thead>
+      <tbody id="tbodyIncidencias"></tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============ CUENTAS POR COBRAR ============ -->
+<section class="sec" id="sec-cxc">
+  <div class="card">
+    <h2>Cuentas por cobrar</h2>
+    <div class="sub">Lo que hay que cobrarle a cada cliente por los servicios realizados. La tarifa sale del <b>tarifario</b> (Comercial → Tarifarios), buscando por cliente, ruta y tipo de unidad.</div>
+    <div class="kpis" style="margin-top:14px">
+      <div class="kpi"><div class="v num" id="kCxcServ">0</div><div class="l">Servicios cobrables</div></div>
+      <div class="kpi"><div class="v num" id="kCxcPorFacturar">$0</div><div class="l">Por facturar</div></div>
+      <div class="kpi"><div class="v num" id="kCxcFacturado">$0</div><div class="l">Facturado sin cobrar</div></div>
+      <div class="kpi"><div class="v num" id="kCxcCobrado">$0</div><div class="l">Cobrado</div></div>
+      <div class="kpi"><div class="v num" id="kCxcSinTarifa">0</div><div class="l">Sin tarifa</div></div>
+    </div>
+    <div class="grid g4" style="margin:14px 0 12px">
+      <div style="grid-column:1/3"><label>Buscar</label><input id="cxcBusca" placeholder="🔍 Carta porte, cliente, ruta, factura…"></div>
+      <div><label>Cliente</label><select id="cxcCliente"><option value="todos">Todos</option></select></div>
+      <div><label>Estado</label><select id="cxcEstado">
+        <option value="todos">Todos</option><option>POR FACTURAR</option><option>FACTURADO</option><option>COBRADO</option>
+      </select></div>
+    </div>
+    <div class="twrap" style="max-height:520px;overflow-y:auto"><table>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
+        <th>Carta porte</th><th>Cliente</th><th>Ruta</th><th>Unidad</th><th>Fecha</th>
+        <th class="right">Tarifa</th><th class="right">Extras</th><th class="right">Total</th>
+        <th>Estado</th><th>Factura</th><th></th>
+      </tr></thead>
+      <tbody id="tbodyCxc"></tbody>
+    </table></div>
+    <div class="mini" id="cxcNota" style="margin-top:10px"></div>
+  </div>
+</section>
+
+<!-- ============ CUENTAS POR PAGAR ============ -->
+<section class="sec" id="sec-cxp">
+  <div class="card">
+    <h2>Cuentas por pagar</h2>
+    <div class="sub">Conciliación del gasto de cada servicio: lo que <b>pidió</b> operaciones, lo que <b>dispersó</b> el auditor, lo que <b>comprobó</b> el operador al liquidar y los <b>gastos extra</b>. La diferencia dice si falta pagar o hay que recuperar.</div>
+    <div class="kpis" style="margin-top:14px">
+      <div class="kpi"><div class="v num" id="kCxpServ">0</div><div class="l">Servicios</div></div>
+      <div class="kpi"><div class="v num" id="kCxpSolicitado">$0</div><div class="l">Solicitado</div></div>
+      <div class="kpi"><div class="v num" id="kCxpDispersado">$0</div><div class="l">Dispersado</div></div>
+      <div class="kpi"><div class="v num" id="kCxpComprobado">$0</div><div class="l">Comprobado</div></div>
+      <div class="kpi"><div class="v num" id="kCxpPendiente">$0</div><div class="l">Pendiente de dispersar</div></div>
+    </div>
+    <div class="grid g4" style="margin:14px 0 12px">
+      <div style="grid-column:1/3"><label>Buscar</label><input id="cxpBusca" placeholder="🔍 Folio, carta porte, operador, ruta…"></div>
+      <div><label>Estado</label><select id="cxpEstado">
+        <option value="todos">Todos</option>
+        <option value="pendiente">Con pendiente de dispersar</option>
+        <option value="sinliquidar">Sin liquidar</option>
+        <option value="conciliado">Conciliados</option>
+      </select></div>
+    </div>
+    <div class="twrap" style="max-height:520px;overflow-y:auto"><table>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
+        <th>Folio</th><th>Carta porte</th><th>Operador</th><th>Ruta</th>
+        <th class="right">Solicitado</th><th class="right">Dispersado</th><th class="right">Extras</th>
+        <th class="right">Comprobado</th><th class="right">Diferencia</th><th>Estado</th>
+      </tr></thead>
+      <tbody id="tbodyCxp"></tbody>
+    </table></div>
+    <div class="mini" id="cxpNota" style="margin-top:10px"></div>
+  </div>
+</section>
+
+<!-- ============ CALIDAD · SEGUIMIENTO ============ -->
+<section class="sec" id="sec-calidadseg">
+  <div class="card">
+    <h2>Seguimiento de calidad</h2>
+    <div class="sub">Todos los tickets levantados, con su estado y su fecha compromiso. Para abrir uno y darle seguimiento, haz clic en <b>Abrir</b>: se trabaja en la pantalla de <b>Levantar ticket</b>.</div>
+    <div id="calSegChips" style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0"></div>
+    <div class="grid g4" style="margin-bottom:12px">
+      <div style="grid-column:1/3"><label>Buscar</label><input id="calSegBusca" placeholder="🔍 Folio, título, carta porte, responsable…"></div>
+      <div><label>Estado</label><select id="calSegEstado">
+        <option value="abiertos">Abiertos</option><option value="todos">Todos</option>
+        <option>ABIERTO</option><option>EN PROCESO</option><option>EN VERIFICACIÓN</option><option>CERRADO</option>
+      </select></div>
+    </div>
+    <div class="twrap" style="max-height:520px;overflow-y:auto"><table>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
+        <th>Folio</th><th>Fecha</th><th>Tipo</th><th>Título</th><th>CP / servicio</th>
+        <th>Responsable</th><th>Compromiso</th><th>Último seguimiento</th><th>Estado</th><th></th>
+      </tr></thead>
+      <tbody id="tbodyCalSeg"></tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============ RRHH · OPERADORES ============ -->
+<section class="sec" id="sec-operadores">
+  <div class="card">
+    <h2>Operadores</h2>
+    <div class="sub">Expediente de cada operador: sus datos, su documentación y las vigencias que hay que renovar, incluido el <b>R-Control</b>.</div>
+    <div id="opChips" style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0"></div>
+    <div class="grid g4" style="margin-bottom:12px">
+      <div style="grid-column:1/3"><label>Buscar</label><input id="opBusca" placeholder="🔍 Nombre, licencia, CURP, RFC…"></div>
+      <div><label>Estado</label><select id="opFiltro">
+        <option value="activos">Activos</option><option value="todos">Todos</option>
+        <option value="vencidos">Con documento vencido</option><option value="porvencer">Por vencer (30 días)</option>
+      </select></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn btn-p" id="btnOpNuevo" style="width:100%">＋ Nuevo operador</button></div>
+    </div>
+    <div class="twrap" style="max-height:440px;overflow-y:auto"><table>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
+        <th>Operador</th><th>Teléfono</th><th>Licencia</th><th>Vence licencia</th>
+        <th>Apto médico</th><th>Toxicológico</th><th>R-Control</th><th>Documentación</th><th></th>
+      </tr></thead>
+      <tbody id="tbodyOperadores"></tbody>
+    </table></div>
+  </div>
+
+  <div class="card" id="opDetalle" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap">
+      <div>
+        <h3 style="margin-bottom:4px">Expediente · <span id="opTit">nuevo</span></h3>
+        <div class="mini" id="opInfo"></div>
+      </div>
+      <button class="btn btn-s btn-sm" id="btnOpCerrar">Cerrar</button>
+    </div>
+
+    <h3 style="margin-top:14px">Datos del operador</h3>
+    <div class="grid g4" style="margin-bottom:14px">
+      <div><label>Nombre</label><input id="opNombre"></div>
+      <div><label>Teléfono (WhatsApp)</label><input id="opTelefono"></div>
+      <div><label>Medio de comunicación</label><input id="opMedio"></div>
+      <div><label>Activo</label><select id="opActivo"><option>SI</option><option>NO</option></select></div>
+      <div><label>Fecha de ingreso</label><input id="opIngreso" type="date"></div>
+      <div><label>CURP</label><input id="opCurp"></div>
+      <div><label>RFC</label><input id="opRfc"></div>
+      <div><label>NSS</label><input id="opNss"></div>
+      <div><label>Tipo de sangre</label><input id="opSangre"></div>
+      <div style="grid-column:2/5"><label>Domicilio</label><input id="opDomicilio"></div>
+      <div><label>Contacto de emergencia</label><input id="opEmergencia"></div>
+      <div><label>Teléfono de emergencia</label><input id="opTelEmergencia"></div>
+    </div>
+
+    <h3>Documentación y vigencias</h3>
+    <div class="sub" style="margin-bottom:10px">Las fechas de vencimiento pintan la lista de arriba: en rojo lo vencido y en ámbar lo que vence dentro de 30 días.</div>
+    <div class="grid g4" style="margin-bottom:14px">
+      <div><label>Licencia federal (número)</label><input id="opLicNum"></div>
+      <div><label>Tipo de licencia</label><input id="opLicTipo" placeholder="Ej: E, B…"></div>
+      <div><label>Vence licencia</label><input id="opLicVence" type="date"></div>
+      <div><label>Vence apto médico</label><input id="opAptoVence" type="date"></div>
+      <div><label>Vence examen toxicológico</label><input id="opToxVence" type="date"></div>
+      <div><label>Vence curso de materiales peligrosos</label><input id="opCursoVence" type="date"></div>
+    </div>
+
+    <h3>R-Control</h3>
+    <div class="sub" style="margin-bottom:10px">Evaluación de confianza del operador: folio, resultado y hasta cuándo tiene vigencia.</div>
+    <div class="grid g4" style="margin-bottom:14px">
+      <div><label>Folio R-Control</label><input id="opRcFolio"></div>
+      <div><label>Resultado</label><select id="opRcResultado">
+        <option value="">— Sin capturar —</option><option>APROBADO</option><option>CONDICIONADO</option><option>NO APROBADO</option>
+      </select></div>
+      <div><label>Vence R-Control</label><input id="opRcVence" type="date"></div>
+    </div>
+
+    <div style="margin-bottom:14px">
+      <label>Notas de RRHH</label>
+      <textarea id="opNotas" rows="2" placeholder="Lo que haya que dejar asentado…"></textarea>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-p" id="btnOpGuardar">💾 Guardar expediente</button>
+      <button class="btn btn-s" id="btnOpCancelar">Cancelar</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ COMERCIAL · TARIFARIOS ============ -->
+<section class="sec" id="sec-tarifarios">
+  <div class="card">
+    <h2>Tarifarios</h2>
+    <div class="sub">Lo que se le cobra a cada cliente por ruta y tipo de unidad. Es lo que Cuentas por Cobrar usa para calcular el monto de cada servicio.</div>
+    <div class="grid g4" style="margin:14px 0 12px">
+      <div style="grid-column:1/3"><label>Buscar</label><input id="tarBusca" placeholder="🔍 Cliente, ruta, tipo de unidad…"></div>
+      <div><label>Cliente</label><select id="tarCliente"><option value="todos">Todos</option></select></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn btn-p" id="btnTarNueva" style="width:100%">＋ Nueva tarifa</button></div>
+    </div>
+    <div id="tarForm" style="display:none;background:var(--surface2);border:1px dashed var(--road);border-radius:10px;padding:14px;margin-bottom:14px">
+      <div class="grid g4" style="margin-bottom:12px">
+        <div><label>Cliente</label><select id="tarFCliente"></select></div>
+        <div><label>Ruta</label><select id="tarFRuta"></select></div>
+        <div><label>Tipo de unidad</label><select id="tarFTipo"></select></div>
+        <div><label>Tarifa ($)</label><input id="tarFTarifa" type="number" min="0" step="0.01"></div>
+        <div><label>Vigencia desde</label><input id="tarFDesde" type="date"></div>
+        <div><label>Vigencia hasta</label><input id="tarFHasta" type="date"></div>
+        <div style="grid-column:3/5"><label>Notas</label><input id="tarFNotas" placeholder="Condiciones, estadías incluidas…"></div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <button class="btn btn-p" id="btnTarGuardar">💾 Guardar tarifa</button>
+        <button class="btn btn-s" id="btnTarCancelar">Cancelar</button>
+      </div>
+    </div>
+    <div class="twrap" style="max-height:520px;overflow-y:auto"><table>
+      <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
+        <th>Cliente</th><th>Ruta</th><th>Tipo de unidad</th><th class="right">Tarifa</th>
+        <th>Vigencia</th><th>Notas</th><th></th>
+      </tr></thead>
+      <tbody id="tbodyTarifas"></tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============ LIBERACIONES (Finanzas) ============ -->
+<section class="sec" id="sec-liberaciones">
+  <div class="card" style="text-align:center;padding:48px 26px">
+    <div style="font-size:44px;margin-bottom:10px">🚧</div>
+    <h2>Liberaciones</h2>
+    <div class="sub" style="margin:8px auto 0;max-width:520px">Liberación de pagos y de garantías: aquí se autorizará lo que ya puede salir a pago.</div>
+    <div class="tag" style="margin-top:18px;background:var(--accent);color:var(--accent-ink)">En desarrollo</div>
+  </div>
+</section>
+
+<!-- ============ FACTURACIÓN (Finanzas) ============ -->
+<section class="sec" id="sec-facturacion">
+  <div class="card" style="text-align:center;padding:48px 26px">
+    <div style="font-size:44px;margin-bottom:10px">🚧</div>
+    <h2>Facturación</h2>
+    <div class="sub" style="margin:8px auto 0;max-width:520px">Emisión y control de facturas de los servicios cobrables.</div>
+    <div class="tag" style="margin-top:18px;background:var(--accent);color:var(--accent-ink)">En desarrollo</div>
+  </div>
+</section>
+
+<!-- ============ CAPACITACIONES (RRHH) ============ -->
+<section class="sec" id="sec-capacitaciones">
+  <div class="card" style="text-align:center;padding:48px 26px">
+    <div style="font-size:44px;margin-bottom:10px">🚧</div>
+    <h2>Capacitaciones</h2>
+    <div class="sub" style="margin:8px auto 0;max-width:520px">Plan de capacitación de los operadores, con sus constancias y vigencias.</div>
+    <div class="tag" style="margin-top:18px;background:var(--accent);color:var(--accent-ink)">En desarrollo</div>
+  </div>
+</section>
+
+<!-- ============ RECLUTAMIENTO (RRHH) ============ -->
+<section class="sec" id="sec-reclutamiento">
+  <div class="card" style="text-align:center;padding:48px 26px">
+    <div style="font-size:44px;margin-bottom:10px">🚧</div>
+    <h2>Reclutamiento</h2>
+    <div class="sub" style="margin:8px auto 0;max-width:520px">Vacantes, candidatos y el avance de cada proceso de contratación.</div>
+    <div class="tag" style="margin-top:18px;background:var(--accent);color:var(--accent-ink)">En desarrollo</div>
+  </div>
+</section>
+
+<!-- ============ ADMINISTRATIVOS (RRHH) ============ -->
+<section class="sec" id="sec-administrativos">
+  <div class="card" style="text-align:center;padding:48px 26px">
+    <div style="font-size:44px;margin-bottom:10px">🚧</div>
+    <h2>Administrativos</h2>
+    <div class="sub" style="margin:8px auto 0;max-width:520px">Expediente del personal administrativo.</div>
+    <div class="tag" style="margin-top:18px;background:var(--accent);color:var(--accent-ink)">En desarrollo</div>
+  </div>
+</section>
+
+<!-- ============ COTIZACIONES (Comercial) ============ -->
+<section class="sec" id="sec-cotizaciones">
+  <div class="card" style="text-align:center;padding:48px 26px">
+    <div style="font-size:44px;margin-bottom:10px">🚧</div>
+    <h2>Cotizaciones</h2>
+    <div class="sub" style="margin:8px auto 0;max-width:520px">Cotizaciones a clientes, con su seguimiento hasta que se ganan o se pierden.</div>
+    <div class="tag" style="margin-top:18px;background:var(--accent);color:var(--accent-ink)">En desarrollo</div>
+  </div>
+</section>
+
+<!-- ============ PROSPECTOS (Comercial) ============ -->
+<section class="sec" id="sec-prospectos">
+  <div class="card" style="text-align:center;padding:48px 26px">
+    <div style="font-size:44px;margin-bottom:10px">🚧</div>
+    <h2>Prospectos</h2>
+    <div class="sub" style="margin:8px auto 0;max-width:520px">Clientes potenciales y el avance de cada oportunidad.</div>
+    <div class="tag" style="margin-top:18px;background:var(--accent);color:var(--accent-ink)">En desarrollo</div>
+  </div>
+</section>
+
 </main>
+</div>
 
 <div id="toast"></div>
 
@@ -1634,7 +2031,7 @@ const TOLERANCIA_KM = 15;
 const DB = { UNIDADES:[], OPERADORES:[], EJECUTIVOS:[], REMOLQUES:[], CLIENTES:[], RUTAS:[], SOLICITUDES:[], NOMINAS:[], LIQUIDACION:[], CASETAS:[], USUARIOS:[], BITACORA:[], SOLICITUDES_CANCELADAS:[], PAGO_X_KM:[],
   SERVICIOS:[], TIPO_NEGOCIO:[], ADUANAS:[], ESTADOS:[], CIUDADES:[], PROVEEDORES:[],
   TIPOS_INCIDENCIA:[], INCIDENCIAS:[], UBICACIONES:[], EVIDENCIAS:[], GASTOS_EXTRA:[],
-  TICKETS_CALIDAD:[], SEGUIMIENTOS_CALIDAD:[], CONFIG:{} };
+  TICKETS_CALIDAD:[], SEGUIMIENTOS_CALIDAD:[], TARIFAS:[], CXC:[], CONFIG:{} };
 
 const $  = id => document.getElementById(id);
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,8);
@@ -1749,7 +2146,7 @@ const HOJAS_APP = ['UNIDADES','OPERADORES','EJECUTIVOS','REMOLQUES','CLIENTES','
   'NOMINAS','LIQUIDACION','CASETAS','USUARIOS','BITACORA','SOLICITUDES_CANCELADAS','PAGO_X_KM',
   'SERVICIOS','TIPO_NEGOCIO','ADUANAS','ESTADOS','CIUDADES','PROVEEDORES',
   'TIPOS_INCIDENCIA','INCIDENCIAS','UBICACIONES','EVIDENCIAS','GASTOS_EXTRA',
-  'TICKETS_CALIDAD','SEGUIMIENTOS_CALIDAD'];
+  'TICKETS_CALIDAD','SEGUIMIENTOS_CALIDAD','TARIFAS','CXC'];
 const hojasPedidas = new Set();
 
 /* Refleja en memoria lo que el guardado acaba de escribir, sin esperar a que
@@ -1907,12 +2304,23 @@ function precioComb(c){
 }
 $('btnRefrescar').addEventListener('click', apiCargar);
 
-/* ---------- Navegación y tema ---------- */
+/* ---------- Navegación y tema ----------
+   Menú lateral por áreas: cada área se abre y se cierra, y al entrar a una
+   pantalla se abre sola el área a la que pertenece. */
+document.querySelectorAll('.area>.ah').forEach(h=>h.addEventListener('click',()=>{
+  h.parentElement.classList.toggle('abierta');
+}));
+function abrirAreaDe(btn){
+  const area = btn.closest('.area');
+  if(area) area.classList.add('abierta');
+}
 document.querySelectorAll('.tab[data-sec]').forEach(b=>b.addEventListener('click',()=>{
   document.querySelectorAll('.tab[data-sec]').forEach(x=>x.classList.remove('active'));
   b.classList.add('active');
+  abrirAreaDe(b);
   document.querySelectorAll('.sec').forEach(s=>s.classList.remove('active'));
   $('sec-'+b.dataset.sec).classList.add('active');
+  window.scrollTo({top:0,behavior:'smooth'});
   if(b.dataset.sec==='indicadores') pintarIndicadores();
   if(b.dataset.sec==='prenomina') pintarPrenomina();
   // Las fotos de evidencia pesan: se piden solo al entrar a Liquidación
@@ -1923,6 +2331,12 @@ document.querySelectorAll('.tab[data-sec]').forEach(b=>b.addEventListener('click
   if(b.dataset.sec==='asignacion'){ pintarDespacho(); pintarTablero(); }
   if(b.dataset.sec==='monitoreo') pintarMonitoreo();
   if(b.dataset.sec==='calidad') pintarCalidad();
+  if(b.dataset.sec==='calidadseg') pintarCalidadSeguimiento();
+  if(b.dataset.sec==='incidencias') pintarPantallaIncidencias();
+  if(b.dataset.sec==='cxc') pintarCxc();
+  if(b.dataset.sec==='cxp') pintarCxp();
+  if(b.dataset.sec==='operadores') pintarOperadores();
+  if(b.dataset.sec==='tarifarios') pintarTarifas();
   if(b.dataset.sec==='nuevoservicio') pintarServicios();
   if(b.dataset.sec==='tdc') pintarTdc();
   if(b.dataset.sec==='fwd') pintarFwd();
@@ -2067,7 +2481,7 @@ function limpiarRuta(){
   editandoRutaId=null;
   $('rutaFormTitulo').textContent='Nueva ruta';
   tramos=[nuevoTramo()]; casetasRuta=[];
-  $('rCliente').value='';
+  $('rCliente').value=''; $('rEnlace').value='';
   $('rTipoServicio').value='LOCAL'; $('rTipoViaje').value='REDONDO';
   $('rTipoUnidad').value='FULL'; $('rEquipo').value='SECA';
   $('rOptFull').checked=false;
@@ -2100,6 +2514,7 @@ $('btnGuardarRuta').addEventListener('click', async ()=>{
     ID: editandoRutaId || uid(),
     RUTA: nombre,
     CLIENTE: ($('rCliente').value||'').toUpperCase(),
+    ENLACE: ($('rEnlace').value||'').trim(),
     TIPO_SERVICIO: $('rTipoServicio').value,
     TIPO_VIAJE: $('rTipoViaje').value,
     TIPO_UNIDAD: $('rTipoUnidad').value,
@@ -2133,7 +2548,8 @@ function pintarListaRutas(){
     .forEach(r=>{
       const tr=document.createElement('tr');
       const badge = esRutaSoloFull(r)? ' <span class="tag" style="background:var(--accent);color:var(--accent-ink)">Solo Full</span>' : '';
-      tr.innerHTML=`<td><b>${esc(r.RUTA)}</b>${badge}</td><td>${esc(r.CLIENTE)}</td><td>${esc(r.TIPO_SERVICIO)}</td><td>${esc(r.TIPO_VIAJE)}</td><td>${esc(r.TIPO_UNIDAD)}</td>
+      const liga = r.ENLACE? ` <a href="${esc(r.ENLACE)}" target="_blank" rel="noopener" title="Abrir el trazo de la ruta">🔗</a>` : '';
+      tr.innerHTML=`<td><b>${esc(r.RUTA)}</b>${badge}${liga}</td><td>${esc(r.CLIENTE)}</td><td>${esc(r.TIPO_SERVICIO)}</td><td>${esc(r.TIPO_VIAJE)}</td><td>${esc(r.TIPO_UNIDAD)}</td>
         <td class="right num">${num(r.TOTAL_KM,1)}</td><td class="right num">${money(r.COSTO_CASETAS)}</td>
         <td style="white-space:nowrap"><button class="btn btn-s btn-sm" data-ed="${r.ID}">Editar</button> <button class="btn btn-d btn-sm" data-rm="${r.ID}">✕</button></td>`;
       tb.appendChild(tr);
@@ -2151,7 +2567,8 @@ function editarRuta(id){
   try{ tramos = JSON.parse(r.TRAMOS_JSON||'[]'); }catch(e){ tramos=[]; }
   if(!Array.isArray(tramos) || !tramos.length) tramos=[nuevoTramo()];
   casetasRuta = leerCasetasRuta(r);
-  $('rCliente').value=r.CLIENTE||''; $('rTipoServicio').value=r.TIPO_SERVICIO||'LOCAL';
+  $('rCliente').value=r.CLIENTE||''; $('rEnlace').value=r.ENLACE||'';
+  $('rTipoServicio').value=r.TIPO_SERVICIO||'LOCAL';
   $('rTipoViaje').value=r.TIPO_VIAJE||'REDONDO'; $('rTipoUnidad').value=r.TIPO_UNIDAD||'FULL';
   $('rEquipo').value=r.EQUIPO_ARRASTRE||'SECA';
   $('rOptFull').checked = esRutaSoloFull(r);
@@ -2804,12 +3221,46 @@ function abrirMonitoreo(id){
   selE.value = estatusMonitoreoDe(s);
   pintarColorEstatus();
   $('monNota').value = s.NOTA_MONITOREO || '';
+  pintarCapturaFwd(s);
   pintarDatosServicioMon(s);
   pintarRastreoMon(s);
   pintarHitos(s);
   pintarIncidenciasYUbicaciones(s);
   $('monDetalle').scrollIntoView({behavior:'smooth',block:'start'});
 }
+/* Un servicio FWD se despacha aquí mismo: no pasa por Asignación ni por
+   Solicitud de Gasto, así que su unidad y su operador se capturan libres (los
+   pone la línea transportista, no la flota de ADL). */
+function esFwd(s){ return String((s&&s.MODALIDAD)||'').toUpperCase()==='FWD'; }
+function pintarCapturaFwd(s){
+  $('monFwdBox').style.display = esFwd(s)? '' : 'none';
+  if(!esFwd(s)) return;
+  $('monFwdEco').value = s.ECONOMICO||'';
+  $('monFwdPlacas').value = s.PLACAS||'';
+  $('monFwdOperador').value = s.OPERADOR||'';
+  $('monFwdMedio').value = s.MEDIO_COMUNICACION||'';
+}
+$('btnMonFwd').addEventListener('click', async ()=>{
+  const s = DB.SERVICIOS.find(x=>String(x.ID)===String(monEditando)); if(!s) return;
+  const eco = $('monFwdEco').value.trim();
+  const op  = $('monFwdOperador').value.trim();
+  if(!eco){ toast('Captura el económico de la unidad.', true); $('monFwdEco').focus(); return; }
+  if(!op){ toast('Captura el operador.', true); $('monFwdOperador').focus(); return; }
+  const reg = Object.assign({}, s, {
+    ECONOMICO: eco, PLACAS: $('monFwdPlacas').value.trim(),
+    OPERADOR: op, MEDIO_COMUNICACION: $('monFwdMedio').value.trim(),
+    ESTATUS: 'ASIGNADO',
+    ASIGNADO_POR: s.ASIGNADO_POR || nombreUsuario(),
+    FECHA_ASIGNACION: s.FECHA_ASIGNACION || hoyISO(),
+    // Un FWD se salta la asignación, el gasto y la dispersión
+    ETAPA: indiceEtapa(etapaDe(s)) < indiceEtapa('ASIGNADO')? 'ASIGNADO' : etapaDe(s)
+  });
+  if(await apiEnviar({action:'upsert', sheet:'SERVICIOS', record:reg})){
+    toast('Unidad y operador guardados');
+    abrirMonitoreo(monEditando); pintarMonitoreo();
+  }
+});
+
 /* Lo que el monitorista necesita tener a la vista del servicio */
 function pintarDatosServicioMon(s){
   const arrastre = [s.REMOLQUE1, s.REMOLQUE2, s.DOLLY].filter(Boolean).join(' · ');
@@ -3052,8 +3503,9 @@ function pintarMonitoreo(){
   if(selF.options.length<=2){
     ETAPAS.forEach(e=>{ const o=document.createElement('option'); o.value=e; o.textContent=PASO_DE_ETAPA[e]+'. '+textoEtapa(e); selF.appendChild(o); });
   }
-  const tdc = serviciosVisibles().filter(s=>String(s.MODALIDAD).toUpperCase()==='TDC' &&
-                                     String(s.ESTATUS||'').toUpperCase()!=='CANCELADO');
+  /* TDC y FWD conviven aquí: un servicio FWD no pasa por asignación ni por
+     solicitud de gasto, entra directo al monitoreo. */
+  const tdc = serviciosVisibles().filter(s=>String(s.ESTATUS||'').toUpperCase()!=='CANCELADO');
 
   // Recordatorio de citas próximas, sobre los viajes que aún no llegan a cargar
   avisoCitasProximas(tdc.filter(s=>indiceEtapa(etapaDe(s)) < indiceEtapa('FINALIZADO')));
@@ -3101,6 +3553,7 @@ function pintarMonitoreo(){
       <td>${pintaCumplimiento(cumplimiento(s.HITO_ARRIBO_DESTINO, s.CITA_ENTREGA))}</td>
       <td>${etiquetaEtapa(s)}</td>
       <td><button class="btn btn-p btn-sm" data-monver="${s.ID}">Bitácora</button></td>`;
+    if(esFwd(s)) tr.style.borderLeft = '4px solid var(--road)';
     tb.appendChild(tr);
   });
   if(!filas.length) tb.innerHTML='<tr><td colspan="11" class="mini">Sin servicios en este filtro.</td></tr>';
@@ -3514,6 +3967,520 @@ function pintarCalidad(){
 }
 ['calBusca','calEstado'].forEach(id=>$(id).addEventListener('input', pintarCalidad));
 $('calEstado').addEventListener('change', pintarCalidad);
+
+/* =====================================================
+   INCIDENCIAS (pantalla de Monitoreo)
+   Todo lo reportado en ruta, junto y filtrable.
+===================================================== */
+function pintarPantallaIncidencias(){
+  const todas = (DB.INCIDENCIAS||[]).filter(i=>{
+    if(!esEjecutivo()) return true;
+    const srv = DB.SERVICIOS.find(x=>String(x.ID)===String(i.SERVICIO_ID||''));
+    return srv? servicioVisible(srv) : true;
+  });
+
+  const sel = $('incFiltro');
+  const tipos = [...new Set(todas.map(i=>String(i.TIPO||'').trim()).filter(Boolean))].sort();
+  if(sel.options.length-1 !== tipos.length){
+    sel.innerHTML = '<option value="todos">Todos</option>'+tipos.map(t=>`<option>${esc(t)}</option>`).join('');
+  }
+
+  const cuenta = {};
+  todas.forEach(i=>{ const t=String(i.TIPO||'—'); cuenta[t]=(cuenta[t]||0)+1; });
+  const chips = $('incChips'); chips.innerHTML='';
+  const tot = document.createElement('span');
+  tot.className='tag'; tot.textContent = todas.length+' incidencia(s)';
+  chips.appendChild(tot);
+  Object.keys(cuenta).sort((a,b)=>cuenta[b]-cuenta[a]).slice(0,8).forEach(t=>{
+    const c=document.createElement('span');
+    c.className='tag'; c.style.background='var(--bad)'; c.style.color='#fff'; c.style.cursor='pointer';
+    c.textContent = t+' · '+cuenta[t];
+    c.addEventListener('click',()=>{ sel.value=t; pintarPantallaIncidencias(); });
+    chips.appendChild(c);
+  });
+
+  const q = ($('incBusca').value||'').trim().toUpperCase();
+  const filtro = sel.value;
+  const filas = todas.filter(i=>{
+    if(filtro!=='todos' && String(i.TIPO||'')!==filtro) return false;
+    if(!q) return true;
+    return [i.CP,i.CLIENTE,i.ECONOMICO,i.OPERADOR,i.TIPO,i.DESCRIPCION,i.REGISTRADO_POR]
+      .some(v=>String(v||'').toUpperCase().includes(q));
+  }).sort((a,b)=>String(a.FECHA_HORA).localeCompare(String(b.FECHA_HORA)));
+
+  const tb=$('tbodyIncidencias'); tb.innerHTML='';
+  [...filas].reverse().forEach(i=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td>${esc(i.FECHA_HORA)}</td>
+      <td><span class="tag" style="background:var(--bad);color:#fff">${esc(i.TIPO)}</span></td>
+      <td>${esc(i.CP)||'—'}</td><td>${esc(i.CLIENTE)||'—'}</td>
+      <td>${esc(i.ECONOMICO)||'—'}</td><td>${esc(i.OPERADOR)||'—'}</td>
+      <td>${esc(i.DESCRIPCION)}</td><td class="mini">${esc(i.REGISTRADO_POR)||'—'}</td>`;
+    tb.appendChild(tr);
+  });
+  if(!filas.length) tb.innerHTML='<tr><td colspan="8" class="mini">Sin incidencias en este filtro.</td></tr>';
+}
+['incBusca','incFiltro'].forEach(id=>$(id).addEventListener('input', pintarPantallaIncidencias));
+$('incFiltro').addEventListener('change', pintarPantallaIncidencias);
+
+/* =====================================================
+   CUENTAS POR PAGAR
+   Conciliación del gasto de cada servicio: lo pedido, lo dispersado, lo
+   comprobado al liquidar y los gastos extra.
+===================================================== */
+function conciliacionDeSolicitud(sol){
+  const l = liqDe(sol.ID);
+  const extras = extrasDeSolicitud(sol.ID);
+  const extrasTotal = extras.reduce((a,g)=>a+nf(g.MONTO),0);
+  const extrasPend  = extras.filter(g=>!dispersadoExtra(g)).reduce((a,g)=>a+nf(g.MONTO),0);
+
+  const solicitado = nf(sol.TOTAL);
+  const dispersadoOk = dispersadoSol(sol.ID);
+  // Lo que el auditor capturó como dispersado; si no lo capturó, lo solicitado
+  const dispCapturado = nf(sol.DISP_TOTAL);
+  const dispersado = dispersadoOk? (dispCapturado || solicitado) : 0;
+
+  const comprobado = l
+    ? nf(l.COMB_REAL)+nf(l.CASETAS_REAL)+nf(l.PENSION_LIQ)+nf(l.VIATICOS)+
+      nf(l.MANIOBRAS)+nf(l.TALACHAS)+nf(l.DADIVAS)+nf(l.ESTACIONAMIENTOS)
+    : 0;
+
+  const porDispersar = (dispersadoOk? 0 : solicitado) + extrasPend;
+  const estado = porDispersar>0? 'PENDIENTE DE DISPERSAR'
+               : !l? 'SIN LIQUIDAR' : 'CONCILIADO';
+  return { sol, l, solicitado, dispersado, extrasTotal, extrasPend, comprobado,
+           diferencia: (dispersado+extrasTotal) - comprobado, porDispersar, estado };
+}
+function pintarCxp(){
+  const base = DB.SOLICITUDES.filter(s=>{
+    if(!esEjecutivo()) return true;
+    const srv = servicioDeSolicitud(s);
+    return srv? servicioVisible(srv) : true;
+  });
+  const items = base.map(conciliacionDeSolicitud);
+
+  const suma = (f) => items.reduce((a,i)=>a+f(i),0);
+  $('kCxpServ').textContent        = num(items.length);
+  $('kCxpSolicitado').textContent  = money(suma(i=>i.solicitado));
+  $('kCxpDispersado').textContent  = money(suma(i=>i.dispersado+ (i.extrasTotal - i.extrasPend)));
+  $('kCxpComprobado').textContent  = money(suma(i=>i.comprobado));
+  $('kCxpPendiente').textContent   = money(suma(i=>i.porDispersar));
+
+  const q = ($('cxpBusca').value||'').trim().toUpperCase();
+  const filtro = $('cxpEstado').value;
+  const filas = items.filter(i=>{
+    if(filtro==='pendiente'  && i.porDispersar<=0) return false;
+    if(filtro==='sinliquidar'&& i.estado!=='SIN LIQUIDAR') return false;
+    if(filtro==='conciliado' && i.estado!=='CONCILIADO') return false;
+    if(!q) return true;
+    return [i.sol.FOLIO,i.sol.CARTAS_PORTE,i.sol.OPERADOR,i.sol.RUTA,i.sol.ECONOMICO]
+      .some(v=>String(v||'').toUpperCase().includes(q));
+  });
+
+  const tb=$('tbodyCxp'); tb.innerHTML='';
+  [...filas].reverse().forEach(i=>{
+    const color = i.estado==='PENDIENTE DE DISPERSAR'? 'var(--bad)'
+                : i.estado==='SIN LIQUIDAR'? 'var(--accent)' : 'var(--ok)';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><b>${esc(i.sol.FOLIO)}</b></td><td>${esc(i.sol.CARTAS_PORTE)}</td>
+      <td>${esc(i.sol.OPERADOR)}</td><td>${esc(i.sol.RUTA)}</td>
+      <td class="right num">${money(i.solicitado)}</td>
+      <td class="right num">${money(i.dispersado)}</td>
+      <td class="right num">${i.extrasTotal? money(i.extrasTotal)+(i.extrasPend? ` <span class="mini" style="color:var(--bad)">(${money(i.extrasPend)} pend.)</span>`:'') : '—'}</td>
+      <td class="right num">${i.comprobado? money(i.comprobado) : '—'}</td>
+      <td class="right num" style="color:${Math.abs(i.diferencia)>0.5? (i.diferencia>0?'var(--bad)':'var(--ok)') : ''}">${
+        i.comprobado? (i.diferencia>=0?'':'−')+money(Math.abs(i.diferencia)) : '—'}</td>
+      <td><span class="tag" style="background:${color};color:#fff">${i.estado}</span></td>`;
+    tb.appendChild(tr);
+  });
+  if(!filas.length) tb.innerHTML='<tr><td colspan="10" class="mini">Sin servicios en este filtro.</td></tr>';
+  $('cxpNota').innerHTML = 'La <b>diferencia</b> es lo entregado (dispersado + extras) contra lo comprobado al '+
+    'liquidar: en rojo, lo que el operador tiene que devolver o comprobar; en verde, lo que se le debe.';
+}
+['cxpBusca','cxpEstado'].forEach(id=>$(id).addEventListener('input', pintarCxp));
+$('cxpEstado').addEventListener('change', pintarCxp);
+
+/* =====================================================
+   TARIFARIOS y CUENTAS POR COBRAR
+===================================================== */
+function tarifaDeServicio(s){
+  const cli  = String(s.CLIENTE||'').trim().toUpperCase();
+  const ruta = String(s.RUTA||'').trim().toUpperCase();
+  const tipo = String(s.TIPO_UNIDAD||'').trim().toUpperCase();
+  const hoy  = hoyISO();
+  const vigente = t => (!t.VIGENCIA_DESDE || t.VIGENCIA_DESDE<=hoy) &&
+                       (!t.VIGENCIA_HASTA || t.VIGENCIA_HASTA>=hoy);
+  const candidatas = (DB.TARIFAS||[]).filter(t=>
+    String(t.CLIENTE||'').trim().toUpperCase()===cli &&
+    (!t.TIPO_UNIDAD || String(t.TIPO_UNIDAD).trim().toUpperCase()===tipo));
+  // Primero la de esa ruta y vigente; luego la de esa ruta; luego la del cliente
+  return candidatas.find(t=>String(t.RUTA||'').trim().toUpperCase()===ruta && vigente(t))
+      || candidatas.find(t=>String(t.RUTA||'').trim().toUpperCase()===ruta)
+      || candidatas.find(t=>!t.RUTA && vigente(t))
+      || null;
+}
+/* Los servicios cobrables son los que ya se hicieron */
+function serviciosCobrables(){
+  return serviciosVisibles().filter(s=>String(s.ESTATUS||'').toUpperCase()!=='CANCELADO' &&
+    (s.HITO_SERVICIO_FINALIZADO || indiceEtapa(etapaDe(s)) >= indiceEtapa('FINALIZADO')));
+}
+function cxcDeServicio(id){
+  return (DB.CXC||[]).find(c=>String(c.SERVICIO_ID||'')===String(id)) || null;
+}
+function pintarCxc(){
+  const servicios = serviciosCobrables();
+  const filas = servicios.map(s=>{
+    const t = tarifaDeServicio(s);
+    const guardado = cxcDeServicio(s.ID);
+    const tarifa = guardado && guardado.TARIFA!==''? nf(guardado.TARIFA) : (t? nf(t.TARIFA) : 0);
+    const extras = guardado? nf(guardado.EXTRAS) : 0;
+    return { s, t, guardado, tarifa, extras, total: tarifa+extras,
+             estado: (guardado && guardado.ESTADO) || 'POR FACTURAR',
+             factura: (guardado && guardado.FACTURA) || '' };
+  });
+
+  const sinTarifa = filas.filter(f=>!f.tarifa).length;
+  const suma = est => filas.filter(f=>f.estado===est).reduce((a,f)=>a+f.total,0);
+  $('kCxcServ').textContent        = num(filas.length);
+  $('kCxcPorFacturar').textContent = money(suma('POR FACTURAR'));
+  $('kCxcFacturado').textContent   = money(suma('FACTURADO'));
+  $('kCxcCobrado').textContent     = money(suma('COBRADO'));
+  $('kCxcSinTarifa').textContent   = num(sinTarifa);
+
+  const selC = $('cxcCliente');
+  const clientes = [...new Set(filas.map(f=>String(f.s.CLIENTE||'').trim()).filter(Boolean))].sort();
+  if(selC.options.length-1 !== clientes.length){
+    selC.innerHTML = '<option value="todos">Todos</option>'+clientes.map(c=>`<option>${esc(c)}</option>`).join('');
+  }
+
+  const q = ($('cxcBusca').value||'').trim().toUpperCase();
+  const fCli = selC.value, fEst = $('cxcEstado').value;
+  const vista = filas.filter(f=>{
+    if(fCli!=='todos' && String(f.s.CLIENTE||'')!==fCli) return false;
+    if(fEst!=='todos' && f.estado!==fEst) return false;
+    if(!q) return true;
+    return [f.s.CP,f.s.CLIENTE,f.s.RUTA,f.factura].some(v=>String(v||'').toUpperCase().includes(q));
+  });
+
+  const tb=$('tbodyCxc'); tb.innerHTML='';
+  [...vista].reverse().forEach(f=>{
+    const color = f.estado==='COBRADO'? 'var(--ok)' : f.estado==='FACTURADO'? 'var(--accent)' : 'var(--road)';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><b>${esc(f.s.CP)}</b></td><td>${esc(f.s.CLIENTE)}</td>
+      <td>${esc(f.s.RUTA)||'<span class="mini">sin ruta</span>'}</td><td>${esc(f.s.TIPO_UNIDAD)}</td>
+      <td>${fmtFechaHora(f.s.CITA_CARGA)}</td>
+      <td class="right num">${f.tarifa? money(f.tarifa) : '<span style="color:var(--bad)">sin tarifa</span>'}</td>
+      <td class="right"><input type="number" step="0.01" value="${f.extras||0}" data-cxcex="${f.s.ID}" style="max-width:110px;text-align:right"></td>
+      <td class="right num"><b>${money(f.total)}</b></td>
+      <td><select data-cxces="${f.s.ID}" style="border-left:5px solid ${color}">
+        ${['POR FACTURAR','FACTURADO','COBRADO'].map(e=>`<option${e===f.estado?' selected':''}>${e}</option>`).join('')}
+      </select></td>
+      <td><input value="${esc(f.factura)}" data-cxcfa="${f.s.ID}" placeholder="Folio" style="max-width:130px"></td>
+      <td><button class="btn btn-p btn-sm" data-cxcgu="${f.s.ID}">Guardar</button></td>`;
+    tb.appendChild(tr);
+  });
+  if(!vista.length) tb.innerHTML='<tr><td colspan="11" class="mini">Sin servicios cobrables en este filtro.</td></tr>';
+  tb.querySelectorAll('[data-cxcgu]').forEach(b=>b.addEventListener('click',()=>guardarCxc(b.dataset.cxcgu)));
+  $('cxcNota').innerHTML = sinTarifa
+    ? `<span style="color:var(--bad)">${sinTarifa} servicio(s) sin tarifa</span>: captúrala en <b>Comercial → Tarifarios</b> para ese cliente, ruta y tipo de unidad.`
+    : 'Todos los servicios cobrables tienen su tarifa.';
+}
+async function guardarCxc(servicioId){
+  const s = DB.SERVICIOS.find(x=>String(x.ID)===String(servicioId)); if(!s) return;
+  const t = tarifaDeServicio(s);
+  const previo = cxcDeServicio(servicioId);
+  const extras = nf(($('tbodyCxc').querySelector(`[data-cxcex="${servicioId}"]`)||{}).value);
+  const estado = ($('tbodyCxc').querySelector(`[data-cxces="${servicioId}"]`)||{}).value || 'POR FACTURAR';
+  const factura = (($('tbodyCxc').querySelector(`[data-cxcfa="${servicioId}"]`)||{}).value||'').trim();
+  const tarifa = previo && previo.TARIFA!==''? nf(previo.TARIFA) : (t? nf(t.TARIFA) : 0);
+  const reg = Object.assign({}, previo||{}, {
+    SERVICIO_ID: s.ID, CP: s.CP, CLIENTE: s.CLIENTE, RUTA: s.RUTA||'',
+    TIPO_UNIDAD: s.TIPO_UNIDAD, FECHA_SERVICIO: String(s.CITA_CARGA||'').slice(0,10),
+    TARIFA: r2(tarifa), EXTRAS: r2(extras), TOTAL: r2(tarifa+extras),
+    ESTADO: estado, FACTURA: factura,
+    FECHA_FACTURA: estado==='POR FACTURAR'? '' : ((previo && previo.FECHA_FACTURA) || hoyISO()),
+    FECHA_COBRO: estado==='COBRADO'? ((previo && previo.FECHA_COBRO) || hoyISO()) : '',
+    REGISTRADO_POR: nombreUsuario()
+  });
+  if(await apiEnviar({action:'upsert', sheet:'CXC', record:reg})){
+    toast('Cuenta por cobrar actualizada'); pintarCxc();
+  }
+}
+['cxcBusca','cxcCliente','cxcEstado'].forEach(id=>$(id).addEventListener('input', pintarCxc));
+['cxcCliente','cxcEstado'].forEach(id=>$(id).addEventListener('change', pintarCxc));
+
+/* ---------- Tarifarios ---------- */
+let tarEditando = null;
+function pintarTarifas(){
+  const selC = $('tarCliente');
+  const clientes = [...DB.CLIENTES].sort((a,b)=>String(a.NOMBRE||'').localeCompare(String(b.NOMBRE||'')));
+  if(selC.options.length-1 !== clientes.length){
+    selC.innerHTML = '<option value="todos">Todos</option>'+clientes.map(c=>`<option>${esc(c.NOMBRE)}</option>`).join('');
+  }
+  const q = ($('tarBusca').value||'').trim().toUpperCase();
+  const fCli = selC.value;
+  const filas = (DB.TARIFAS||[]).filter(t=>{
+    if(fCli!=='todos' && String(t.CLIENTE||'')!==fCli) return false;
+    if(!q) return true;
+    return [t.CLIENTE,t.RUTA,t.TIPO_UNIDAD,t.NOTAS].some(v=>String(v||'').toUpperCase().includes(q));
+  });
+  const tb=$('tbodyTarifas'); tb.innerHTML='';
+  filas.forEach(t=>{
+    const vig = [t.VIGENCIA_DESDE, t.VIGENCIA_HASTA].filter(Boolean).join(' → ') || 'sin vigencia';
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><b>${esc(t.CLIENTE)}</b></td><td>${esc(t.RUTA)||'<span class="mini">todas</span>'}</td>
+      <td>${esc(t.TIPO_UNIDAD)||'<span class="mini">todas</span>'}</td>
+      <td class="right num">${money(t.TARIFA)}</td><td class="mini">${esc(vig)}</td>
+      <td>${esc(t.NOTAS)}</td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-s btn-sm" data-tared="${t.ID}">Editar</button>
+        <button class="btn btn-d btn-sm" data-tardel="${t.ID}">✕</button></td>`;
+    tb.appendChild(tr);
+  });
+  if(!filas.length) tb.innerHTML='<tr><td colspan="7" class="mini">Sin tarifas capturadas.</td></tr>';
+  tb.querySelectorAll('[data-tared]').forEach(b=>b.addEventListener('click',()=>abrirTarifa(b.dataset.tared)));
+  tb.querySelectorAll('[data-tardel]').forEach(b=>b.addEventListener('click', async ()=>{
+    if(await apiEnviar({action:'delete', sheet:'TARIFAS', id:b.dataset.tardel})){ toast('Tarifa eliminada'); pintarTarifas(); }
+  }));
+}
+function abrirTarifa(id){
+  const t = id? (DB.TARIFAS||[]).find(x=>String(x.ID)===String(id)) : null;
+  tarEditando = t? t.ID : null;
+  $('tarForm').style.display='';
+  llenarSelect('tarFCliente', DB.CLIENTES, c=>c.NOMBRE);
+  llenarSelect('tarFRuta', DB.RUTAS, r=>`${r.RUTA}${r.CLIENTE?' ('+r.CLIENTE+')':''}`, '— Todas las rutas —');
+  $('tarFTipo').innerHTML = '<option value="">— Todos los tipos —</option>'+
+    TIPOS_UNIDAD_SERVICIO.map(x=>`<option>${esc(x)}</option>`).join('');
+  if(t){
+    seleccionarPorNombre('tarFCliente','CLIENTES', t.CLIENTE);
+    const r = DB.RUTAS.find(x=>String(x.RUTA||'')===String(t.RUTA||''));
+    $('tarFRuta').value = r? r.ID : '';
+    $('tarFTipo').value = t.TIPO_UNIDAD||'';
+    $('tarFTarifa').value = nf(t.TARIFA);
+    $('tarFDesde').value = t.VIGENCIA_DESDE||'';
+    $('tarFHasta').value = t.VIGENCIA_HASTA||'';
+    $('tarFNotas').value = t.NOTAS||'';
+  } else {
+    ['tarFTarifa','tarFDesde','tarFHasta','tarFNotas'].forEach(x=>$(x).value='');
+    $('tarFRuta').value=''; $('tarFTipo').value='';
+  }
+}
+$('btnTarNueva').addEventListener('click',()=>abrirTarifa(null));
+$('btnTarCancelar').addEventListener('click',()=>{ $('tarForm').style.display='none'; tarEditando=null; });
+$('btnTarGuardar').addEventListener('click', async ()=>{
+  const cliente = nombreDeSelect('tarFCliente','CLIENTES');
+  if(!cliente){ toast('Elige el cliente.', true); return; }
+  if(!(nf($('tarFTarifa').value)>0)){ toast('Captura la tarifa.', true); $('tarFTarifa').focus(); return; }
+  const r = DB.RUTAS.find(x=>String(x.ID)===$('tarFRuta').value);
+  const reg = {
+    ID: tarEditando || undefined,
+    CLIENTE: cliente, RUTA: r? r.RUTA : '', TIPO_UNIDAD: $('tarFTipo').value,
+    TARIFA: r2(nf($('tarFTarifa').value)), MONEDA:'MXN',
+    VIGENCIA_DESDE: $('tarFDesde').value, VIGENCIA_HASTA: $('tarFHasta').value,
+    NOTAS: $('tarFNotas').value.trim()
+  };
+  if(reg.ID===undefined) delete reg.ID;
+  if(await apiEnviar({action:'upsert', sheet:'TARIFAS', record:reg})){
+    toast(tarEditando? 'Tarifa actualizada' : 'Tarifa guardada');
+    $('tarForm').style.display='none'; tarEditando=null;
+    pintarTarifas();
+  }
+});
+['tarBusca','tarCliente'].forEach(id=>$(id).addEventListener('input', pintarTarifas));
+$('tarCliente').addEventListener('change', pintarTarifas);
+
+/* ---------- Calidad · Seguimiento ----------
+   La misma información de los tickets, en su propia pantalla. Abrir un ticket
+   lleva a "Levantar ticket", que es donde se trabaja. */
+function pintarCalidadSeguimiento(){
+  const todos = (DB.TICKETS_CALIDAD||[]).filter(ticketVisible);
+  const cuenta = {};
+  todos.forEach(t=>{ const e=estadoTicket(t); cuenta[e]=(cuenta[e]||0)+1; });
+  const chips = $('calSegChips'); chips.innerHTML='';
+  const tot=document.createElement('span'); tot.className='tag';
+  tot.textContent = todos.length+' ticket(s)'; chips.appendChild(tot);
+  ESTADOS_CALIDAD.forEach(e=>{
+    if(!cuenta[e]) return;
+    const c=document.createElement('span');
+    c.className='tag'; c.style.background=COLOR_CALIDAD[e]; c.style.color='#fff'; c.style.cursor='pointer';
+    c.textContent = e+' · '+cuenta[e];
+    c.addEventListener('click',()=>{ $('calSegEstado').value=e; pintarCalidadSeguimiento(); });
+    chips.appendChild(c);
+  });
+
+  const hoy = hoyISO();
+  const q = ($('calSegBusca').value||'').trim().toUpperCase();
+  const filtro = $('calSegEstado').value;
+  const filas = todos.filter(t=>{
+    const e = estadoTicket(t);
+    if(filtro==='abiertos'){ if(e==='CERRADO') return false; }
+    else if(filtro!=='todos' && e!==filtro) return false;
+    if(!q) return true;
+    return [t.FOLIO,t.TITULO,t.CP,t.RESPONSABLE,t.TIPO,t.CLIENTE].some(v=>String(v||'').toUpperCase().includes(q));
+  });
+
+  const tb=$('tbodyCalSeg'); tb.innerHTML='';
+  [...filas].reverse().forEach(t=>{
+    const e = estadoTicket(t);
+    const notas = seguimientosDe(t.ID);
+    const ultima = notas.length? notas[notas.length-1] : null;
+    const tarde = ticketAbierto(t) && t.FECHA_COMPROMISO && t.FECHA_COMPROMISO < hoy;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><b>${esc(t.FOLIO)}</b></td><td>${esc(t.FECHA_ALTA)}</td><td>${esc(t.TIPO)}</td>
+      <td>${esc(t.TITULO)}</td><td>${esc(t.CP)||'<span class="mini">general</span>'}</td>
+      <td>${esc(t.RESPONSABLE)||'—'}</td>
+      <td${tarde? ' style="color:var(--bad);font-weight:700"':''}>${esc(t.FECHA_COMPROMISO)||'—'}</td>
+      <td class="mini">${ultima? esc(ultima.FECHA_HORA)+' · '+esc(ultima.NOTA).slice(0,60) : 'sin seguimiento'}</td>
+      <td><span class="tag" style="background:${COLOR_CALIDAD[e]};color:#fff">${e}</span></td>
+      <td><button class="btn btn-p btn-sm" data-calsegver="${t.ID}">Abrir</button></td>`;
+    tb.appendChild(tr);
+  });
+  if(!filas.length) tb.innerHTML='<tr><td colspan="10" class="mini">Sin tickets en este filtro.</td></tr>';
+  tb.querySelectorAll('[data-calsegver]').forEach(b=>b.addEventListener('click',()=>{
+    document.querySelector('.tab[data-sec="calidad"]').click();
+    abrirTicket(b.dataset.calsegver);
+  }));
+}
+['calSegBusca','calSegEstado'].forEach(id=>$(id).addEventListener('input', pintarCalidadSeguimiento));
+$('calSegEstado').addEventListener('change', pintarCalidadSeguimiento);
+
+/* =====================================================
+   RRHH · OPERADORES
+   El expediente completo: datos, documentación y R-Control, con aviso de lo
+   que ya venció o está por vencer.
+===================================================== */
+const DOCS_OPERADOR = [
+  { campo:'LICENCIA_VENCE',   texto:'Licencia federal' },
+  { campo:'APTO_MEDICO_VENCE',texto:'Apto médico' },
+  { campo:'EXAMEN_TOX_VENCE', texto:'Examen toxicológico' },
+  { campo:'CURSO_MP_VENCE',   texto:'Curso de materiales peligrosos' },
+  { campo:'RCONTROL_VENCE',   texto:'R-Control' }
+];
+function diasPara(fecha){
+  const f = aFecha(fecha); if(!f) return null;
+  return Math.round((f.getTime() - new Date().setHours(0,0,0,0))/86400000);
+}
+/* Qué tan bien está el expediente: vencido, por vencer, al día o incompleto */
+function estadoDocumentos(op){
+  let vencidos=0, porVencer=0, faltantes=0;
+  DOCS_OPERADOR.forEach(d=>{
+    const dias = diasPara(op[d.campo]);
+    if(dias===null){ faltantes++; return; }
+    if(dias < 0) vencidos++;
+    else if(dias <= 30) porVencer++;
+  });
+  return { vencidos, porVencer, faltantes, alDia: !vencidos && !porVencer && !faltantes };
+}
+function etiquetaVence(fecha){
+  const dias = diasPara(fecha);
+  if(dias===null) return '<span class="mini">sin capturar</span>';
+  const color = dias<0? 'var(--bad)' : dias<=30? 'var(--accent)' : 'var(--ok)';
+  const txt = dias<0? 'vencida hace '+(-dias)+' d' : dias<=30? 'en '+dias+' d' : '';
+  return `<span style="color:${color};font-weight:${dias<=30?'700':'400'}">${esc(fmtFecha(fecha))}${txt? ' · '+txt:''}</span>`;
+}
+let opEditando = null;
+function pintarOperadores(){
+  const todos = DB.OPERADORES;
+  const est = todos.map(o=>({ o, e: estadoDocumentos(o) }));
+
+  const chips=$('opChips'); chips.innerHTML='';
+  const mk=(txt,color)=>{ const c=document.createElement('span'); c.className='tag';
+    if(color){ c.style.background=color; c.style.color='#fff'; } c.textContent=txt; chips.appendChild(c); };
+  mk(todos.length+' operador(es)');
+  mk(todos.filter(o=>String(o.ACTIVO||'SI').toUpperCase()!=='NO').length+' activos','var(--ok)');
+  const nVenc = est.filter(x=>x.e.vencidos).length, nPor = est.filter(x=>!x.e.vencidos && x.e.porVencer).length;
+  if(nVenc) mk(nVenc+' con documento vencido','var(--bad)');
+  if(nPor)  mk(nPor+' por vencer (30 días)','var(--accent)');
+
+  const q = ($('opBusca').value||'').trim().toUpperCase();
+  const filtro = $('opFiltro').value;
+  const filas = est.filter(({o,e})=>{
+    const activo = String(o.ACTIVO||'SI').toUpperCase()!=='NO';
+    if(filtro==='activos'  && !activo) return false;
+    if(filtro==='vencidos' && !e.vencidos) return false;
+    if(filtro==='porvencer'&& !e.porVencer) return false;
+    if(!q) return true;
+    return [o.NOMBRE,o.LICENCIA_NUM,o.CURP,o.RFC,o.TELEFONO,o.RCONTROL_FOLIO]
+      .some(v=>String(v||'').toUpperCase().includes(q));
+  });
+
+  const tb=$('tbodyOperadores'); tb.innerHTML='';
+  filas.forEach(({o,e})=>{
+    const doc = e.vencidos? `<span class="tag" style="background:var(--bad);color:#fff">${e.vencidos} vencido(s)</span>`
+      : e.porVencer? `<span class="tag" style="background:var(--accent);color:var(--accent-ink)">${e.porVencer} por vencer</span>`
+      : e.faltantes? `<span class="tag">${e.faltantes} sin capturar</span>`
+      : '<span class="tag ok">Al día</span>';
+    const tr=document.createElement('tr');
+    if(String(o.ACTIVO||'SI').toUpperCase()==='NO') tr.style.opacity='.55';
+    tr.innerHTML=`<td><b>${esc(o.NOMBRE)}</b></td><td>${esc(o.TELEFONO)||'—'}</td>
+      <td>${esc(o.LICENCIA_NUM)||'—'}${o.LICENCIA_TIPO? ' · '+esc(o.LICENCIA_TIPO):''}</td>
+      <td>${etiquetaVence(o.LICENCIA_VENCE)}</td>
+      <td>${etiquetaVence(o.APTO_MEDICO_VENCE)}</td>
+      <td>${etiquetaVence(o.EXAMEN_TOX_VENCE)}</td>
+      <td>${o.RCONTROL_FOLIO? esc(o.RCONTROL_FOLIO)+'<br>' : ''}${etiquetaVence(o.RCONTROL_VENCE)}
+        ${o.RCONTROL_RESULTADO? `<br><span class="mini">${esc(o.RCONTROL_RESULTADO)}</span>`:''}</td>
+      <td>${doc}</td>
+      <td><button class="btn btn-p btn-sm" data-opver="${o.ID}">Expediente</button></td>`;
+    tb.appendChild(tr);
+  });
+  if(!filas.length) tb.innerHTML='<tr><td colspan="9" class="mini">Sin operadores en este filtro.</td></tr>';
+  tb.querySelectorAll('[data-opver]').forEach(b=>b.addEventListener('click',()=>abrirOperador(b.dataset.opver)));
+}
+function abrirOperador(id){
+  const o = id? DB.OPERADORES.find(x=>String(x.ID)===String(id)) : null;
+  opEditando = o? o.ID : null;
+  $('opDetalle').style.display='';
+  $('opTit').textContent = o? (o.NOMBRE||o.ID) : 'nuevo operador';
+  if(o){
+    const e = estadoDocumentos(o);
+    $('opInfo').innerHTML = e.alDia
+      ? '<span style="color:var(--ok)">Documentación al día.</span>'
+      : [e.vencidos? `<span style="color:var(--bad)">${e.vencidos} documento(s) vencido(s)</span>`:'',
+         e.porVencer? `<span style="color:var(--accent)">${e.porVencer} por vencer</span>`:'',
+         e.faltantes? `${e.faltantes} sin capturar`:''].filter(Boolean).join(' · ');
+  } else $('opInfo').textContent = 'Se da de alta al guardar.';
+
+  const v = (id,val)=>{ $(id).value = val||''; };
+  v('opNombre', o&&o.NOMBRE); v('opTelefono', o&&o.TELEFONO); v('opMedio', o&&o.MEDIO_COMUNICACION);
+  $('opActivo').value = (o && String(o.ACTIVO||'SI').toUpperCase()==='NO')? 'NO' : 'SI';
+  v('opIngreso', o&&o.FECHA_INGRESO); v('opCurp', o&&o.CURP); v('opRfc', o&&o.RFC); v('opNss', o&&o.NSS);
+  v('opSangre', o&&o.TIPO_SANGRE); v('opDomicilio', o&&o.DOMICILIO);
+  v('opEmergencia', o&&o.CONTACTO_EMERGENCIA); v('opTelEmergencia', o&&o.TEL_EMERGENCIA);
+  v('opLicNum', o&&o.LICENCIA_NUM); v('opLicTipo', o&&o.LICENCIA_TIPO); v('opLicVence', o&&o.LICENCIA_VENCE);
+  v('opAptoVence', o&&o.APTO_MEDICO_VENCE); v('opToxVence', o&&o.EXAMEN_TOX_VENCE);
+  v('opCursoVence', o&&o.CURSO_MP_VENCE);
+  v('opRcFolio', o&&o.RCONTROL_FOLIO); $('opRcResultado').value = (o&&o.RCONTROL_RESULTADO)||'';
+  v('opRcVence', o&&o.RCONTROL_VENCE); v('opNotas', o&&o.NOTAS_RRHH);
+  $('opDetalle').scrollIntoView({behavior:'smooth',block:'start'});
+}
+$('btnOpNuevo').addEventListener('click',()=>abrirOperador(null));
+$('btnOpCerrar').addEventListener('click',()=>{ $('opDetalle').style.display='none'; opEditando=null; });
+$('btnOpCancelar').addEventListener('click',()=>{ $('opDetalle').style.display='none'; opEditando=null; });
+$('btnOpGuardar').addEventListener('click', async ()=>{
+  const nombre = $('opNombre').value.trim();
+  if(!nombre){ toast('Captura el nombre del operador.', true); $('opNombre').focus(); return; }
+  const previo = opEditando? DB.OPERADORES.find(x=>String(x.ID)===String(opEditando)) : null;
+  const reg = Object.assign({}, previo||{}, {
+    NOMBRE: nombre, TELEFONO: $('opTelefono').value.trim(),
+    MEDIO_COMUNICACION: $('opMedio').value.trim(), ACTIVO: $('opActivo').value,
+    FECHA_INGRESO: $('opIngreso').value, CURP: $('opCurp').value.trim().toUpperCase(),
+    RFC: $('opRfc').value.trim().toUpperCase(), NSS: $('opNss').value.trim(),
+    TIPO_SANGRE: $('opSangre').value.trim().toUpperCase(), DOMICILIO: $('opDomicilio').value.trim(),
+    CONTACTO_EMERGENCIA: $('opEmergencia').value.trim(), TEL_EMERGENCIA: $('opTelEmergencia').value.trim(),
+    LICENCIA_NUM: $('opLicNum').value.trim(), LICENCIA_TIPO: $('opLicTipo').value.trim().toUpperCase(),
+    LICENCIA_VENCE: $('opLicVence').value, APTO_MEDICO_VENCE: $('opAptoVence').value,
+    EXAMEN_TOX_VENCE: $('opToxVence').value, CURSO_MP_VENCE: $('opCursoVence').value,
+    RCONTROL_FOLIO: $('opRcFolio').value.trim(), RCONTROL_RESULTADO: $('opRcResultado').value,
+    RCONTROL_VENCE: $('opRcVence').value, NOTAS_RRHH: $('opNotas').value.trim()
+  });
+  if(await apiEnviar({action:'upsert', sheet:'OPERADORES', record:reg})){
+    toast(previo? 'Expediente actualizado' : 'Operador dado de alta');
+    $('opDetalle').style.display='none'; opEditando=null;
+    pintarOperadores();
+  }
+});
+['opBusca','opFiltro'].forEach(id=>$(id).addEventListener('input', pintarOperadores));
+$('opFiltro').addEventListener('change', pintarOperadores);
 
 /* ---------- Tablero operativo ----------
    El estado de cada unidad de la flota, editable en el propio renglón. */
@@ -5075,6 +6042,17 @@ function pagoPorKmDelPeriodo(serviciosLiq){
 }
 
 /* Tarjeta de Pago por KM: solo existe en el esquema de nómina fija */
+/* Apoyo para viaje por tipo de unidad. Los montos se configuran en
+   Administración → Apoyo para viaje por tipo de unidad. */
+const APOYO_DEF = { 'FULL':1500, 'SENCILLO':1500, 'RABÓN':1200, '3.5 TON':1000 };
+const APOYO_CFG = { 'FULL':'APOYO_FULL', 'SENCILLO':'APOYO_SENCILLO',
+                    'RABÓN':'APOYO_RABON', '3.5 TON':'APOYO_35' };
+function apoyoDeTipo(tipo){
+  const t = String(tipo||'').toUpperCase();
+  const clave = APOYO_CFG[t];
+  return clave? cfgNum(clave, APOYO_DEF[t]) : cfgNum('APOYO_VIAJE',1500);
+}
+
 /* Piso de pago por tipo de unidad: si el pago del periodo se queda por
    debajo, la diferencia se completa. Los montos se configuran en
    Administración → Hoja de servicio. */
@@ -5182,8 +6160,8 @@ function calcularPrenomina(){
   const km = kmOdo;
 
   const nPend = servicios.length - serviciosLiq.length;
-  const nObs = [$('ob1'),$('ob2'),$('ob3')].filter(c=>c.checked).length;
-  const bono = bruto*(nf($('pBonoPct').value)/100)/3*nObs;
+  // Los objetivos de cumplimiento salieron del esquema: no hay bono
+  const bono = 0;
   const objTot = esModoFijo? 0 : nf($('pObjKm').value)*semanas;
   const kmX = Math.max(0, km-objTot);
   const pagoKm = esModoFijo? 0 : kmX*nf($('pPagoKmX').value);
@@ -5203,12 +6181,12 @@ function calcularPrenomina(){
   /* El apoyo para viaje aplica en los dos esquemas: en el de pago fijo entra
      completo por cada periodo con servicios, porque ahí no hay objetivo de km
      contra el cual escalonarlo. */
-  const apoyo = esModoFijo
-    ? (serviciosLiq.length
-        ? { monto: nf($('pApoyoMonto').value), pct:100, autorizado:true,
-            nota:'Apoyo para viaje del esquema de pago fijo.' }
-        : { monto:0, pct:0, autorizado:false, nota:'Sin viajes liquidados en el periodo.' })
-    : calcularApoyo(serviciosLiq.length, cumplePct);
+  /* El apoyo para viaje depende del tipo de unidad: Full y Sencillo 1 500,
+     Rabón 1 200 y 3.5 T 1 000. Sin viajes liquidados no se paga. */
+  const apoyo = serviciosLiq.length
+    ? { monto: apoyoDeTipo(tipo), pct:100, autorizado:true,
+        nota:'Apoyo para viaje de '+tipo+'.' }
+    : { monto:0, pct:0, autorizado:false, nota:'Sin viajes liquidados en el periodo.' };
 
   // Descuentos por adelantos al operador (adelanto de nómina, pensión,
   // hotel…) comprobados al liquidar cada viaje del periodo.
@@ -5265,6 +6243,7 @@ function calcularPrenomina(){
   $('pCumplePct').textContent=num(cumplePct,1)+'%';
   $('pKmX').textContent=num(kmX,1);
   $('pPagoKm').textContent=money(pagoKm);
+  $('pApoyoMonto').value = apoyo.monto;
   $('pApoyoPct').value = num(cumplePct,1)+'%';
   $('pApoyo').textContent=money(apoyo.monto);
   $('pApoyoNota').innerHTML = apoyo.nota;
@@ -5315,7 +6294,10 @@ $('pApoyoMonto').addEventListener('input',calcularPrenomina);
    el sueldo sale del parámetro fijo de Administración y desaparecen —no se
    grisean— el objetivo de kilómetros, el objetivo de rendimiento y el apoyo
    para viaje. Quedan el sueldo, el bono por cumplimiento y los descuentos. */
-function pagoFijoActivo(){ return $('pTipoPagoFijo').checked; }
+/* Ya no hay dos esquemas: el pago del operador es sueldo + pago por servicio
+   (por km) + apoyo para viaje, más el complemento hasta el piso de su tipo de
+   unidad. Se conserva la bandera para no reescribir todo el cálculo. */
+function pagoFijoActivo(){ return true; }
 
 /* Sueldo del esquema de nómina fija: el del propio operador (Administración →
    Operadores). Si ese operador no lo tiene capturado, se cae al parámetro
@@ -5326,14 +6308,12 @@ function sueldoFijoDe(op){
 }
 
 function alCambiarTipoPago(){
-  const esF = pagoFijoActivo();
-  ['pCardObjKm','pCardApoyo','pCardRend'].forEach(id=>{ $(id).style.display = esF? 'none' : ''; });
-  $('pSueldoNota').style.display = esF? '' : 'none';
-  $('pSueldoTit').textContent = esF? 'Sueldo (nómina fija)' : 'Sueldo';
-  $('pNominalTit').textContent = esF? 'Sueldo fijo (semanal × semanas)' : 'Sueldo bruto (semanal × semanas)';
+  ['pCardObjKm','pCardApoyo','pCardRend'].forEach(id=>{ $(id).style.display = 'none'; });
+  $('pSueldoNota').style.display = 'none';
+  $('pSueldoTit').textContent = 'Sueldo';
+  $('pNominalTit').textContent = 'Sueldo del periodo (semanal × semanas)';
   calcularPrenomina();
 }
-$('pTipoPagoFijo').addEventListener('change',alCambiarTipoPago);
 
 $('btnPdfNom').addEventListener('click',()=>{
   const c = ultimoCalculoNom;
@@ -5512,6 +6492,19 @@ function pendientesDispersion(){
   return DB.SOLICITUDES.filter(s=>String(s.DISPERSION).toUpperCase()!=='SI').length + extrasPendientes().length;
 }
 function pintarResumenDispersion(){
+  // Aviso aparte para los gastos extra: son los que se piden en ruta y hay
+  // que dispersar aunque la solicitud original ya esté pagada.
+  const extras = extrasPendientes();
+  const elX = $('dispPendExtra');
+  if(elX){
+    elX.style.display = extras.length? '' : 'none';
+    if(extras.length){
+      const total = extras.reduce((a,g)=>a+nf(g.MONTO),0);
+      elX.innerHTML = `<b>⚠ ${extras.length} gasto(s) extra pendiente(s) de dispersar</b> · ${money(total)}<br>`+
+        extras.slice(0,4).map(g=>`· Folio <b>${esc(g.FOLIO)}</b> · ${esc(g.TIPO)} · ${money(g.MONTO)} — ${esc(g.OPERADOR)}`).join('<br>')+
+        (extras.length>4? `<br><span class="mini">y ${extras.length-4} más…</span>` : '');
+    }
+  }
   const n = pendientesDispersion();
   const el = $('dispPend');
   el.textContent = n>0
@@ -6248,6 +7241,12 @@ const ADMIN = {
   UBICACIONES:{ soloLectura:true, sinBorrar:true, invertido:true,
     cols:[{k:'FECHA_HORA'},{k:'CP'},{k:'ECONOMICO'},{k:'OPERADOR'},
           {k:'UBICACION'},{k:'REGISTRADO_POR'}] },
+  TARIFAS:{ cols:[{k:'CLIENTE'},{k:'RUTA'},{k:'TIPO_UNIDAD'},{k:'TARIFA',tipo:'number'},
+      {k:'VIGENCIA_DESDE'},{k:'VIGENCIA_HASTA'},{k:'NOTAS'}],
+    csv:'CLIENTE, RUTA, TIPO_UNIDAD, TARIFA, VIGENCIA_DESDE, VIGENCIA_HASTA, NOTAS' },
+  CXC:{ soloLectura:true, invertido:true, sinBorrarMasivo:true,
+    cols:[{k:'CP'},{k:'CLIENTE'},{k:'RUTA'},{k:'FECHA_SERVICIO'},{k:'TARIFA'},{k:'EXTRAS'},
+          {k:'TOTAL'},{k:'ESTADO'},{k:'FACTURA'}] },
   TICKETS_CALIDAD:{ soloLectura:true, invertido:true, sinBorrarMasivo:true,
     cols:[{k:'FOLIO'},{k:'FECHA_ALTA'},{k:'TIPO'},{k:'TITULO'},{k:'CP'},
           {k:'RESPONSABLE'},{k:'FECHA_COMPROMISO'},{k:'PRIORIDAD'},{k:'ESTADO'}] },
@@ -6257,7 +7256,7 @@ const ADMIN = {
     cols:[{k:'MODALIDAD'},{k:'CP'},{k:'CLIENTE'},{k:'CITA_CARGA'},
           {k:'SEMANA'},{k:'CIUDAD_DESTINO'},{k:'TIPO_UNIDAD'},
           {k:'ECONOMICO'},{k:'OPERADOR'},{k:'ESTATUS'}] },
-  RUTAS:{ soloLectura:true, cols:[{k:'RUTA'},{k:'CLIENTE'},{k:'TIPO_SERVICIO'},{k:'TOTAL_KM'},{k:'COSTO_CASETAS'}] },
+  RUTAS:{ soloLectura:true, cols:[{k:'RUTA'},{k:'CLIENTE'},{k:'ENLACE'},{k:'TIPO_SERVICIO'},{k:'TOTAL_KM'},{k:'COSTO_CASETAS'}] },
   SOLICITUDES:{ soloLectura:true, sinBorrarMasivo:true, cols:[{k:'FOLIO'},{k:'FECHA_SERVICIO'},{k:'RUTA'},{k:'OPERADOR'},{k:'TOTAL'}] },
   /* Tarifario por kilómetros y tipo de unidad para el esquema de nómina fija.
      Se carga con "Importar CSV" desde el archivo de Excel. */
@@ -6285,14 +7284,21 @@ let adminOk=false;
 const SECCIONES_INFO = {
   nuevoservicio:'Nuevo Servicio', asignacion:'Asignación de Unidad', tdc:'TDC', fwd:'FWD',
   solicitud:'Solicitud de Gasto', dispersiones:'Dispersiones', monitoreo:'Monitoreo',
-  calidad:'Calidad', liquidacion:'Liquidación', prenomina:'Hoja de Servicio',
-  indicadores:'Indicadores', rutas:'Rutas'
+  incidencias:'Incidencias', calidad:'Calidad · Levantar ticket',
+  calidadseg:'Calidad · Seguimiento', liquidacion:'Liquidación', prenomina:'Hoja de Servicio',
+  cxc:'Cuentas por cobrar', cxp:'Cuentas por pagar', liberaciones:'Liberaciones',
+  facturacion:'Facturación', operadores:'RRHH · Operadores', capacitaciones:'RRHH · Capacitaciones',
+  reclutamiento:'RRHH · Reclutamiento', administrativos:'RRHH · Administrativos',
+  tarifarios:'Comercial · Tarifarios', cotizaciones:'Comercial · Cotizaciones',
+  prospectos:'Comercial · Prospectos', indicadores:'Indicadores', rutas:'Rutas'
 };
 const TODAS_LAS_SECCIONES = Object.keys(SECCIONES_INFO);
-const SECCIONES_AUDITOR = ['dispersiones','monitoreo','calidad','liquidacion','prenomina','indicadores'];
+const SECCIONES_AUDITOR = ['dispersiones','cxc','cxp','liquidacion','prenomina','monitoreo',
+                           'calidad','calidadseg','indicadores'];
 /* El comercial (y el ejecutivo) trabajan su cartera: dan de alta servicios,
    los siguen y los ven en TDC/FWD. Todo filtrado a SUS clientes. */
-const SECCIONES_EJECUTIVO = ['nuevoservicio','tdc','fwd','monitoreo','calidad','indicadores'];
+const SECCIONES_EJECUTIVO = ['nuevoservicio','tdc','fwd','monitoreo','incidencias',
+                             'calidad','calidadseg','cotizaciones','prospectos','indicadores'];
 function seccionesPorDefecto(rol){
   const r = String(rol||'').toUpperCase();
   if(r==='AUDITOR')  return SECCIONES_AUDITOR;
@@ -6312,6 +7318,13 @@ function aplicarPermisos(){
   document.querySelectorAll('.tab-admin').forEach(t=>t.style.display = adminOk? '' : 'none');
 
   const permitidas = seccionesPermitidas();
+  // Un área sin pestañas visibles no tiene por qué aparecer
+  setTimeout(()=>{
+    document.querySelectorAll('.area').forEach(a=>{
+      const visibles = [...a.querySelectorAll('.tab[data-sec]')].some(t=>t.style.display!=='none');
+      a.style.display = visibles? '' : 'none';
+    });
+  },0);
   document.querySelectorAll('.tab[data-sec]').forEach(t=>{
     if(t.dataset.sec==='admin') return;   // ya se decidió arriba
     t.style.display = permitidas.includes(t.dataset.sec)? '' : 'none';
@@ -6341,7 +7354,9 @@ const CFG_MAP = [
   ['OBJ_REND_FULL','cfgORFull',1.8],['OBJ_REND_SENCILLO','cfgORSen',2.5],['OBJ_REND_RABON','cfgORRab',3.5],
   ['OBJ_REND_35','cfgOR35',3],['OBJ_REND_15','cfgOR15',8],['OBJ_REND_UTIL','cfgORUtil',10],
   ['PISO_FULL','cfgPisoFull',7500],['PISO_SENCILLO','cfgPisoSen',5200],
-  ['PISO_RABON','cfgPisoRab',3900],['PISO_35','cfgPiso35',2900]
+  ['PISO_RABON','cfgPisoRab',3900],['PISO_35','cfgPiso35',2900],
+  ['APOYO_FULL','cfgApoyoFull',1500],['APOYO_SENCILLO','cfgApoyoSen',1500],
+  ['APOYO_RABON','cfgApoyoRab',1200],['APOYO_35','cfgApoyo35',1000]
 ];
 function cargarConfigAdmin(){
   CFG_MAP.forEach(([clave,id,def])=>{ $(id).value=cfgNum(clave,def); });
@@ -6762,6 +7777,12 @@ function refrescarTodo(){
   if(document.querySelector('#sec-asignacion.active')){ pintarDespacho(); pintarTablero(); }
   if(document.querySelector('#sec-monitoreo.active')) pintarMonitoreo();
   if(document.querySelector('#sec-calidad.active')) pintarCalidad();
+  if(document.querySelector('#sec-calidadseg.active')) pintarCalidadSeguimiento();
+  if(document.querySelector('#sec-incidencias.active')) pintarPantallaIncidencias();
+  if(document.querySelector('#sec-cxc.active')) pintarCxc();
+  if(document.querySelector('#sec-cxp.active')) pintarCxp();
+  if(document.querySelector('#sec-operadores.active')) pintarOperadores();
+  if(document.querySelector('#sec-tarifarios.active')) pintarTarifas();
   if(document.querySelector('#sec-nuevoservicio.active')) pintarServicios();
   if(document.querySelector('#sec-tdc.active')) pintarTdc();
   if(document.querySelector('#sec-fwd.active')) pintarFwd();

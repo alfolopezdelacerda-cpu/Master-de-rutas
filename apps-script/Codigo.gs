@@ -43,7 +43,15 @@ var HOJAS = {
      SUELDO_FIJO_SEMANAL   → esquema de nómina fija */
   /* TELEFONO: a 10 dígitos o con lada. Es al que se le manda el aviso de
      WhatsApp cuando se le asigna un servicio. */
-  OPERADORES: ['ID','NOMBRE','TELEFONO','PAGO_NOMINAL_SEMANAL','SUELDO_FIJO_SEMANAL','MEDIO_COMUNICACION','ACTIVO'],
+  OPERADORES: ['ID','NOMBRE','TELEFONO','PAGO_NOMINAL_SEMANAL','SUELDO_FIJO_SEMANAL','MEDIO_COMUNICACION','ACTIVO',
+               /* Expediente de RRHH. Las columnas *_VENCE son fechas: la
+                  pantalla de Operadores avisa cuando están por vencer. */
+               'FECHA_INGRESO','CURP','RFC','NSS','TIPO_SANGRE','DOMICILIO',
+               'CONTACTO_EMERGENCIA','TEL_EMERGENCIA',
+               'LICENCIA_NUM','LICENCIA_TIPO','LICENCIA_VENCE',
+               'APTO_MEDICO_VENCE','EXAMEN_TOX_VENCE','CURSO_MP_VENCE',
+               'RCONTROL_FOLIO','RCONTROL_RESULTADO','RCONTROL_VENCE',
+               'NOTAS_RRHH'],
 
   EJECUTIVOS: ['ID','NOMBRE'],
 
@@ -86,6 +94,15 @@ var HOJAS = {
                   de un gasto extra). GASTO_ID liga el comprobante con su
                   renglón de GASTOS_EXTRA. */
                'CLASE','GASTO_ID','NOMBRE','IMAGEN','REGISTRADO_POR'],
+
+  /* Tarifario comercial: lo que se le cobra al cliente por ruta y tipo de
+     unidad. De aquí sale el monto de Cuentas por Cobrar. */
+  TARIFAS: ['ID','CLIENTE','RUTA','TIPO_UNIDAD','TARIFA','MONEDA','VIGENCIA_DESDE','VIGENCIA_HASTA','NOTAS'],
+
+  /* Cuentas por cobrar: un renglón por servicio cobrable. ESTADO:
+     POR FACTURAR | FACTURADO | COBRADO. */
+  CXC: ['ID','SERVICIO_ID','CP','CLIENTE','RUTA','TIPO_UNIDAD','FECHA_SERVICIO',
+        'TARIFA','EXTRAS','TOTAL','ESTADO','FACTURA','FECHA_FACTURA','FECHA_COBRO','NOTAS','REGISTRADO_POR'],
 
   /* Tickets del área de calidad: desviaciones del proceso, quejas, hallazgos.
      El seguimiento de cada uno vive en SEGUIMIENTOS_CALIDAD, un renglón por
@@ -163,7 +180,8 @@ var HOJAS = {
      información pueden ver. */
   USUARIOS: ['ID','USUARIO','NOMBRE','PASSWORD','ROL','ACTIVO','PESTANAS','CLIENTES'],
 
-  RUTAS: ['ID','RUTA','CLIENTE','TIPO_SERVICIO','TIPO_VIAJE','TIPO_UNIDAD','EQUIPO_ARRASTRE',
+  /* ENLACE: liga al trazo de la ruta (Google Maps, Waze, lo que se use) */
+  RUTAS: ['ID','RUTA','CLIENTE','ENLACE','TIPO_SERVICIO','TIPO_VIAJE','TIPO_UNIDAD','EQUIPO_ARRASTRE',
           'TRAMOS_JSON','TOTAL_KM','KM_CARGADOS','KM_VACIOS','KM_POSICIONAMIENTO',
           'OPTIMIZADA_FULL','CASETAS_JSON','COSTO_CASETAS',
           'COSTO_CASETAS_2E','COSTO_CASETAS_5E','COSTO_CASETAS_9E'],

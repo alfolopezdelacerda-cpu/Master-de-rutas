@@ -171,6 +171,8 @@ Las dos las escribe el monitoreo y las dos son solo de consulta en la app.
 | `EVIDENCIAS` | `ID`, `FECHA_HORA`, `SERVICIO_ID`, `FOLIO`, `CP`, `OPERADOR`, `CLASE`, `GASTO_ID`, `NOMBRE`, `IMAGEN`, `REGISTRADO_POR` |
 | `TICKETS_CALIDAD` | `ID`, `FOLIO`, `FECHA_ALTA`, `TIPO`, `PRIORIDAD`, `ESTADO`, `AREA`, `SERVICIO_ID`, `CP`, `CLIENTE`, `OPERADOR`, `ECONOMICO`, `TITULO`, `DESCRIPCION`, `RESPONSABLE`, `LEVANTADO_POR`, `FECHA_COMPROMISO`, `ACCION_CORRECTIVA`, `CAUSA_RAIZ`, `FECHA_CIERRE`, `CERRADO_POR` |
 | `SEGUIMIENTOS_CALIDAD` | `ID`, `TICKET_ID`, `FECHA_HORA`, `ESTADO`, `NOTA`, `REGISTRADO_POR` |
+| `TARIFAS` | `ID`, `CLIENTE`, `RUTA`, `TIPO_UNIDAD`, `TARIFA`, `MONEDA`, `VIGENCIA_DESDE`, `VIGENCIA_HASTA`, `NOTAS` |
+| `CXC` | `ID`, `SERVICIO_ID`, `CP`, `CLIENTE`, `RUTA`, `TIPO_UNIDAD`, `FECHA_SERVICIO`, `TARIFA`, `EXTRAS`, `TOTAL`, `ESTADO`, `FACTURA`, `FECHA_FACTURA`, `FECHA_COBRO`, `NOTAS`, `REGISTRADO_POR` |
 | `GASTOS_EXTRA` | `ID`, `FOLIO`, `SOLICITUD_ID`, `SERVICIO_ID`, `CARTAS_PORTE`, `OPERADOR`, `ECONOMICO`, `FECHA_SOLICITUD`, `TIPO`, `MONTO`, `MOTIVO`, `SOLICITADO_POR`, `DISPERSION`, `DISPERSADO_POR`, `FECHA_DISPERSION`, `COMPROBANTE_ID` |
 
 `INCIDENCIAS` guarda lo que se reporta en ruta contra el servicio y su
@@ -271,6 +273,12 @@ está liquidado, se guardan los datos nuevos pero el servicio se queda donde
 iba.
 
 ### Monitoreo
+
+**Un servicio FWD no pasa por Asignación ni por Solicitud de Gasto**: entra
+directo al monitoreo. En su bitácora aparece la caja *Unidad del servicio FWD*,
+donde se capturan **económico, placas, operador y medio de comunicación** —los
+pone la línea transportista, no la flota de ADL— y con eso el servicio queda
+asignado. En un servicio TDC esa caja no aparece.
 
 La pestaña **Monitoreo** es la vista del embudo: arriba, cuántos servicios hay
 en cada una de las diez etapas —cada contador funciona como filtro—; abajo, la
@@ -557,6 +565,12 @@ uno solo en vez de apilarse.
 Del lado del navegador, al guardar solo se **repinta la sección que estás
 viendo**; las demás se dibujan al entrar a su pestaña.
 
+## Enlace de la ruta
+
+Cada ruta guarda el **enlace de su trazo** (`RUTAS.ENLACE`): se pega en el
+formulario de Rutas —Google Maps, Waze, lo que se use— y en la lista aparece
+un 🔗 que lo abre en otra pestaña.
+
 ## Cómo funciona el costo de casetas
 
 Las casetas ya no se escriben a mano en la ruta: se eligen del catálogo. La ruta
@@ -753,12 +767,25 @@ Si los km de un viaje superan al renglón más alto de la tabla, se cotiza con
 ese renglón y la fila se marca **«tope de la tabla»**. Si la tabla está vacía,
 la tarjeta lo avisa en rojo en vez de pagar cero en silencio.
 
-### Complemento de pago (esquema de pago fijo)
+### El pago del operador
 
-En el esquema de **pago fijo** el operador cobra **sueldo + pago por servicio
-(según los km de cada viaje en la tabla `PAGO_X_KM`) + apoyo para viaje**
-(1 500 por defecto). Si esa suma no llega al **piso** de su tipo de unidad, la
-diferencia se paga como **complemento de pago**:
+Hay **un solo esquema**: el operador cobra **sueldo + pago por servicio (según
+los km de cada viaje en la tabla `PAGO_X_KM`) + apoyo para viaje**. Se
+quitaron el interruptor de nómina fija, los objetivos de cumplimiento, el
+objetivo de kilómetros y el objetivo de rendimiento.
+
+El **apoyo para viaje** depende del tipo de unidad y se paga en cada periodo
+con viajes liquidados:
+
+| Tipo de unidad | Apoyo |
+|---|---|
+| Full | $1,500 |
+| Sencillo | $1,500 |
+| Rabón | $1,200 |
+| 3.5 T | $1,000 |
+
+Si la suma no llega al **piso** de su tipo de unidad, la diferencia se paga
+como **complemento de pago**:
 
 | Tipo de unidad | Piso |
 |---|---|
@@ -767,8 +794,7 @@ diferencia se paga como **complemento de pago**:
 | Rabón | $3,900 |
 | 3.5 T | $2,900 |
 
-Los cuatro montos se configuran en **Administración → Piso de pago por tipo de
-unidad**. La tarjeta *Pago por KM* muestra el desglose completo —pago por
+Los cuatro pisos y los cuatro apoyos se configuran en **Administración**. La tarjeta *Pago por KM* muestra el desglose completo —pago por
 servicio, sueldo, apoyo, suma del periodo, piso y complemento— y dice si el
 complemento aplicó o no. Se guardan en `NOMINAS.PISO_PAGO` y
 `NOMINAS.COMPLEMENTO_PAGO`.
@@ -966,6 +992,11 @@ De ahí en adelante camina solo:
 
 Mientras no se disperse se puede eliminar; una vez dispersado, ya no.
 
+En **Dispersiones**, un gasto extra pendiente levanta su propia **alerta** en
+rojo arriba de la pantalla, con el folio, el tipo, el monto y el operador de
+cada uno: es dinero que hay que dispersar aunque la solicitud original ya esté
+pagada.
+
 ## Automatizaciones por cliente y por ejecutivo
 
 **El cliente manda.** Al elegir el cliente en Nuevo Servicio, los selectores de
@@ -1084,6 +1115,71 @@ En **Asignación de unidad**, si el económico elegido está en
 mecánica**, sale un aviso y **la asignación no se hace**. El aviso dice en qué
 estado está y, si trae otro viaje en curso, cuál es. Para poder asignarla hay
 que liberarla en el tablero operativo.
+
+## El menú, por áreas
+
+La navegación es un **menú lateral** agrupado por área de la empresa. Cada área
+se abre y se cierra, y al entrar a una pantalla se abre sola la suya:
+
+| Área | Pantallas |
+|---|---|
+| **Tráfico** | Nuevo Servicio |
+| **Histórico de viajes** | TDC · FWD |
+| **Operaciones** | Asignación de unidad · Solicitud de gasto · Liquidación · Hoja de servicio |
+| **Monitoreo** | Monitoreo · Incidencias · Rutas |
+| **Finanzas** | Dispersiones · CXC · CXP · Liberaciones · Facturación |
+| **Calidad** | Levantar ticket · Seguimiento |
+| **RRHH** | Operadores · Capacitaciones · Reclutamiento · Administrativos |
+| **Comercial** | Tarifarios · Cotizaciones · Prospectos |
+| **Dirección** | Indicadores · Administración |
+
+Las pantallas que todavía no tienen contenido —Liberaciones, Facturación,
+Capacitaciones, Reclutamiento, Administrativos, Cotizaciones y Prospectos—
+existen y se abren, marcadas como **En desarrollo**; en el menú llevan una
+etiqueta *dev*. Un área que se quede sin pantallas permitidas para el usuario
+no se muestra.
+
+## Cuentas por pagar (CXP)
+
+Concilia el gasto de cada servicio, poniendo lado a lado lo que **pidió**
+operaciones, lo que **dispersó** el auditor, los **gastos extra** y lo que el
+operador **comprobó** al liquidar. La **diferencia** es lo entregado contra lo
+comprobado: en rojo lo que el operador debe devolver o comprobar, en verde lo
+que se le debe.
+
+Cada renglón cae en un estado: **Pendiente de dispersar** (falta pagar la
+solicitud o algún gasto extra), **Sin liquidar** (ya se pagó pero el viaje no
+se ha liquidado) o **Conciliado**. Arriba, los totales del periodo.
+
+## Cuentas por cobrar (CXC)
+
+Lista los servicios **ya realizados** y lo que hay que cobrarle al cliente por
+cada uno. La tarifa sale del **tarifario** (Comercial → Tarifarios) buscando
+por cliente, ruta y tipo de unidad, y prefiriendo la vigente; si no hay tarifa,
+el renglón lo dice y el contador *Sin tarifa* lo cuenta.
+
+Sobre la tarifa se capturan los **extras** del servicio, y el renglón se mueve
+entre **Por facturar → Facturado → Cobrado**, guardando el folio de la factura
+y sellando las fechas. Todo queda en la hoja `CXC`.
+
+## Tarifarios (Comercial)
+
+Lo que se le cobra a cada cliente, por **ruta** y **tipo de unidad**, con su
+vigencia y sus notas. Una tarifa sin ruta aplica a todas las rutas de ese
+cliente, y una sin tipo de unidad, a todos los tipos. Es lo que alimenta
+Cuentas por Cobrar.
+
+## RRHH · Operadores
+
+El expediente completo de cada operador: datos personales, contacto de
+emergencia, documentación con sus vigencias —licencia federal, apto médico,
+examen toxicológico y curso de materiales peligrosos— y el **R-Control**, con
+su folio, su resultado y su vigencia.
+
+La lista pinta cada vencimiento: **rojo** lo vencido, **ámbar** lo que vence
+dentro de 30 días y verde lo que está al día, con una columna que resume el
+estado del expediente y filtros para ver solo lo vencido o lo que está por
+vencer. Desde aquí también se da de alta un operador nuevo.
 
 ## Tiempos del proceso (Indicadores)
 
