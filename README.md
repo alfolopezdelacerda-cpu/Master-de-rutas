@@ -1140,6 +1140,39 @@ Administrativos, Cotizaciones y Prospectos— existen y se abren, marcadas como 
 etiqueta *dev*. Un área que se quede sin pantallas permitidas para el usuario
 no se muestra.
 
+## La carta porte: cuándo se crea y con qué folio
+
+Hay dos cosas que se llaman *carta porte*, y ocurren en momentos distintos:
+
+| | Qué es | Cuándo | Dónde |
+|---|---|---|---|
+| **Número de carta porte** | El folio interno del viaje. Es la llave con la que la plataforma amarra servicio, solicitud, monitoreo, liquidación, CXC y factura. | Al **dar de alta el servicio**. | Tráfico → Nuevo Servicio |
+| **Carta porte timbrada** | El CFDI de traslado: UUID, IdCCP, XML y PDF. Es el documento fiscal. | Cuando el viaje ya tiene **unidad y operador**, y **antes de que la unidad salga** — el operador lo lleva durante todo el traslado. | Finanzas → Cartas porte timbradas |
+
+Por eso el campo de Nuevo Servicio nunca pide el UUID: ahí solo nace el número.
+En la bitácora del monitoreo se ve si ese viaje ya está timbrado, con su UUID y
+su PDF, o si le falta; y en Cartas porte timbradas el filtro **Servicios sin
+timbrar** lista lo que está pendiente.
+
+### El folio consecutivo
+
+El número se pone solo al abrir un servicio nuevo, y es corrido. Se calcula
+sobre lo que ya existe —los servicios capturados y las cartas porte timbradas—,
+así que no depende de un contador guardado aparte: si alguien capturó folios a
+mano, o dos personas dan de alta a la vez, la cuenta se reacomoda sola y una
+carta porte ocupada se rechaza diciendo cuál es el siguiente folio libre.
+
+- Se puede **sobrescribir** cuando el cliente trae el suyo; el botón **#**
+  regresa al consecutivo.
+- Si el servicio lleva varias cartas porte, cada una que se agrega toma el
+  siguiente número.
+- Un servicio ya dado de alta **no se renumera** al editarlo.
+
+En **Administración → Área financiera** se configura el **prefijo**, el
+**número inicial** —su ancho manda: con `00001` los folios salen de cinco
+dígitos— y si el folio se pone solo o se captura a mano. Parámetros:
+`CP_PREFIJO`, `CP_INICIAL` y `CP_AUTO`.
+
 ## Clientes y proveedores
 
 Los dos expedientes de a quién le cobramos y a quién le pagamos. Es de aquí de
