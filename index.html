@@ -1470,6 +1470,19 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       <input id="cfgSabana" placeholder="Ej: 1a2b3c4d... (de la URL del Sheet)" style="margin-bottom:12px">
       <button class="btn btn-s btn-sm" id="btnGuardarSabana">Guardar ID de sábana</button>
       <hr class="sep">
+      <h3>Base de datos</h3>
+      <div class="sub" style="margin-bottom:10px">Con la URL y la llave de Supabase capturadas, la plataforma trabaja contra <b>Postgres</b>: las escrituras dejan de formarse en fila y cada movimiento queda auditado en la base. Vacías, todo sigue contra el Google Sheet. La sábana se escribe por Apps Script en los dos casos.</div>
+      <div class="grid g4" style="margin-bottom:10px">
+        <div style="grid-column:1/3"><label>URL del proyecto</label><input id="cfgSbUrl" placeholder="https://xxxxxxxx.supabase.co"></div>
+        <div style="grid-column:3/5"><label>Llave pública (anon)</label><input id="cfgSbKey" placeholder="eyJhbGciOi…"></div>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+        <button class="btn btn-p" id="btnGuardarSb">Guardar y conectar</button>
+        <button class="btn btn-s" id="btnProbarSb">Probar conexión</button>
+        <button class="btn btn-s" id="btnVolverSheet">Volver al Google Sheet</button>
+      </div>
+      <div class="mini" id="sbEstado" style="margin-bottom:12px"></div>
+      <hr class="sep">
       <label>URL de conexión (Google Apps Script /exec)</label>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         <input id="cfgUrl" style="flex:1;min-width:260px">
@@ -2524,6 +2537,277 @@ function semanaNomina(iso){
 function toast(msg, mal){ const t=$('toast'); t.textContent=msg; t.style.background = mal?'var(--bad)':'var(--ink)'; t.classList.add('show'); clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove('show'),3000); }
 function esc(s){ return String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
 
+/* =====================================================
+   CAPA DE DATOS
+   La app nunca habla directo con el backend: pasa por BACKEND, que tiene dos
+   implementaciones intercambiables.
+
+     · appsScript — el Google Sheet, como siempre.
+     · supabase   — Postgres. Escrituras concurrentes de verdad (sin el candado
+                    global que formaba en fila cada guardado), permisos por
+                    renglón y auditoría a nivel de base.
+
+   Se elige con SUPABASE_URL en Administración: en cuanto está configurada, la
+   app trabaja contra Postgres. Mientras no lo esté, todo sigue igual que hoy.
+   La sábana es la excepción: vive en un Google Sheet, así que ese renglón se
+   sigue escribiendo por Apps Script incluso con Supabase de por medio.
+===================================================== */
+const TABLAS_SUPABASE = ['UNIDADES','OPERADORES','EJECUTIVOS','REMOLQUES','CLIENTES','RUTAS',
+  'SOLICITUDES','NOMINAS','LIQUIDACION','CASETAS','USUARIOS','BITACORA','SOLICITUDES_CANCELADAS',
+  'PAGO_X_KM','SERVICIOS','TIPO_NEGOCIO','ADUANAS','ESTADOS','CIUDADES','PROVEEDORES',
+  'TIPOS_INCIDENCIA','INCIDENCIAS','UBICACIONES','EVIDENCIAS','GASTOS_EXTRA','TICKETS_CALIDAD',
+  'SEGUIMIENTOS_CALIDAD','TARIFAS','CXC','ORDENES_COMPRA','CARTAS_PORTE','FACTURAS','PAGOS',
+  'LIBERACIONES'];
+const tablaDe = hoja => String(hoja||'').toLowerCase();
+
+let SUPABASE_URL  = localStorage.getItem('adl_sb_url')  || '';
+let SUPABASE_KEY  = localStorage.getItem('adl_sb_key')  || '';
+function usaSupabase(){ return !!(SUPABASE_URL && SUPABASE_KEY); }
+
+/* Llamada cruda a PostgREST. Se usa fetch directo en vez de la librería de
+   Supabase para no cargar un script externo: la app es un solo archivo y así
+   sigue abriendo desde file:// sin depender de un CDN. */
+async function sbFetch(ruta, opciones){
+  const o = Object.assign({ headers:{} }, opciones||{});
+  o.headers = Object.assign({
+    'apikey': SUPABASE_KEY,
+    'Authorization': 'Bearer ' + (sesionSb.token || SUPABASE_KEY),
+    'Content-Type': 'application/json'
+  }, o.headers);
+  const r = await fetch(SUPABASE_URL.replace(/\/+$/,'') + ruta, o);
+  if(!r.ok){
+    let detalle = '';
+    try{ const j = await r.json(); detalle = j.message || j.hint || j.error || ''; }catch(e){}
+    throw new Error(detalle || ('Supabase respondió '+r.status));
+  }
+  return r.status===204? null : r.json();
+}
+/* La sesión de Supabase Auth. Mientras no exista, se trabaja con la llave
+   anónima y las políticas que le correspondan. */
+const sesionSb = { token:'', usuario:null };
+
+/* PostgREST devuelve las columnas tal cual están en la tabla, y las tablas se
+   crearon con los MISMOS nombres de columna que las hojas. Por eso lo que
+   llega ya tiene la forma que la app espera; solo hay que quitar las columnas
+   de control que Postgres agrega. */
+function limpiarFila(f){
+  if(!f) return f;
+  const o = {};
+  for(const k in f){ if(k!=='creado_en' && k!=='actualizado_en') o[k] = f[k]==null? '' : f[k]; }
+  return o;
+}
+function paraEscribir(rec){
+  const o = {};
+  for(const k in rec){
+    if(k==='creado_en' || k==='actualizado_en') continue;
+    o[k] = rec[k]==null? '' : String(rec[k]);
+  }
+  return o;
+}
+
+const BACKEND = {
+  /* ---------- Google Sheet vía Apps Script ---------- */
+  appsScript: {
+    nombre: 'Google Sheet',
+    async cargar(){
+      const r = await fetch(WEBHOOK);
+      const j = await r.json();
+      if(!j.ok) throw new Error(j.error||'Error');
+      return j;
+    },
+    async enviar(payload){
+      const r = await fetch(WEBHOOK, { method:'POST', body: JSON.stringify(payload) });
+      const j = await r.json();
+      if(!j.ok) throw new Error(j.error||'Error');
+      return j;
+    },
+    async leerHojas(hojas){
+      const r = await fetch(WEBHOOK, { method:'POST',
+        body: JSON.stringify({ action:'leerHoja', sheets:hojas, usuario: ctxUsuario() }) });
+      const j = await r.json();
+      if(!j.ok || !j.data) throw new Error(j.error||'Error');
+      return j.data;
+    }
+  },
+
+  /* ---------- Supabase (Postgres) ---------- */
+  supabase: {
+    nombre: 'Supabase',
+    async cargar(){
+      // Las hojas de archivo no se traen en la carga: pesan y casi nunca se ven
+      const hojas = TABLAS_SUPABASE.filter(h=>!HOJAS_ARCHIVO.includes(h));
+      const data = await BACKEND.supabase.leerHojas(hojas);
+      data.CONFIG = await BACKEND.supabase.leerConfig();
+      return { ok:true, data, parcial:true };
+    },
+    async leerConfig(){
+      const filas = await sbFetch('/rest/v1/config?select=clave,valor');
+      const cfg = {};
+      (filas||[]).forEach(f=>{ cfg[f.clave] = f.valor==null? '' : f.valor; });
+      return cfg;
+    },
+    async leerHojas(hojas){
+      const data = {};
+      // En paralelo: son consultas independientes y el navegador las multiplexa
+      await Promise.all(hojas.map(async h=>{
+        if(h==='CONFIG'){ data.CONFIG = await BACKEND.supabase.leerConfig(); return; }
+        const filas = await sbFetch(`/rest/v1/${tablaDe(h)}?select=*`);
+        data[h] = (filas||[]).map(limpiarFila);
+      }));
+      return data;
+    },
+    async enviar(payload){
+      const p = payload;
+      const tocadas = new Set();
+      const marcar = h => { if(h) tocadas.add(h); };
+
+      switch(p.action){
+        case 'upsert': {
+          const rec = paraEscribir(p.record);
+          if(!rec.ID) delete rec.ID;                 // lo genera la base
+          const [fila] = await sbFetch(`/rest/v1/${tablaDe(p.sheet)}`, {
+            method:'POST', body: JSON.stringify(rec),
+            headers:{ 'Prefer':'resolution=merge-duplicates,return=representation' }
+          }) || [];
+          marcar(p.sheet);
+          // El servicio avanza de etapa solo, igual que en el Apps Script
+          if(p.sheet==='SOLICITUDES'){ await etapaPorSolicitudSb(fila||rec); marcar('SERVICIOS'); }
+          if(p.sheet==='NOMINAS'){     await etapaPorNominaSb(fila||rec);    marcar('SERVICIOS'); }
+          break;
+        }
+        case 'bulkUpsert': {
+          const recs = (p.records||[]).map(paraEscribir).map(r=>{ if(!r.ID) delete r.ID; return r; });
+          if(recs.length) await sbFetch(`/rest/v1/${tablaDe(p.sheet)}`, {
+            method:'POST', body: JSON.stringify(recs),
+            headers:{ 'Prefer':'resolution=merge-duplicates' }
+          });
+          marcar(p.sheet);
+          break;
+        }
+        case 'delete':
+          await sbFetch(`/rest/v1/${tablaDe(p.sheet)}?ID=eq.${encodeURIComponent(p.id)}`, {method:'DELETE'});
+          marcar(p.sheet);
+          break;
+        case 'deleteMany': {
+          const ids = (p.ids||[]).map(x=>`"${String(x).replace(/"/g,'')}"`).join(',');
+          if(ids) await sbFetch(`/rest/v1/${tablaDe(p.sheet)}?ID=in.(${encodeURIComponent(ids)})`, {method:'DELETE'});
+          marcar(p.sheet);
+          break;
+        }
+        case 'clearAll':
+          await sbFetch(`/rest/v1/${tablaDe(p.sheet)}?ID=not.is.null`, {method:'DELETE'});
+          marcar(p.sheet);
+          break;
+        case 'setConfig':
+          await sbFetch('/rest/v1/config', {
+            method:'POST', body: JSON.stringify({ clave:p.clave, valor:String(p.valor==null?'':p.valor) }),
+            headers:{ 'Prefer':'resolution=merge-duplicates' }
+          });
+          marcar('CONFIG');
+          break;
+        case 'liquidar': {
+          const rec = paraEscribir(p.record);
+          await sbFetch('/rest/v1/liquidacion', {
+            method:'POST', body: JSON.stringify(rec),
+            headers:{ 'Prefer':'resolution=merge-duplicates' }
+          });
+          await etapaPorLiquidacionSb(p.record);
+          marcar('LIQUIDACION'); marcar('SERVICIOS');
+          // La sábana es un Google Sheet: ese renglón sigue pasando por Apps
+          // Script. Si falla, la liquidación ya quedó guardada de todos modos.
+          const aviso = await copiarSabana(p);
+          return { ok:true, parcial:true, aviso, data: await BACKEND.supabase.leerHojas([...tocadas]) };
+        }
+        case 'cancelarSolicitud': {
+          const rec = paraEscribir(p.record);
+          if(!rec.FECHA_CANCELACION) rec.FECHA_CANCELACION = hoyISO();
+          await sbFetch('/rest/v1/solicitudes_canceladas', {
+            method:'POST', body: JSON.stringify(rec),
+            headers:{ 'Prefer':'resolution=merge-duplicates' }
+          });
+          await sbFetch(`/rest/v1/solicitudes?ID=eq.${encodeURIComponent(rec.ID)}`, {method:'DELETE'});
+          marcar('SOLICITUDES'); marcar('SOLICITUDES_CANCELADAS');
+          break;
+        }
+        case 'log':
+          await sbFetch('/rest/v1/bitacora', { method:'POST', body: JSON.stringify({
+            FECHA_HORA: ahoraTexto(), USUARIO: (p.usuario&&p.usuario.USUARIO)||'',
+            NOMBRE: (p.usuario&&p.usuario.NOMBRE)||'', ROL: (p.usuario&&p.usuario.ROL)||'',
+            ACCION: p.evento||'', DETALLE: p.detalle||''
+          })});
+          return { ok:true, parcial:true, data:{} };
+        default:
+          throw new Error('Acción no reconocida: '+p.action);
+      }
+      return { ok:true, parcial:true, data: await BACKEND.supabase.leerHojas([...tocadas]) };
+    }
+  }
+};
+function backend(){ return usaSupabase()? BACKEND.supabase : BACKEND.appsScript; }
+
+/* ---------- La máquina de etapas, del lado de Supabase ----------
+   Es la misma lógica que el Apps Script aplica en el servidor: guardar una
+   solicitud, una liquidación o una nómina mueve el servicio de etapa, y la
+   etapa nunca retrocede. */
+async function servicioDeCps(cartasPorte){
+  const buscadas = String(cartasPorte||'').split(/[,;\s]+/).map(x=>x.trim().toUpperCase()).filter(Boolean);
+  if(!buscadas.length) return null;
+  const enMemoria = DB.SERVICIOS.find(s=>cpsDeServicio(s).some(c=>buscadas.includes(c.toUpperCase())));
+  if(enMemoria) return enMemoria;
+  const filas = await sbFetch('/rest/v1/servicios?select=*');
+  return (filas||[]).map(limpiarFila)
+    .find(s=>cpsDeServicio(s).some(c=>buscadas.includes(c.toUpperCase()))) || null;
+}
+async function avanzarEtapaSb(servicio, etapa, campos){
+  if(!servicio) return;
+  const reg = Object.assign({ ID: servicio.ID }, campos||{});
+  if(indiceEtapa(etapa) > indiceEtapa(servicio.ETAPA)) reg.ETAPA = etapa;
+  else if(!servicio.ETAPA) reg.ETAPA = etapa;
+  await sbFetch('/rest/v1/servicios', {
+    method:'POST', body: JSON.stringify(paraEscribir(reg)),
+    headers:{ 'Prefer':'resolution=merge-duplicates' }
+  });
+}
+async function etapaPorSolicitudSb(record){
+  const s = await servicioDeCps(record.CARTAS_PORTE); if(!s) return;
+  const dispersada = String(record.DISPERSION||'').toUpperCase()==='SI';
+  await avanzarEtapaSb(s, dispersada? 'DISPERSADO' : 'GASTO SOLICITADO', dispersada
+    ? { SOLICITUD_ID:record.ID, FOLIO_GASTO:record.FOLIO, FECHA_DISPERSION: record.FECHA_DISPERSION || ahoraTexto() }
+    : { SOLICITUD_ID:record.ID, FOLIO_GASTO:record.FOLIO, FECHA_GASTO: ahoraTexto() });
+}
+async function etapaPorLiquidacionSb(record){
+  if(String(record.ESTADO||'').toUpperCase()!=='LIQUIDADO') return;
+  const s = await servicioDeCps(record.CARTAS_PORTE); if(!s) return;
+  await avanzarEtapaSb(s, 'LIQUIDADO', { FECHA_LIQUIDACION: record.FECHA_LIQUIDACION || ahoraTexto() });
+}
+async function etapaPorNominaSb(record){
+  if(!record || !record.OPERADOR) return;
+  const pagada = String(record.PAGADA||'').toUpperCase()==='SI';
+  const etapa  = pagada? 'PAGADO' : 'EN PRE-NÓMINA';
+  const objetivo = indiceEtapa(etapa), liquidado = indiceEtapa('LIQUIDADO');
+  const suyos = DB.SERVICIOS.filter(s=>
+    String(s.OPERADOR||'').toUpperCase()===String(record.OPERADOR).toUpperCase() &&
+    indiceEtapa(s.ETAPA) >= liquidado && indiceEtapa(s.ETAPA) < objetivo);
+  for(const s of suyos){
+    await avanzarEtapaSb(s, etapa, pagada
+      ? { NOMINA_ID:record.ID, FECHA_PAGO: record.FECHA_PAGO || ahoraTexto() }
+      : { NOMINA_ID:record.ID });
+  }
+}
+/* La sábana vive en un Google Sheet, así que se sigue escribiendo por Apps
+   Script aunque los datos ya estén en Postgres. Nunca tumba el guardado: si
+   falla, se devuelve el aviso y la liquidación queda igual. */
+async function copiarSabana(payload){
+  if(!WEBHOOK) return '';
+  try{
+    const r = await fetch(WEBHOOK, { method:'POST', body: JSON.stringify(payload) });
+    const j = await r.json();
+    return j.aviso || '';
+  }catch(e){
+    return 'La liquidación se guardó, pero no se pudo copiar el renglón a la sábana: '+e.message;
+  }
+}
+
 /* ---------- API ---------- */
 function setConn(on, txt){ $('connPill').classList.toggle('on', on); $('connTxt').textContent = txt; }
 /* Hasta que la carga termina, DB está vacío. Sin esto el login rechazaba
@@ -2535,16 +2819,16 @@ let cargaEnCurso = null;
 async function apiCargar(){
   setConn(false,'Conectando…');
   try{
-    const r = await fetch(WEBHOOK);
-    const j = await r.json();
-    if(!j.ok) throw new Error(j.error||'Error');
+    const j = await backend().cargar();
     aplicarDatos(j.data);
     datosListos = true;
     if(j.parcial) refrescarArchivo();   // solo lo que ya estuviera cargado
-    setConn(true,'Conectado al Sheet');
+    setConn(true,'Conectado a '+backend().nombre);
   }catch(e){
     setConn(false,'Sin conexión');
-    toast('No se pudo conectar al Google Sheet. Revisa la URL en Administración.', true);
+    toast(usaSupabase()
+      ? 'No se pudo conectar a Supabase. Revisa la URL y la llave en Administración.'
+      : 'No se pudo conectar al Google Sheet. Revisa la URL en Administración.', true);
   }
 }
 /* Espera a que los datos estén cargados; si la carga falló, reintenta */
@@ -2564,9 +2848,7 @@ function ctxUsuario(){
 async function apiEnviar(payload){
   try{
     payload = Object.assign({}, payload, { usuario: ctxUsuario() });
-    const r = await fetch(WEBHOOK, { method:'POST', body: JSON.stringify(payload) });
-    const j = await r.json();
-    if(!j.ok) throw new Error(j.error||'Error');
+    const j = await backend().enviar(payload);
     /* Lo que se acaba de guardar se aplica también en local, ANTES de la
        respuesta: si el backend no devolvió esa hoja —por ejemplo con un Apps
        Script publicado viejo— la pantalla seguiría mostrando lo anterior
@@ -2576,7 +2858,7 @@ async function apiEnviar(payload){
     // La respuesta del guardado no trae las hojas de archivo: se piden aparte
     // para que después de guardar quede todo al día (ver refrescarArchivo).
     if(j.parcial) refrescarArchivo();
-    setConn(true,'Conectado al Sheet');
+    setConn(true,'Conectado a '+backend().nombre);
     // El backend avisa si algo falló al copiar a la sábana
     if(j.aviso) modal('Aviso de la sábana', esc(j.aviso), '📄');
     return true;
@@ -2590,9 +2872,8 @@ async function apiEnviar(payload){
    la bitácora nunca debe interrumpir lo que el usuario está haciendo. */
 function bitacora(accion, detalle){
   try{
-    fetch(WEBHOOK, { method:'POST', body: JSON.stringify({
-      action:'log', usuario: ctxUsuario(), evento: accion, detalle: detalle||''
-    })});
+    backend().enviar({ action:'log', usuario: ctxUsuario(), evento: accion, detalle: detalle||'' })
+      .catch(()=>{});
   }catch(e){ /* silencioso a propósito */ }
 }
 
@@ -2636,10 +2917,8 @@ function aplicarDatos(data, pintar){
 const HOJAS_ARCHIVO = ['BITACORA','SOLICITUDES_CANCELADAS','EVIDENCIAS'];
 
 async function traerHojas(hojas){
-  const r = await fetch(WEBHOOK, { method:'POST', body: JSON.stringify({ action:'leerHoja', sheets:hojas, usuario: ctxUsuario() }) });
-  const j = await r.json();
-  if(!j.ok || !j.data) throw new Error(j.error||'Error');
-  aplicarDatos(j.data, false);
+  const data = await backend().leerHojas(hojas);
+  aplicarDatos(data, false);
   if(adminOk) pintarAdmin();
 }
 
@@ -9068,6 +9347,9 @@ function cargarConfigAdmin(){
   $('cfgGpsEco').value    = DB.CONFIG.GPS_CAMPO_ECO || '';
   $('cfgGpsUbic').value   = DB.CONFIG.GPS_CAMPO_UBIC || '';
   $('cfgGpsLatLon').value = DB.CONFIG.GPS_CAMPO_LATLON || '';
+  $('cfgSbUrl').value = SUPABASE_URL;
+  $('cfgSbKey').value = SUPABASE_KEY;
+  pintarEstadoSb();
   $('cfgRfcEmisor').value = DB.CONFIG.RFC_EMISOR || '';
   $('cfgLibObliga').checked = libObligatoria();
   $('cfgCpPrefijo').value = DB.CONFIG.CP_PREFIJO || '';
@@ -9075,6 +9357,63 @@ function cargarConfigAdmin(){
   $('cfgCpAuto').checked  = cpAutomatico();
   muestraFolioCp();
 }
+/* ---------- Conexión a Supabase ---------- */
+function pintarEstadoSb(){
+  const el = $('sbEstado'); if(!el) return;
+  el.innerHTML = usaSupabase()
+    ? `<span style="color:var(--ok)">Trabajando contra Supabase.</span> Los datos se guardan en Postgres; el Google Sheet queda como estaba, sin recibir nada nuevo.`
+    : 'Trabajando contra el <b>Google Sheet</b>. Captura la URL y la llave para pasar a Postgres.';
+}
+$('btnGuardarSb').addEventListener('click', async ()=>{
+  const url = $('cfgSbUrl').value.trim().replace(/\/+$/,'');
+  const key = $('cfgSbKey').value.trim();
+  if(!url || !key){ toast('Captura la URL y la llave.', true); return; }
+  if(!/^https:\/\/.+\.supabase\.co$/.test(url) && !/^https:\/\//.test(url)){
+    toast('La URL debe empezar con https://', true); return;
+  }
+  SUPABASE_URL = url; SUPABASE_KEY = key;
+  try{
+    await sbFetch('/rest/v1/config?select=clave&limit=1');
+  }catch(e){
+    SUPABASE_URL = localStorage.getItem('adl_sb_url')||'';
+    SUPABASE_KEY = localStorage.getItem('adl_sb_key')||'';
+    modal('No se pudo conectar',
+      'Supabase contestó: <b>'+esc(e.message)+'</b><br><br>Revisa que la URL y la llave sean del proyecto correcto y que el esquema ya esté aplicado.', '🔌');
+    return;
+  }
+  localStorage.setItem('adl_sb_url', url);
+  localStorage.setItem('adl_sb_key', key);
+  pintarEstadoSb();
+  toast('Conectado a Supabase, recargando datos…');
+  datosListos = false;
+  await apiCargar();
+});
+$('btnProbarSb').addEventListener('click', async ()=>{
+  const antesU = SUPABASE_URL, antesK = SUPABASE_KEY;
+  SUPABASE_URL = $('cfgSbUrl').value.trim().replace(/\/+$/,'');
+  SUPABASE_KEY = $('cfgSbKey').value.trim();
+  $('sbEstado').textContent = 'Probando…';
+  try{
+    const filas = await sbFetch('/rest/v1/servicios?select=ID&limit=1');
+    $('sbEstado').innerHTML = `<span style="color:var(--ok)">Conexión correcta.</span> La tabla <b>servicios</b> respondió`+
+      (filas && filas.length? ' y ya trae datos.' : ', todavía vacía.');
+  }catch(e){
+    $('sbEstado').innerHTML = `<span style="color:var(--bad)">${esc(e.message)}</span>`;
+  }
+  SUPABASE_URL = antesU; SUPABASE_KEY = antesK;
+});
+$('btnVolverSheet').addEventListener('click', async ()=>{
+  const ok = await preguntar('Volver al Google Sheet',
+    'La plataforma vuelve a guardar en el Google Sheet. Lo que se haya capturado en Supabase <b>se queda en Supabase</b>: no se copia de regreso. ¿Continuar?', '↩');
+  if(!ok) return;
+  localStorage.removeItem('adl_sb_url'); localStorage.removeItem('adl_sb_key');
+  SUPABASE_URL=''; SUPABASE_KEY='';
+  pintarEstadoSb();
+  datosListos = false;
+  await apiCargar();
+  toast('De vuelta en el Google Sheet');
+});
+
 function muestraFolioCp(){
   const el = $('cfgCpMuestra'); if(!el) return;
   const pref = $('cfgCpPrefijo').value.trim();

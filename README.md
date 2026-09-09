@@ -41,6 +41,22 @@ build: no hay dependencias ni paso de compilación.
 Cada vez que cambies el código del Apps Script hay que crear una implementación
 nueva (o actualizar la existente) para que la URL `/exec` sirva la versión nueva.
 
+## Dónde viven los datos
+
+La plataforma puede trabajar contra el **Google Sheet** vía Apps Script (como
+nació) o contra **Postgres en Supabase**. Se elige en *Administración → Base de
+datos*, sin tocar código: con la URL y la llave capturadas, guarda en Postgres;
+vacías, en el Sheet.
+
+Postgres resuelve tres cosas que el Sheet no puede: permisos **por renglón**
+—el login de hoy es de interfaz, no de seguridad—, escrituras concurrentes sin
+el candado global que forma en fila cada guardado, y la cuota diaria de Apps
+Script. El proceso completo, por etapas, está en
+[`supabase/README.md`](supabase/README.md).
+
+La **sábana** es la excepción: es un Google Sheet ajeno, así que ese renglón se
+sigue escribiendo por Apps Script en los dos casos.
+
 ## Hojas del Google Sheet
 
 `configurarHojas()` las crea solo, pero conviene saber qué espera cada una.
