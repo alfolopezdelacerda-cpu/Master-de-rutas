@@ -64,10 +64,22 @@ var HOJAS = {
      los servicios de los clientes que trae asignados aquí. */
   CLIENTES: ['ID','NOMBRE','RAZON_SOCIAL','RFC','REGIMEN_FISCAL','CP_FISCAL',
              'USO_CFDI','METODO_PAGO','FORMA_PAGO','MONEDA','DIAS_CREDITO','LIMITE_CREDITO',
+             /* CREDITO_DESDE: desde qué hecho empiezan a correr los días de
+                crédito. No es lo mismo contarlos desde que se timbra la
+                factura que desde que el cliente la acepta en su portal: en
+                cuentas grandes hay semanas de diferencia y es lo que decide
+                si una factura está vencida o no. */
+             'CREDITO_DESDE',
              'DOMICILIO','CIUDAD','ESTADO','PAIS',
              'CONTACTO','CONTACTO_TEL','CONTACTO_MAIL','MAIL_FACTURACION',
+             /* Cuenta DESDE LA QUE EL CLIENTE NOS PAGA. No sirve para pagarle
+                —a un cliente no se le paga— sino para reconocer de quién es un
+                depósito: el banco solo muestra el titular y la referencia, y
+                el titular casi nunca es el nombre comercial. */
+             'BANCO','CUENTA_BANCARIA','CLABE','TITULAR_CUENTA','REFERENCIA_PAGO',
              'PORTAL_ENLACE','PORTAL_USUARIO','PORTAL_PASSWORD',
              'CONSTANCIA_URL','ACTA_URL','PODER_URL','OPINION_SAT_URL','OPINION_SAT_VENCE',
+             'COMPROBANTE_DOMICILIO_URL','COMPROBANTE_DOMICILIO_FECHA',
              'CONTRATO_URL','CONTRATO_VENCE','NOTAS','ACTIVO','EJECUTIVO'],
 
   /* Catálogos del alta de servicios (Nuevo Servicio) */
@@ -112,8 +124,30 @@ var HOJAS = {
                'CLASE','GASTO_ID','NOMBRE','IMAGEN','REGISTRADO_POR'],
 
   /* Tarifario comercial: lo que se le cobra al cliente por ruta y tipo de
-     unidad. De aquí sale el monto de Cuentas por Cobrar. */
-  TARIFAS: ['ID','CLIENTE','RUTA','TIPO_UNIDAD','TARIFA','MONEDA','VIGENCIA_DESDE','VIGENCIA_HASTA','NOTAS'],
+     unidad. De aquí sale el monto de Cuentas por Cobrar.
+     Un renglón es una COTIZACIÓN: nace como PROPUESTA y, cuando el cliente la
+     acepta, pasa a ACEPTADA. Solo las aceptadas se cobran — antes cualquier
+     renglón capturado ya se cobraba, aceptado o no.
+     Lo demás son las condiciones que se pactan junto con el precio y que hoy
+     se perdían en la columna NOTAS: de ahí salen los cobros extra que después
+     nadie sabe justificar. */
+  TARIFAS: ['ID','FOLIO','CLIENTE','RUTA','TIPO_UNIDAD','TIPO_CARGA','TARIFA','MONEDA',
+            'VIGENCIA_DESDE','VIGENCIA_HASTA',
+            /* ESTADO: PROPUESTA | ACEPTADA | RECHAZADA */
+            'ESTADO','FECHA_ACEPTACION','ACEPTADA_POR',
+            /* Estadía: las horas de carga y descarga que van incluidas en la
+               tarifa, y lo que cuesta cada hora que se pase de ahí. */
+            'HORAS_LIBRES_CARGA','HORAS_LIBRES_DESCARGA','COSTO_HORA_EXTRA',
+            /* Repartos: entregas adicionales en el mismo viaje */
+            'REPARTOS','REPARTOS_INCLUIDOS','COSTO_REPARTO_EXTRA',
+            /* Seguro de mercancía: hasta cuánto responde y qué se cobra por él */
+            'SEGURO_MERCANCIA','SEGURO_VALOR','SEGURO_PRIMA',
+            /* Convenios de extra costo, un renglón por concepto pactado
+               (maniobra, pernocta, falso flete, reexpedición…). Se guardan
+               juntos porque cada cliente pacta los suyos y no hay una lista
+               fija que sirva para todos. */
+            'EXTRAS_JSON',
+            'NOTAS','REGISTRADO_POR'],
 
   /* Cuentas por cobrar: un renglón por servicio cobrable. ESTADO:
      POR FACTURAR | FACTURADO | COBRADO. */

@@ -492,6 +492,7 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 
     <h3>Origen y destino</h3>
     <div class="mini" id="nsRutasCliente" style="margin-bottom:10px;color:var(--ink2)"></div>
+    <div class="mini" id="nsTarifa" style="margin-bottom:10px"></div>
     <div class="grid g5" style="margin-bottom:14px">
       <div style="grid-column:1/3"><label>Ruta del cliente</label>
         <select id="nsRuta" title="Solo las rutas dadas de alta para el cliente elegido"></select></div>
@@ -1748,31 +1749,88 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
 <section class="sec" id="sec-tarifarios">
   <div class="card">
     <h2>Tarifarios</h2>
-    <div class="sub">Lo que se le cobra a cada cliente por ruta y tipo de unidad. Es lo que Cuentas por Cobrar usa para calcular el monto de cada servicio.</div>
-    <div class="grid g4" style="margin:14px 0 12px">
-      <div style="grid-column:1/3"><label>Buscar</label><input id="tarBusca" placeholder="🔍 Cliente, ruta, tipo de unidad…"></div>
+    <div class="sub">Lo cotizado a cada cliente: el precio por ruta y tipo de unidad, y las <b>condiciones que se pactaron junto con el precio</b> —horas libres, repartos, seguro de mercancía y los convenios de extra costo—. Solo las tarifas <b>aceptadas</b> se usan para cobrar.</div>
+    <div id="tarChips" style="display:flex;gap:8px;flex-wrap:wrap;margin:14px 0"></div>
+    <div class="grid g4" style="margin-bottom:12px">
       <div><label>Cliente</label><select id="tarCliente"><option value="todos">Todos</option></select></div>
-      <div style="display:flex;align-items:flex-end"><button class="btn btn-p" id="btnTarNueva" style="width:100%">＋ Nueva tarifa</button></div>
+      <div><label>Estado</label><select id="tarEstado">
+        <option value="todos">Todos</option>
+        <option value="ACEPTADA">Solo aceptadas</option>
+        <option value="PROPUESTA">Solo propuestas</option>
+        <option value="RECHAZADA">Solo rechazadas</option>
+        <option value="vigentes">Aceptadas y vigentes hoy</option>
+      </select></div>
+      <div><label>Buscar</label><input id="tarBusca" placeholder="🔍 Folio, ruta, tipo de carga…"></div>
+      <div style="display:flex;align-items:flex-end"><button class="btn btn-p" id="btnTarNueva" style="width:100%">＋ Nueva cotización</button></div>
     </div>
+
+    <div id="tarResumenCliente" class="mini" style="margin-bottom:12px;color:var(--ink2)"></div>
+
     <div id="tarForm" style="display:none;background:var(--surface2);border:1px dashed var(--road);border-radius:10px;padding:14px;margin-bottom:14px">
+      <h3 style="margin-top:0">Qué se cotiza</h3>
       <div class="grid g4" style="margin-bottom:12px">
+        <div><label>Folio</label><input id="tarFFolio" placeholder="COT-0001"></div>
         <div><label>Cliente</label><select id="tarFCliente"></select></div>
-        <div><label>Ruta</label><select id="tarFRuta"></select></div>
+        <div><label>Ruta</label><select id="tarFRuta" title="Solo las rutas dadas de alta para ese cliente"></select></div>
         <div><label>Tipo de unidad</label><select id="tarFTipo"></select></div>
+        <div><label>Tipo de carga</label><select id="tarFCarga">
+          <option value="">— Sin especificar —</option>
+          <option>SECA</option><option>REFRIGERADA</option><option>CONGELADA</option>
+          <option>PELIGROSA</option><option>GRANEL</option><option>SOBREDIMENSIONADA</option>
+        </select></div>
         <div><label>Tarifa ($)</label><input id="tarFTarifa" type="number" min="0" step="0.01"></div>
+        <div><label>Moneda</label><select id="tarFMoneda"><option>MXN</option><option>USD</option></select></div>
+        <div><label>Estado</label><select id="tarFEstado">
+          <option value="PROPUESTA">Propuesta</option>
+          <option value="ACEPTADA">Aceptada</option>
+          <option value="RECHAZADA">Rechazada</option>
+        </select></div>
         <div><label>Vigencia desde</label><input id="tarFDesde" type="date"></div>
         <div><label>Vigencia hasta</label><input id="tarFHasta" type="date"></div>
-        <div style="grid-column:3/5"><label>Notas</label><input id="tarFNotas" placeholder="Condiciones, estadías incluidas…"></div>
       </div>
+
+      <h3>Horas libres de carga y descarga</h3>
+      <div class="sub" style="margin-bottom:10px">Lo que va incluido en la tarifa. Pasando de ahí corre la estadía, y es lo que después hay que poder justificar cuando el cliente la objeta.</div>
+      <div class="grid g4" style="margin-bottom:12px">
+        <div><label>Horas libres en carga</label><input id="tarFHlCarga" type="number" min="0" step="0.5" value="0"></div>
+        <div><label>Horas libres en descarga</label><input id="tarFHlDescarga" type="number" min="0" step="0.5" value="0"></div>
+        <div><label>Costo por hora extra ($)</label><input id="tarFCostoHora" type="number" min="0" step="0.01" value="0"></div>
+      </div>
+
+      <h3>Repartos</h3>
+      <div class="grid g4" style="margin-bottom:12px">
+        <div><label>¿Lleva repartos?</label><select id="tarFRepartos"><option value="NO">No</option><option value="SI">Sí</option></select></div>
+        <div><label>Repartos incluidos</label><input id="tarFRepIncl" type="number" min="0" step="1" value="0"></div>
+        <div><label>Costo por reparto extra ($)</label><input id="tarFRepCosto" type="number" min="0" step="0.01" value="0"></div>
+      </div>
+
+      <h3>Seguro de mercancía</h3>
+      <div class="grid g4" style="margin-bottom:12px">
+        <div><label>¿Se cubre?</label><select id="tarFSeguro"><option value="NO">No</option><option value="SI">Sí</option></select></div>
+        <div><label>Valor asegurado ($)</label><input id="tarFSeguroValor" type="number" min="0" step="0.01" value="0"></div>
+        <div><label>Prima que se cobra ($)</label><input id="tarFSeguroPrima" type="number" min="0" step="0.01" value="0"></div>
+      </div>
+
+      <h3>Convenios de extra costo</h3>
+      <div class="sub" style="margin-bottom:10px">Lo que se pactó cobrar aparte del flete. Cada cliente pacta los suyos, por eso no hay lista fija.</div>
+      <div class="twrap" style="margin-bottom:8px"><table>
+        <thead><tr><th>Concepto</th><th class="right">Monto</th><th>Unidad</th><th>Nota</th><th></th></tr></thead>
+        <tbody id="tarExtras"></tbody>
+      </table></div>
+      <button class="btn btn-s btn-sm" id="btnTarExtraAdd" style="margin-bottom:12px">＋ Agregar convenio</button>
+
+      <div style="margin-bottom:12px"><label>Notas</label><input id="tarFNotas" placeholder="Lo que no cabe arriba…"></div>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
-        <button class="btn btn-p" id="btnTarGuardar">💾 Guardar tarifa</button>
+        <button class="btn btn-p" id="btnTarGuardar">💾 Guardar cotización</button>
         <button class="btn btn-s" id="btnTarCancelar">Cancelar</button>
       </div>
     </div>
+
     <div class="twrap" style="max-height:520px;overflow-y:auto"><table>
       <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
-        <th>Cliente</th><th>Ruta</th><th>Tipo de unidad</th><th class="right">Tarifa</th>
-        <th>Vigencia</th><th>Notas</th><th></th>
+        <th>Estado</th><th>Folio</th><th>Cliente</th><th>Ruta</th><th>Unidad</th><th>Carga</th>
+        <th class="right">Tarifa</th><th>Vigencia</th><th>Horas libres</th><th>Repartos</th>
+        <th>Seguro</th><th>Extras</th><th></th>
       </tr></thead>
       <tbody id="tbodyTarifas"></tbody>
     </table></div>
@@ -2095,10 +2153,28 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
     </div>
 
     <h3>Condiciones comerciales</h3>
+    <div class="sub" style="margin-bottom:10px">Los días de crédito no se cuentan siempre desde lo mismo. <b>Desde cuándo corren</b> es lo que decide si una factura está vencida: entre timbrarla y que el cliente la acepte en su portal puede haber semanas.</div>
     <div class="grid g4" style="margin-bottom:14px">
       <div><label>Días de crédito</label><input id="cliDiasCredito" type="number" min="0" step="1" value="0"></div>
+      <div style="grid-column:2/4"><label>Los días corren a partir de…</label><select id="cliCreditoDesde">
+        <option value="FECHA_FACTURA">La fecha de la factura (timbrado)</option>
+        <option value="FECHA_SERVICIO">La fecha del servicio</option>
+        <option value="RECEPCION_FACTURA">Que el cliente recibe la factura</option>
+        <option value="ACEPTACION_PORTAL">Que el cliente la acepta en su portal</option>
+        <option value="FIN_DE_MES">El cierre del mes en que se factura</option>
+      </select></div>
       <div><label>Límite de crédito</label><input id="cliLimite" type="number" min="0" step="0.01" value="0"></div>
-      <div style="grid-column:3/5"><label>Correo para facturación</label><input id="cliMailFac" placeholder="facturas@cliente.com"></div>
+      <div style="grid-column:1/4"><label>Correo para facturación</label><input id="cliMailFac" placeholder="facturas@cliente.com"></div>
+    </div>
+
+    <h3>Cuenta desde la que nos paga</h3>
+    <div class="sub" style="margin-bottom:10px">Para <b>reconocer un depósito</b> cuando cae en el banco. El estado de cuenta solo muestra el titular y la referencia, y el titular casi nunca se llama igual que el nombre comercial: sin esto, cada depósito hay que ir a preguntarlo.</div>
+    <div class="grid g4" style="margin-bottom:14px">
+      <div><label>Banco</label><input id="cliBanco" placeholder="BBVA, Santander…"></div>
+      <div style="grid-column:2/4"><label>Titular de la cuenta</label><input id="cliTitular" placeholder="Como aparece en la transferencia"></div>
+      <div><label>Cuenta</label><input id="cliCuenta"></div>
+      <div><label>CLABE</label><input id="cliClabe" placeholder="18 dígitos"></div>
+      <div style="grid-column:2/4"><label>Referencia con la que paga</label><input id="cliReferencia" placeholder="Si siempre usa la misma"></div>
     </div>
 
     <h3>Contacto</h3>
@@ -2124,7 +2200,9 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
       <div style="grid-column:1/3"><label>Poder del representante legal</label><input id="cliPoder" placeholder="https://…"></div>
       <div style="grid-column:3/5"><label>Opinión de cumplimiento (32-D)</label><input id="cliOpinion" placeholder="https://…"></div>
       <div><label>Vence opinión</label><input id="cliOpinionVence" type="date"></div>
-      <div style="grid-column:2/4"><label>Contrato</label><input id="cliContrato" placeholder="https://…"></div>
+      <div style="grid-column:1/3"><label>Comprobante de domicilio</label><input id="cliComprobante" placeholder="https://…"></div>
+      <div><label>Fecha del recibo</label><input id="cliComprobanteFecha" type="date"></div>
+      <div style="grid-column:1/3"><label>Contrato</label><input id="cliContrato" placeholder="https://…"></div>
       <div><label>Vence contrato</label><input id="cliContratoVence" type="date"></div>
     </div>
 
@@ -3622,6 +3700,41 @@ function filtrarPorCliente(){
     : rutas.length
       ? `<b>${esc(cliente)}</b>: ${rutas.length} ruta(s) dadas de alta · ${srv.length} servicio(s) previos.`
       : `<b>${esc(cliente)}</b> no tiene rutas dadas de alta en la hoja RUTAS. Se pueden crear en la pestaña <b>Rutas</b>.`;
+  pintarTarifaDelServicio();
+}
+
+/* Lo cotizado, a la vista mientras se da de alta el servicio. Antes había que
+   ir a Tarifarios a buscarlo, y el precio recién aparecía en CXC cuando el
+   viaje ya estaba hecho: si no había tarifa aceptada, el servicio se hacía
+   igual y el problema salía al cobrar. */
+function pintarTarifaDelServicio(){
+  const caja = $('nsTarifa');
+  const cliente = nombreDeSelect('nsCliente','CLIENTES');
+  if(!cliente){ caja.innerHTML=''; return; }
+  const ruta = (DB.RUTAS.find(r=>String(r.ID)===$('nsRuta').value)||{}).RUTA || '';
+  const t = tarifaDeServicio({ CLIENTE:cliente, RUTA:ruta, TIPO_UNIDAD:$('nsTipoUnidad').value });
+  if(!t){
+    const hay = (DB.TARIFAS||[]).some(x=>String(x.CLIENTE||'').trim().toUpperCase()===cliente.toUpperCase());
+    caja.innerHTML = `<span style="color:var(--bad)">Sin tarifa aceptada para esta combinación.</span> `+
+      (hay? 'Hay cotizaciones de este cliente, pero ninguna aceptada y vigente que aplique. '
+          : 'A este cliente no se le ha cotizado nada. ')+
+      'El servicio se puede dar de alta, pero al llegar a Cuentas por Cobrar no va a tener de dónde tomar el precio.';
+    return;
+  }
+  const cond = [];
+  if(nf(t.HORAS_LIBRES_CARGA)||nf(t.HORAS_LIBRES_DESCARGA))
+    cond.push(`${num(nf(t.HORAS_LIBRES_CARGA),1)} h libres en carga y ${num(nf(t.HORAS_LIBRES_DESCARGA),1)} en descarga`+
+      (nf(t.COSTO_HORA_EXTRA)? ` (extra ${money(t.COSTO_HORA_EXTRA)}/h)` : ''));
+  if(String(t.REPARTOS||'').toUpperCase()==='SI')
+    cond.push(`${num(nf(t.REPARTOS_INCLUIDOS),0)} reparto(s) incluidos`+
+      (nf(t.COSTO_REPARTO_EXTRA)? ` (extra ${money(t.COSTO_REPARTO_EXTRA)})` : ''));
+  if(String(t.SEGURO_MERCANCIA||'').toUpperCase()==='SI')
+    cond.push(`mercancía asegurada hasta ${money(t.SEGURO_VALOR)}`);
+  const ex = extrasDeTarifa(t);
+  if(ex.length) cond.push(ex.map(e=>`${esc(e.concepto)} ${money(e.monto)}`).join(', '));
+  caja.innerHTML = `<span style="color:var(--ok)">Tarifa ${money(t.TARIFA)} ${esc(t.MONEDA||'MXN')}</span>`+
+    (t.TIPO_CARGA? ` · carga ${esc(t.TIPO_CARGA)}` : '')+
+    (cond.length? `<br><span style="color:var(--ink2)">${cond.join(' · ')}</span>` : '');
 }
 /* Al elegir la ruta del cliente, si trae origen y destino reconocibles se
    ponen solos ("JALISCO - QUERÉTARO" → origen JALISCO, destino QUERÉTARO). */
@@ -3641,8 +3754,10 @@ $('nsRuta').addEventListener('change',()=>{
       if(!$('nsCiudadDestino').value) $('nsCiudadDestino').value = dst.ID;
     }
   }
+  pintarTarifaDelServicio();
 });
 $('nsCliente').addEventListener('change', filtrarPorCliente);
+$('nsTipoUnidad').addEventListener('change', pintarTarifaDelServicio);
 
 /* Los catálogos se guardan por nombre, no por ID: la sábana necesita el
    texto y así el registro no depende de que el catálogo no cambie. */
@@ -4990,8 +5105,14 @@ function tarifaDeServicio(s){
   const hoy  = hoyISO();
   const vigente = t => (!t.VIGENCIA_DESDE || t.VIGENCIA_DESDE<=hoy) &&
                        (!t.VIGENCIA_HASTA || t.VIGENCIA_HASTA>=hoy);
+  /* Solo se cobra lo que el cliente aceptó. Una tarifa SIN estado es de antes
+     de que existiera el estado: en ese entonces cualquier renglón capturado se
+     cobraba, así que se respeta para no dejar de cobrar servicios en curso.
+     Las nuevas nacen PROPUESTA y no cobran hasta que se aceptan. */
+  const cobrable = t => { const e = String(t.ESTADO||'').trim().toUpperCase();
+                          return !e || e==='ACEPTADA'; };
   const candidatas = (DB.TARIFAS||[]).filter(t=>
-    String(t.CLIENTE||'').trim().toUpperCase()===cli &&
+    String(t.CLIENTE||'').trim().toUpperCase()===cli && cobrable(t) &&
     (!t.TIPO_UNIDAD || String(t.TIPO_UNIDAD).trim().toUpperCase()===tipo));
   // Primero la de esa ruta y vigente; luego la de esa ruta; luego la del cliente
   return candidatas.find(t=>String(t.RUTA||'').trim().toUpperCase()===ruta && vigente(t))
@@ -5089,40 +5210,156 @@ async function guardarCxc(servicioId){
 ['cxcBusca','cxcCliente','cxcEstado'].forEach(id=>$(id).addEventListener('input', pintarCxc));
 ['cxcCliente','cxcEstado'].forEach(id=>$(id).addEventListener('change', pintarCxc));
 
-/* ---------- Tarifarios ---------- */
+/* ---------- Tarifarios ----------
+   Un renglón de TARIFAS es una cotización: nace PROPUESTA y solo cuenta para
+   cobrar cuando el cliente la acepta. Junto al precio viajan las condiciones
+   que se pactaron con él —horas libres, repartos, seguro y los convenios de
+   extra costo—, que antes se perdían en NOTAS y después no había cómo
+   justificar un cobro extra. */
 let tarEditando = null;
+let tarExtras = [];          // los convenios que se están editando
+
+const ESTADO_TARIFA = {
+  ACEPTADA:  { t:'Aceptada',  color:'var(--ok)' },
+  PROPUESTA: { t:'Propuesta', color:'var(--accent)' },
+  RECHAZADA: { t:'Rechazada', color:'var(--bad)' }
+};
+const estadoTarifa = t => String(t.ESTADO||'PROPUESTA').toUpperCase();
+function tarifaVigente(t, hoy){
+  const d = hoy || hoyISO();
+  return (!t.VIGENCIA_DESDE || t.VIGENCIA_DESDE<=d) && (!t.VIGENCIA_HASTA || t.VIGENCIA_HASTA>=d);
+}
+function extrasDeTarifa(t){
+  try{ const a = JSON.parse(t.EXTRAS_JSON||'[]'); return Array.isArray(a)? a : []; }catch(e){ return []; }
+}
+
 function pintarTarifas(){
   const selC = $('tarCliente');
   const clientes = [...DB.CLIENTES].sort((a,b)=>String(a.NOMBRE||'').localeCompare(String(b.NOMBRE||'')));
   if(selC.options.length-1 !== clientes.length){
+    const antes = selC.value;
     selC.innerHTML = '<option value="todos">Todos</option>'+clientes.map(c=>`<option>${esc(c.NOMBRE)}</option>`).join('');
+    if([...selC.options].some(o=>o.value===antes)) selC.value = antes;
   }
   const q = ($('tarBusca').value||'').trim().toUpperCase();
-  const fCli = selC.value;
-  const filas = (DB.TARIFAS||[]).filter(t=>{
-    if(fCli!=='todos' && String(t.CLIENTE||'')!==fCli) return false;
+  const fCli = selC.value, fEst = $('tarEstado').value, hoy = hoyISO();
+  const delCliente = (DB.TARIFAS||[]).filter(t=>fCli==='todos' || String(t.CLIENTE||'')===fCli);
+
+  const filas = delCliente.filter(t=>{
+    const est = estadoTarifa(t);
+    if(fEst==='vigentes'){ if(est!=='ACEPTADA' || !tarifaVigente(t,hoy)) return false; }
+    else if(fEst!=='todos' && est!==fEst) return false;
     if(!q) return true;
-    return [t.CLIENTE,t.RUTA,t.TIPO_UNIDAD,t.NOTAS].some(v=>String(v||'').toUpperCase().includes(q));
+    return [t.FOLIO,t.CLIENTE,t.RUTA,t.TIPO_UNIDAD,t.TIPO_CARGA,t.NOTAS]
+      .some(v=>String(v||'').toUpperCase().includes(q));
   });
+
+  /* Las píldoras cuentan sobre el cliente elegido, no sobre lo filtrado:
+     sirven para ver de un vistazo cómo está la cuenta, no el filtro. */
+  const cuenta = e => delCliente.filter(t=>estadoTarifa(t)===e).length;
+  $('tarChips').innerHTML = [
+    ['Aceptadas', cuenta('ACEPTADA'), 'var(--ok)'],
+    ['Propuestas', cuenta('PROPUESTA'), 'var(--accent)'],
+    ['Rechazadas', cuenta('RECHAZADA'), 'var(--bad)'],
+    ['Aceptadas y vigentes hoy',
+      delCliente.filter(t=>estadoTarifa(t)==='ACEPTADA' && tarifaVigente(t,hoy)).length, 'var(--ink2)']
+  ].map(([t,n,c])=>`<span class="chip" style="border-color:${c};color:${c}">${esc(t)}: <b>${n}</b></span>`).join('');
+
+  $('tarResumenCliente').innerHTML = fCli==='todos'
+    ? 'Elige un cliente para ver todo lo que se le cotizó y bajo qué condiciones.'
+    : (()=>{ const rutas = rutasDeCliente(fCli).length;
+        const aceptadas = delCliente.filter(t=>estadoTarifa(t)==='ACEPTADA');
+        const sinVigencia = aceptadas.filter(t=>!tarifaVigente(t,hoy)).length;
+        return `<b>${esc(fCli)}</b>: ${delCliente.length} cotización(es) sobre ${rutas} ruta(s) dadas de alta.`+
+          (sinVigencia? ` <span style="color:var(--bad)">${sinVigencia} aceptada(s) fuera de vigencia hoy: no se van a cobrar.</span>` : '')+
+          (!aceptadas.length && delCliente.length? ' <span style="color:var(--accent)">Ninguna aceptada todavía: los servicios de este cliente no tienen de dónde tomar precio.</span>' : '');
+      })();
+
   const tb=$('tbodyTarifas'); tb.innerHTML='';
   filas.forEach(t=>{
+    const est = estadoTarifa(t), meta = ESTADO_TARIFA[est] || ESTADO_TARIFA.PROPUESTA;
     const vig = [t.VIGENCIA_DESDE, t.VIGENCIA_HASTA].filter(Boolean).join(' → ') || 'sin vigencia';
+    const fuera = est==='ACEPTADA' && !tarifaVigente(t,hoy);
+    const hl = (nf(t.HORAS_LIBRES_CARGA)||nf(t.HORAS_LIBRES_DESCARGA))
+      ? `${num(nf(t.HORAS_LIBRES_CARGA),1)} / ${num(nf(t.HORAS_LIBRES_DESCARGA),1)} h`+
+        (nf(t.COSTO_HORA_EXTRA)? `<br><span class="mini">extra ${money(t.COSTO_HORA_EXTRA)}/h</span>`:'')
+      : '<span class="mini">—</span>';
+    const rep = String(t.REPARTOS||'NO').toUpperCase()==='SI'
+      ? `${num(nf(t.REPARTOS_INCLUIDOS),0)} incl.`+
+        (nf(t.COSTO_REPARTO_EXTRA)? `<br><span class="mini">extra ${money(t.COSTO_REPARTO_EXTRA)}</span>`:'')
+      : '<span class="mini">no</span>';
+    const seg = String(t.SEGURO_MERCANCIA||'NO').toUpperCase()==='SI'
+      ? `${money(t.SEGURO_VALOR)}`+(nf(t.SEGURO_PRIMA)? `<br><span class="mini">prima ${money(t.SEGURO_PRIMA)}</span>`:'')
+      : '<span class="mini">no</span>';
+    const ex = extrasDeTarifa(t);
     const tr=document.createElement('tr');
-    tr.innerHTML=`<td><b>${esc(t.CLIENTE)}</b></td><td>${esc(t.RUTA)||'<span class="mini">todas</span>'}</td>
+    tr.innerHTML=`
+      <td><span class="chip" style="border-color:${meta.color};color:${meta.color}">${esc(meta.t)}</span></td>
+      <td class="mini">${esc(t.FOLIO)||'—'}</td>
+      <td><b>${esc(t.CLIENTE)}</b></td>
+      <td>${esc(t.RUTA)||'<span class="mini">todas</span>'}</td>
       <td>${esc(t.TIPO_UNIDAD)||'<span class="mini">todas</span>'}</td>
-      <td class="right num">${money(t.TARIFA)}</td><td class="mini">${esc(vig)}</td>
-      <td>${esc(t.NOTAS)}</td>
+      <td class="mini">${esc(t.TIPO_CARGA)||'—'}</td>
+      <td class="right num">${money(t.TARIFA)}<br><span class="mini">${esc(t.MONEDA||'MXN')}</span></td>
+      <td class="mini"${fuera? ' style="color:var(--bad)"':''}>${esc(vig)}${fuera? '<br>fuera de vigencia':''}</td>
+      <td>${hl}</td><td>${rep}</td><td>${seg}</td>
+      <td>${ex.length? `<span title="${esc(ex.map(e=>e.concepto+': '+money(e.monto)).join(' · '))}">${ex.length} convenio(s)</span>` : '<span class="mini">—</span>'}</td>
       <td style="white-space:nowrap">
+        ${est==='PROPUESTA'? `<button class="btn btn-p btn-sm" data-taracep="${t.ID}">Aceptar</button>`:''}
         <button class="btn btn-s btn-sm" data-tared="${t.ID}">Editar</button>
         <button class="btn btn-d btn-sm" data-tardel="${t.ID}">✕</button></td>`;
     tb.appendChild(tr);
   });
-  if(!filas.length) tb.innerHTML='<tr><td colspan="7" class="mini">Sin tarifas capturadas.</td></tr>';
+  if(!filas.length) tb.innerHTML='<tr><td colspan="13" class="mini">Sin cotizaciones que cumplan el filtro.</td></tr>';
   tb.querySelectorAll('[data-tared]').forEach(b=>b.addEventListener('click',()=>abrirTarifa(b.dataset.tared)));
+  tb.querySelectorAll('[data-taracep]').forEach(b=>b.addEventListener('click',()=>aceptarTarifa(b.dataset.taracep)));
   tb.querySelectorAll('[data-tardel]').forEach(b=>b.addEventListener('click', async ()=>{
-    if(await apiEnviar({action:'delete', sheet:'TARIFAS', id:b.dataset.tardel})){ toast('Tarifa eliminada'); pintarTarifas(); }
+    if(await apiEnviar({action:'delete', sheet:'TARIFAS', id:b.dataset.tardel})){ toast('Cotización eliminada'); pintarTarifas(); }
   }));
 }
+
+async function aceptarTarifa(id){
+  const t = (DB.TARIFAS||[]).find(x=>String(x.ID)===String(id));
+  if(!t) return;
+  const ok = await preguntar('Aceptar la cotización',
+    `A partir de ahora los servicios de <b>${esc(t.CLIENTE)}</b>${t.RUTA? ' en <b>'+esc(t.RUTA)+'</b>':''} se van a cobrar a <b>${money(t.TARIFA)}</b>.<br><br>¿El cliente ya la aceptó?`, '✅');
+  if(!ok) return;
+  const reg = Object.assign({}, t, { ESTADO:'ACEPTADA', FECHA_ACEPTACION: hoyISO(),
+    ACEPTADA_POR: nombreUsuario() });
+  if(await apiEnviar({action:'upsert', sheet:'TARIFAS', record:reg})){
+    toast('Cotización aceptada'); pintarTarifas();
+  }
+}
+
+/* ---- Convenios de extra costo ---- */
+function pintarTarExtras(){
+  const tb = $('tarExtras'); tb.innerHTML='';
+  tarExtras.forEach((e,i)=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input data-tex="concepto" data-i="${i}" value="${esc(e.concepto||'')}" placeholder="Maniobra, pernocta, falso flete…"></td>
+      <td><input data-tex="monto" data-i="${i}" type="number" min="0" step="0.01" value="${nf(e.monto)}"></td>
+      <td><select data-tex="unidad" data-i="${i}">
+        ${['POR VIAJE','POR HORA','POR TONELADA','POR MANIOBRA','POR DÍA','PORCENTAJE']
+          .map(u=>`<option${String(e.unidad||'POR VIAJE')===u? ' selected':''}>${u}</option>`).join('')}
+      </select></td>
+      <td><input data-tex="nota" data-i="${i}" value="${esc(e.nota||'')}"></td>
+      <td><button class="btn btn-d btn-sm" data-texdel="${i}">✕</button></td>`;
+    tb.appendChild(tr);
+  });
+  if(!tarExtras.length) tb.innerHTML='<tr><td colspan="5" class="mini">Sin convenios. Solo se cobra el flete.</td></tr>';
+  tb.querySelectorAll('[data-tex]').forEach(el=>el.addEventListener('input',()=>{
+    const i = +el.dataset.i, campo = el.dataset.tex;
+    tarExtras[i][campo] = campo==='monto'? nf(el.value) : el.value;
+  }));
+  tb.querySelectorAll('[data-texdel]').forEach(b=>b.addEventListener('click',()=>{
+    tarExtras.splice(+b.dataset.texdel,1); pintarTarExtras();
+  }));
+}
+$('btnTarExtraAdd').addEventListener('click',()=>{
+  tarExtras.push({concepto:'', monto:0, unidad:'POR VIAJE', nota:''}); pintarTarExtras();
+});
+
 function abrirTarifa(id){
   const t = id? (DB.TARIFAS||[]).find(x=>String(x.ID)===String(id)) : null;
   tarEditando = t? t.ID : null;
@@ -5131,20 +5368,39 @@ function abrirTarifa(id){
   rutasDelClienteTarifa();
   $('tarFTipo').innerHTML = '<option value="">— Todos los tipos —</option>'+
     TIPOS_UNIDAD_SERVICIO.map(x=>`<option>${esc(x)}</option>`).join('');
+  const n = (idc,v)=>{ $(idc).value = nf(v); };
   if(t){
     seleccionarPorNombre('tarFCliente','CLIENTES', t.CLIENTE);
     rutasDelClienteTarifa();
     const r = DB.RUTAS.find(x=>String(x.RUTA||'')===String(t.RUTA||''));
     $('tarFRuta').value = r? r.ID : '';
+    $('tarFFolio').value = t.FOLIO||'';
     $('tarFTipo').value = t.TIPO_UNIDAD||'';
+    $('tarFCarga').value = t.TIPO_CARGA||'';
     $('tarFTarifa').value = nf(t.TARIFA);
+    $('tarFMoneda').value = t.MONEDA||'MXN';
+    $('tarFEstado').value = estadoTarifa(t);
     $('tarFDesde').value = t.VIGENCIA_DESDE||'';
     $('tarFHasta').value = t.VIGENCIA_HASTA||'';
+    n('tarFHlCarga', t.HORAS_LIBRES_CARGA); n('tarFHlDescarga', t.HORAS_LIBRES_DESCARGA);
+    n('tarFCostoHora', t.COSTO_HORA_EXTRA);
+    $('tarFRepartos').value = String(t.REPARTOS||'NO').toUpperCase()==='SI'? 'SI':'NO';
+    n('tarFRepIncl', t.REPARTOS_INCLUIDOS); n('tarFRepCosto', t.COSTO_REPARTO_EXTRA);
+    $('tarFSeguro').value = String(t.SEGURO_MERCANCIA||'NO').toUpperCase()==='SI'? 'SI':'NO';
+    n('tarFSeguroValor', t.SEGURO_VALOR); n('tarFSeguroPrima', t.SEGURO_PRIMA);
     $('tarFNotas').value = t.NOTAS||'';
+    tarExtras = extrasDeTarifa(t).map(e=>Object.assign({concepto:'',monto:0,unidad:'POR VIAJE',nota:''}, e));
   } else {
-    ['tarFTarifa','tarFDesde','tarFHasta','tarFNotas'].forEach(x=>$(x).value='');
-    $('tarFRuta').value=''; $('tarFTipo').value='';
+    ['tarFFolio','tarFTarifa','tarFDesde','tarFHasta','tarFNotas'].forEach(x=>$(x).value='');
+    $('tarFRuta').value=''; $('tarFTipo').value=''; $('tarFCarga').value='';
+    $('tarFMoneda').value='MXN'; $('tarFEstado').value='PROPUESTA';
+    ['tarFHlCarga','tarFHlDescarga','tarFCostoHora','tarFRepIncl','tarFRepCosto',
+     'tarFSeguroValor','tarFSeguroPrima'].forEach(x=>$(x).value=0);
+    $('tarFRepartos').value='NO'; $('tarFSeguro').value='NO';
+    tarExtras = [];
   }
+  pintarTarExtras();
+  $('tarForm').scrollIntoView({behavior:'smooth', block:'start'});
 }
 /* La ruta se elige de las de ESE cliente: un tarifario no mezcla cuentas */
 function rutasDelClienteTarifa(){
@@ -5164,22 +5420,53 @@ $('btnTarGuardar').addEventListener('click', async ()=>{
   const cliente = nombreDeSelect('tarFCliente','CLIENTES');
   if(!cliente){ toast('Elige el cliente.', true); return; }
   if(!(nf($('tarFTarifa').value)>0)){ toast('Captura la tarifa.', true); $('tarFTarifa').focus(); return; }
+  const desde = $('tarFDesde').value, hasta = $('tarFHasta').value;
+  if(desde && hasta && hasta < desde){
+    toast('La vigencia termina antes de empezar.', true); $('tarFHasta').focus(); return;
+  }
+  const sinConcepto = tarExtras.find(e=>!String(e.concepto||'').trim());
+  if(sinConcepto){ toast('Hay un convenio sin concepto.', true); return; }
+
+  const previo = tarEditando? (DB.TARIFAS||[]).find(x=>String(x.ID)===String(tarEditando)) : null;
   const r = DB.RUTAS.find(x=>String(x.ID)===$('tarFRuta').value);
-  const reg = {
-    ID: tarEditando || undefined,
+  const estado = $('tarFEstado').value;
+  const reg = Object.assign({}, previo||{}, {
+    FOLIO: $('tarFFolio').value.trim(),
     CLIENTE: cliente, RUTA: r? r.RUTA : '', TIPO_UNIDAD: $('tarFTipo').value,
-    TARIFA: r2(nf($('tarFTarifa').value)), MONEDA:'MXN',
-    VIGENCIA_DESDE: $('tarFDesde').value, VIGENCIA_HASTA: $('tarFHasta').value,
-    NOTAS: $('tarFNotas').value.trim()
-  };
-  if(reg.ID===undefined) delete reg.ID;
+    TIPO_CARGA: $('tarFCarga').value,
+    TARIFA: r2(nf($('tarFTarifa').value)), MONEDA: $('tarFMoneda').value,
+    VIGENCIA_DESDE: desde, VIGENCIA_HASTA: hasta,
+    ESTADO: estado,
+    HORAS_LIBRES_CARGA: nf($('tarFHlCarga').value),
+    HORAS_LIBRES_DESCARGA: nf($('tarFHlDescarga').value),
+    COSTO_HORA_EXTRA: r2(nf($('tarFCostoHora').value)),
+    REPARTOS: $('tarFRepartos').value,
+    REPARTOS_INCLUIDOS: nf($('tarFRepIncl').value),
+    COSTO_REPARTO_EXTRA: r2(nf($('tarFRepCosto').value)),
+    SEGURO_MERCANCIA: $('tarFSeguro').value,
+    SEGURO_VALOR: r2(nf($('tarFSeguroValor').value)),
+    SEGURO_PRIMA: r2(nf($('tarFSeguroPrima').value)),
+    EXTRAS_JSON: JSON.stringify(tarExtras.map(e=>({
+      concepto:String(e.concepto||'').trim(), monto:r2(nf(e.monto)),
+      unidad:e.unidad||'POR VIAJE', nota:String(e.nota||'').trim() }))),
+    NOTAS: $('tarFNotas').value.trim(),
+    REGISTRADO_POR: nombreUsuario()
+  });
+  // La firma de aceptación se pone al pasar a ACEPTADA y se borra al salir de ahí
+  if(estado==='ACEPTADA' && estadoTarifa(previo||{})!=='ACEPTADA'){
+    reg.FECHA_ACEPTACION = hoyISO(); reg.ACEPTADA_POR = nombreUsuario();
+  } else if(estado!=='ACEPTADA'){
+    reg.FECHA_ACEPTACION = ''; reg.ACEPTADA_POR = '';
+  }
+  if(tarEditando) reg.ID = tarEditando; else delete reg.ID;
   if(await apiEnviar({action:'upsert', sheet:'TARIFAS', record:reg})){
-    toast(tarEditando? 'Tarifa actualizada' : 'Tarifa guardada');
+    toast(tarEditando? 'Cotización actualizada' : 'Cotización guardada');
     $('tarForm').style.display='none'; tarEditando=null;
     pintarTarifas();
   }
 });
-['tarBusca','tarCliente'].forEach(id=>$(id).addEventListener('input', pintarTarifas));
+['tarBusca','tarCliente','tarEstado'].forEach(id=>$(id).addEventListener('input', pintarTarifas));
+['tarCliente','tarEstado'].forEach(id=>$(id).addEventListener('change', pintarTarifas));
 $('tarCliente').addEventListener('change', pintarTarifas);
 
 /* =====================================================
@@ -5366,7 +5653,11 @@ function abrirCliente(id){
     p('cliDomicilio',c.DOMICILIO); p('cliCiudad',c.CIUDAD); p('cliEstado',c.ESTADO);
     $('cliPais').value = c.PAIS||'MÉXICO'; $('cliMoneda').value = c.MONEDA||'MXN';
     $('cliDiasCredito').value = nf(c.DIAS_CREDITO); $('cliLimite').value = nf(c.LIMITE_CREDITO);
+    $('cliCreditoDesde').value = c.CREDITO_DESDE || 'FECHA_FACTURA';
     p('cliMailFac',c.MAIL_FACTURACION);
+    p('cliBanco',c.BANCO); p('cliTitular',c.TITULAR_CUENTA); p('cliCuenta',c.CUENTA_BANCARIA);
+    p('cliClabe',c.CLABE); p('cliReferencia',c.REFERENCIA_PAGO);
+    p('cliComprobante',c.COMPROBANTE_DOMICILIO_URL); p('cliComprobanteFecha',c.COMPROBANTE_DOMICILIO_FECHA);
     p('cliContacto',c.CONTACTO); p('cliContactoTel',c.CONTACTO_TEL); p('cliContactoMail',c.CONTACTO_MAIL);
     p('cliPortalUrl',c.PORTAL_ENLACE); p('cliPortalUsuario',c.PORTAL_USUARIO); p('cliPortalPass',c.PORTAL_PASSWORD);
     p('cliConstancia',c.CONSTANCIA_URL); p('cliActa',c.ACTA_URL); p('cliPoder',c.PODER_URL);
@@ -5378,9 +5669,11 @@ function abrirCliente(id){
     ['cliNombre','cliRazon','cliEjecutivo','cliRfc','cliCpFiscal','cliDomicilio','cliCiudad','cliEstado',
      'cliMailFac','cliContacto','cliContactoTel','cliContactoMail','cliPortalUrl','cliPortalUsuario',
      'cliPortalPass','cliConstancia','cliActa','cliPoder','cliOpinion','cliOpinionVence','cliContrato',
-     'cliContratoVence','cliNotas'].forEach(x=>$(x).value='');
+     'cliContratoVence','cliNotas','cliBanco','cliTitular','cliCuenta','cliClabe','cliReferencia',
+     'cliComprobante','cliComprobanteFecha'].forEach(x=>$(x).value='');
     $('cliActivo').value='SI'; $('cliPais').value='MÉXICO'; $('cliMoneda').value='MXN';
     $('cliMetodo').value='PPD'; $('cliDiasCredito').value=0; $('cliLimite').value=0;
+    $('cliCreditoDesde').value='FECHA_FACTURA';
     $('cliRegimen').value=''; $('cliUsoCfdi').value='G03'; $('cliForma').value='99';
   }
   $('cliDetalle').scrollIntoView({behavior:'smooth', block:'start'});
@@ -5399,6 +5692,12 @@ async function guardarCliente(){
     METODO_PAGO: $('cliMetodo').value, FORMA_PAGO: $('cliForma').value,
     MONEDA: $('cliMoneda').value,
     DIAS_CREDITO: nf($('cliDiasCredito').value), LIMITE_CREDITO: r2(nf($('cliLimite').value)),
+    CREDITO_DESDE: $('cliCreditoDesde').value,
+    BANCO: $('cliBanco').value.trim(), TITULAR_CUENTA: $('cliTitular').value.trim(),
+    CUENTA_BANCARIA: $('cliCuenta').value.trim(), CLABE: $('cliClabe').value.replace(/\D/g,''),
+    REFERENCIA_PAGO: $('cliReferencia').value.trim(),
+    COMPROBANTE_DOMICILIO_URL: $('cliComprobante').value.trim(),
+    COMPROBANTE_DOMICILIO_FECHA: $('cliComprobanteFecha').value,
     DOMICILIO: $('cliDomicilio').value.trim(), CIUDAD: $('cliCiudad').value.trim(),
     ESTADO: $('cliEstado').value.trim(), PAIS: $('cliPais').value.trim(),
     CONTACTO: $('cliContacto').value.trim(), CONTACTO_TEL: $('cliContactoTel').value.trim(),
@@ -9224,9 +9523,9 @@ const ADMIN = {
   UBICACIONES:{ soloLectura:true, sinBorrar:true, invertido:true,
     cols:[{k:'FECHA_HORA'},{k:'CP'},{k:'ECONOMICO'},{k:'OPERADOR'},
           {k:'UBICACION'},{k:'REGISTRADO_POR'}] },
-  TARIFAS:{ cols:[{k:'CLIENTE'},{k:'RUTA'},{k:'TIPO_UNIDAD'},{k:'TARIFA',tipo:'number'},
-      {k:'VIGENCIA_DESDE'},{k:'VIGENCIA_HASTA'},{k:'NOTAS'}],
-    csv:'CLIENTE, RUTA, TIPO_UNIDAD, TARIFA, VIGENCIA_DESDE, VIGENCIA_HASTA, NOTAS' },
+  TARIFAS:{ cols:[{k:'FOLIO'},{k:'CLIENTE'},{k:'RUTA'},{k:'TIPO_UNIDAD'},{k:'TIPO_CARGA'},
+      {k:'TARIFA',tipo:'number'},{k:'ESTADO'},{k:'VIGENCIA_DESDE'},{k:'VIGENCIA_HASTA'},{k:'NOTAS'}],
+    csv:'FOLIO, CLIENTE, RUTA, TIPO_UNIDAD, TIPO_CARGA, TARIFA, ESTADO, VIGENCIA_DESDE, VIGENCIA_HASTA, NOTAS' },
   CXC:{ soloLectura:true, invertido:true, sinBorrarMasivo:true,
     cols:[{k:'CP'},{k:'CLIENTE'},{k:'RUTA'},{k:'FECHA_SERVICIO'},{k:'TARIFA'},{k:'EXTRAS'},
           {k:'TOTAL'},{k:'ESTADO'},{k:'FACTURA'}] },

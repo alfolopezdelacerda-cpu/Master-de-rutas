@@ -109,7 +109,7 @@ create table if not exists remolques (
 create index if not exists remolques_economico_idx on remolques ("ECONOMICO");
 
 -- ---------------------------------------------------------------------------
--- CLIENTES (33 columnas)
+-- CLIENTES (41 columnas)
 -- ---------------------------------------------------------------------------
 create table if not exists clientes (
   "ID" text primary key default gen_random_uuid()::text,
@@ -124,6 +124,7 @@ create table if not exists clientes (
   "MONEDA"                     text,
   "DIAS_CREDITO"               text,
   "LIMITE_CREDITO"             text,
+  "CREDITO_DESDE"              text,
   "DOMICILIO"                  text,
   "CIUDAD"                     text,
   "ESTADO"                     text,
@@ -132,6 +133,11 @@ create table if not exists clientes (
   "CONTACTO_TEL"               text,
   "CONTACTO_MAIL"              text,
   "MAIL_FACTURACION"           text,
+  "BANCO"                      text,
+  "CUENTA_BANCARIA"            text,
+  "CLABE"                      text,
+  "TITULAR_CUENTA"             text,
+  "REFERENCIA_PAGO"            text,
   "PORTAL_ENLACE"              text,
   "PORTAL_USUARIO"             text,
   "PORTAL_PASSWORD"            text,
@@ -140,6 +146,8 @@ create table if not exists clientes (
   "PODER_URL"                  text,
   "OPINION_SAT_URL"            text,
   "OPINION_SAT_VENCE"          text,
+  "COMPROBANTE_DOMICILIO_URL"  text,
+  "COMPROBANTE_DOMICILIO_FECHA" text,
   "CONTRATO_URL"               text,
   "CONTRATO_VENCE"             text,
   "NOTAS"                      text,
@@ -322,22 +330,40 @@ create index if not exists evidencias_operador_idx on evidencias ("OPERADOR");
 create index if not exists evidencias_nombre_idx on evidencias ("NOMBRE");
 
 -- ---------------------------------------------------------------------------
--- TARIFAS (9 columnas)
+-- TARIFAS (25 columnas)
 -- ---------------------------------------------------------------------------
 create table if not exists tarifas (
   "ID" text primary key default gen_random_uuid()::text,
+  "FOLIO"                      text,
   "CLIENTE"                    text,
   "RUTA"                       text,
   "TIPO_UNIDAD"                text,
+  "TIPO_CARGA"                 text,
   "TARIFA"                     text,
   "MONEDA"                     text,
   "VIGENCIA_DESDE"             text,
   "VIGENCIA_HASTA"             text,
+  "ESTADO"                     text,
+  "FECHA_ACEPTACION"           text,
+  "ACEPTADA_POR"               text,
+  "HORAS_LIBRES_CARGA"         text,
+  "HORAS_LIBRES_DESCARGA"      text,
+  "COSTO_HORA_EXTRA"           text,
+  "REPARTOS"                   text,
+  "REPARTOS_INCLUIDOS"         text,
+  "COSTO_REPARTO_EXTRA"        text,
+  "SEGURO_MERCANCIA"           text,
+  "SEGURO_VALOR"               text,
+  "SEGURO_PRIMA"               text,
+  "EXTRAS_JSON"                text,
   "NOTAS"                      text,
+  "REGISTRADO_POR"             text,
   creado_en      timestamptz not null default now(),
   actualizado_en timestamptz not null default now()
 );
+create index if not exists tarifas_folio_idx on tarifas ("FOLIO");
 create index if not exists tarifas_cliente_idx on tarifas ("CLIENTE");
+create index if not exists tarifas_estado_idx on tarifas ("ESTADO");
 
 -- ---------------------------------------------------------------------------
 -- CXC (16 columnas)
