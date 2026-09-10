@@ -9454,6 +9454,41 @@ function huellaFila(fila){
   return h.toString(36);
 }
 function idDeMigracion(hoja, fila){ return `mig-${tablaDe(hoja)}-${huellaFila(fila)}`; }
+
+/* PostgREST publica su propio esquema en la raíz: qué tablas hay y qué columnas
+   tiene cada una. Se lee de ahí en vez de suponerlo, porque el Sheet de verdad
+   tiene columnas que el mapa HOJAS nunca supo (se agregaron a mano en la hoja).
+   Sin esto, la copia falla de una columna a la vez: PostgREST solo reporta la
+   PRIMERA que no reconoce, así que descubrirlas todas tomaría una pasada por
+   columna. */
+async function columnasDeSupabase(){
+  const spec = await sbFetch('/rest/v1/');
+  const defs = (spec && (spec.definitions || (spec.components||{}).schemas)) || {};
+  const mapa = {};
+  for(const t in defs) mapa[t] = new Set(Object.keys(defs[t].properties || {}));
+  return mapa;
+}
+
+/* Lo que el Sheet trae y Postgres no tiene. Se mira TODA la hoja, no el primer
+   renglón: en el Sheet es normal que una columna venga vacía arriba y con dato
+   más abajo. */
+function columnasQueFaltan(filas, columnasSb){
+  const vistas = new Set();
+  for(const f of filas) for(const k in f) vistas.add(k);
+  vistas.delete('creado_en'); vistas.delete('actualizado_en');
+  return [...vistas].filter(c=>!columnasSb.has(c));
+}
+
+/* Dos renglones del Sheet con el MISMO ID en un mismo bloque hacen que Postgres
+   rechace el bloque entero: "ON CONFLICT DO UPDATE command cannot affect row a
+   second time". Se queda el último —que es el que ganaría de todos modos si
+   fueran en bloques distintos— y se reporta cuántos se colapsaron, porque un ID
+   repetido en la hoja es un problema de la hoja, no de la migración. */
+function unicosPorId(lote){
+  const porId = new Map();
+  for(const r of lote) porId.set(String(r.ID), r);
+  return { filas:[...porId.values()], repetidos: lote.length - porId.size };
+}
 function migFila(tabla, enSheet, enSb, estado){
   const tb = $('migTabla');
   let tr = tb.querySelector(`[data-migt="${tabla}"]`);
@@ -9506,7 +9541,41 @@ async function migrarSheetASupabase(soloVerificar){
   }
 
   const tablas = TABLAS_SUPABASE;
-  let desiguales = 0, errores = 0;
+
+  /* ---- Revisión previa: que el esquema de allá aguante lo de acá ----
+     Se hace ANTES de escribir nada. Copiar a medias y descubrir en la tabla 20
+     que falta una columna deja la base en un estado que hay que interpretar; es
+     preferible una sola lista de todo lo que falta y una sola corrida de SQL. */
+  let columnasSb = null;
+  try{ columnasSb = await columnasDeSupabase(); }
+  catch(e){ /* Si no se puede leer el esquema, se sigue: el error saldrá tabla por tabla */ }
+
+  if(columnasSb){
+    const parches = [];
+    for(const hoja of tablas){
+      const t = tablaDe(hoja);
+      if(!columnasSb[t]){ parches.push({ tabla:t, falta:null }); continue; }
+      const faltan = columnasQueFaltan(datos[hoja] || [], columnasSb[t]);
+      if(faltan.length) parches.push({ tabla:t, falta:faltan });
+    }
+    if(parches.length){
+      const sinTabla = parches.filter(p=>!p.falta).map(p=>p.tabla);
+      const sql = parches.filter(p=>p.falta).flatMap(p=>
+        p.falta.map(c=>`alter table ${p.tabla} add column if not exists "${c}" text;`)).join('\n');
+      const nCols = parches.reduce((a,p)=>a+(p.falta? p.falta.length : 0), 0);
+      $('migProgreso').style.display = 'none';
+      $('migResumen').innerHTML =
+        `<span style="color:var(--bad)">El esquema de Supabase no tiene todo lo que trae el Sheet.</span> `+
+        (sinTabla.length? `Faltan estas tablas por completo: <b>${esc(sinTabla.join(', '))}</b> — vuelve a correr <code>schema.sql</code> completo.<br>` : '')+
+        (nCols? `Y faltan ${nCols} columna(s), agregadas a la hoja después de que se generó el esquema. `+
+          `Pega esto en el <b>SQL Editor</b> de Supabase, corre, y vuelve a darle a «Copiar datos ahora»:`+
+          `<textarea readonly style="width:100%;height:150px;margin-top:8px;font:12px ui-monospace,monospace">${esc(sql)}</textarea>` : '')+
+        `<br>No se copió nada todavía: primero el esquema, luego los datos.`;
+      terminar(); return;
+    }
+  }
+
+  let desiguales = 0, errores = 0, colapsados = 0;
   for(let i=0; i<tablas.length; i++){
     const hoja = tablas[i];
     const filas = datos[hoja] || [];
@@ -9514,25 +9583,35 @@ async function migrarSheetASupabase(soloVerificar){
     $('migBarra').style.width = Math.round((i/tablas.length)*100)+'%';
 
     try{
-      if(!soloVerificar && filas.length){
+      const preparadas = filas.map(f=>{
+        const r = paraEscribir(f);
+        if(!r.ID) r.ID = idDeMigracion(hoja, f);
+        return r;
+      });
+      // Se quitan los ID repetidos sobre la hoja entera, no bloque por bloque:
+      // si los duplicados caen en bloques distintos el POST no falla, pero el
+      // conteo final tampoco cuadraría y no se sabría por qué.
+      const { filas:aEscribir, repetidos } = unicosPorId(preparadas);
+      colapsados += repetidos;
+
+      if(!soloVerificar && aEscribir.length){
         const BLOQUE = 300;
-        for(let k=0; k<filas.length; k+=BLOQUE){
-          const lote = filas.slice(k, k+BLOQUE).map(f=>{
-            const r = paraEscribir(f);
-            if(!r.ID) r.ID = idDeMigracion(hoja, f);
-            return r;
-          });
+        for(let k=0; k<aEscribir.length; k+=BLOQUE){
+          const lote = aEscribir.slice(k, k+BLOQUE);
           await sbFetch(`/rest/v1/${tablaDe(hoja)}`, { method:'POST', body: JSON.stringify(lote),
             headers:{ 'Prefer':'resolution=merge-duplicates' } });
-          migFila(hoja, filas.length, null, `copiando ${Math.min(k+BLOQUE, filas.length)} de ${filas.length}…`);
+          migFila(hoja, filas.length, null, `copiando ${Math.min(k+BLOQUE, aEscribir.length)} de ${aEscribir.length}…`);
         }
       }
-      // Se relee para confirmar que quedó, en vez de confiar en el guardado
+      // Se relee para confirmar que quedó, en vez de confiar en el guardado.
+      // Se compara contra los renglones ÚNICOS: si la hoja trae dos con el mismo
+      // ID, en Postgres es uno solo y eso no es un faltante.
       const enSb = await sbFetch(`/rest/v1/${tablaDe(hoja)}?select=ID`);
       const n = (enSb||[]).length;
-      const igual = n === filas.length;
+      const igual = n === aEscribir.length;
       if(!igual) desiguales++;
-      migFila(hoja, filas.length, n, igual? 'ok' : 'no cuadra');
+      migFila(hoja, filas.length, n,
+        igual? (repetidos? `ok · ${repetidos} con ID repetido` : 'ok') : 'no cuadra');
     }catch(e){
       errores++;
       migFila(hoja, filas.length, null, 'error: '+e.message.slice(0,60));
@@ -9554,6 +9633,7 @@ async function migrarSheetASupabase(soloVerificar){
     ? `<span style="color:var(--bad)">${desiguales} tabla(s) con distinto número de renglones y ${errores} con error.</span> `+
       'Vuelve a darle a «Copiar datos ahora»: repetirlo solo alcanza lo que falta, no duplica nada. Si una tabla marca error de tabla inexistente, falta aplicar el esquema en Supabase.'
     : `<span style="color:var(--ok)">Todo cuadra.</span> Las ${tablas.length} tablas tienen el mismo número de renglones de los dos lados. `+
+      (colapsados? `<br><b>${colapsados} renglón(es) del Sheet traían un ID ya usado por otro</b> y quedaron como uno solo: en Postgres el ID es la llave y no puede repetirse. Vale la pena revisarlos en la hoja. ` : '')+
       (soloVerificar? '' : 'Ya puedes darle a «Guardar y conectar» para que la app empiece a trabajar contra Supabase.');
   terminar();
 }

@@ -103,19 +103,31 @@ for(const hoja of aMigrar){
 
   if(!filas.length){ reporte.push({ hoja, sheet:0, supabase:0 }); continue; }
 
+  const preparadas = filas.map(f=>{
+    const o = {};
+    for(const k in f){
+      if(k==='creado_en' || k==='actualizado_en') continue;
+      o[k] = f[k]==null? '' : String(f[k]);
+    }
+    if(!o.ID) o.ID = `mig-${t}-${huellaFila(f)}`;
+    return o;
+  });
+  /* Dos renglones con el mismo ID en un mismo POST hacen que Postgres rechace el
+     bloque entero ("ON CONFLICT DO UPDATE command cannot affect row a second
+     time"). Se queda el último y se avisa: un ID repetido es un problema de la
+     hoja, no de la migración. */
+  const porId = new Map();
+  for(const r of preparadas) porId.set(String(r.ID), r);
+  const aEscribir = [...porId.values()];
+  if(aEscribir.length !== preparadas.length){
+    console.log(`  ⚠ ${hoja}: ${preparadas.length - aEscribir.length} renglón(es) con ID repetido, se conserva el último`);
+  }
+
   // Se escribe en bloques: un POST con 5,000 renglones se cae por tamaño
   const BLOQUE = 500;
   let escritos = 0;
-  for(let i=0; i<filas.length; i+=BLOQUE){
-    const lote = filas.slice(i, i+BLOQUE).map(f=>{
-      const o = {};
-      for(const k in f){
-        if(k==='creado_en' || k==='actualizado_en') continue;
-        o[k] = f[k]==null? '' : String(f[k]);
-      }
-      if(!o.ID) o.ID = `mig-${t}-${huellaFila(f)}`;
-      return o;
-    });
+  for(let i=0; i<aEscribir.length; i+=BLOQUE){
+    const lote = aEscribir.slice(i, i+BLOQUE);
     try{
       await sb(`/rest/v1/${t}`, { method:'POST', body: JSON.stringify(lote),
         headers:{ Prefer:'resolution=merge-duplicates' } });
@@ -127,8 +139,10 @@ for(const hoja of aMigrar){
   }
   // Se relee para confirmar que de verdad quedó, no para confiar en el POST
   const enSb = await sb(`/rest/v1/${t}?select=ID`);
-  reporte.push({ hoja, sheet: filas.length, supabase: (enSb||[]).length, escritos });
-  console.log(`  ${hoja.padEnd(24)} ${String(filas.length).padStart(6)} → ${String((enSb||[]).length).padStart(6)}`);
+  // Se compara contra los renglones ÚNICOS: si la hoja trae dos con el mismo ID,
+  // en Postgres es uno solo y eso no es un faltante.
+  reporte.push({ hoja, sheet: aEscribir.length, supabase: (enSb||[]).length, escritos });
+  console.log(`  ${hoja.padEnd(24)} ${String(aEscribir.length).padStart(6)} → ${String((enSb||[]).length).padStart(6)}`);
 }
 
 /* ---------- 3 · CONFIG ---------- */

@@ -27,7 +27,10 @@ const hojas = [];
 {
   const txt = bloque[1];
   // Cada entrada es NOMBRE: [ ...lista de columnas... ]
-  const rx = /(?:^|\n)\s*([A-Z][A-Z_0-9]*)\s*:\s*\[([\s\S]*?)\]\s*,/g;
+  // La coma final es opcional: la ÚLTIMA entrada del mapa no la lleva, y
+  // exigirla dejaba esa hoja fuera del esquema sin avisar (así se perdió
+  // PAGO_X_KM). Se acepta coma, fin de bloque o salto de línea.
+  const rx = /(?:^|\n)\s*([A-Z][A-Z_0-9]*)\s*:\s*\[([\s\S]*?)\]\s*(?:,|\n|$)/g;
   let m;
   while((m = rx.exec(txt))){
     const nombre = m[1];
@@ -36,6 +39,18 @@ const hojas = [];
   }
 }
 if(!hojas.length){ console.error('No se leyó ninguna hoja'); process.exit(1); }
+
+/* Una hoja que el regex no alcance a leer no da error: simplemente no se
+   genera su tabla, y el problema recién aparece al migrar. Se cuentan las
+   entradas con un barrido más laxo y se comparan. */
+{
+  const declaradas = [...bloque[1].matchAll(/(?:^|\n)\s*([A-Z][A-Z_0-9]*)\s*:\s*\[/g)].map(m=>m[1]);
+  const perdidas = declaradas.filter(n=>!hojas.some(h=>h.nombre===n));
+  if(perdidas.length){
+    console.error('Estas hojas están en HOJAS pero no se pudieron leer:', perdidas.join(', '));
+    process.exit(1);
+  }
+}
 
 /* ---------- Índices que valen la pena ----------
    Las columnas por las que la app busca de verdad: la llave del viaje (CP),

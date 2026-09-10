@@ -57,7 +57,7 @@ De *Project Settings → API* salen los tres datos que se usan más abajo:
 
 En *SQL Editor*, pegar y correr, en este orden:
 
-1. `schema.sql` — las 33 tablas, sus índices, el sello de `actualizado_en` y la
+1. `schema.sql` — las 34 tablas, sus índices, el sello de `actualizado_en` y la
    tabla `auditoria` con sus triggers.
 2. `rls.sql` — prende RLS en todas las tablas con políticas abiertas (etapa 1).
 
@@ -84,6 +84,13 @@ bitácora, canceladas y evidencias, que no viajan en la carga normal— y lo
 escribe tabla por tabla, mostrando el avance y comparando al final cuántos
 renglones quedaron de cada lado. No hace falta terminal ni instalar nada.
 
+Antes de escribir nada compara el esquema de Supabase contra lo que el Sheet
+trae de verdad. Si a la hoja se le agregaron columnas a mano que el mapa `HOJAS`
+nunca supo, las lista **todas juntas** y da el `alter table` listo para pegar en
+el SQL Editor. Vale la pena que sea así: PostgREST solo reporta la *primera*
+columna que no reconoce de cada tabla, de modo que descubrirlas a fuerza de
+reintentos tomaría una pasada por columna.
+
 Es **idempotente**: cada renglón se escribe por su ID, así que repetirlo
 actualiza en vez de duplicar. Eso permite hacer el corte sin parar la
 operación:
@@ -100,6 +107,10 @@ operación:
 > vez de meterlo de nuevo. El límite: si ese renglón se edita en el Sheet entre
 > una copia y otra, cambia su huella y entra como nuevo — un renglón sin ID no
 > tiene identidad propia y no hay de dónde agarrarse.
+
+> Si dos renglones de la hoja traen el **mismo ID**, en Postgres son uno solo:
+> ahí el ID es la llave y no puede repetirse. Se conserva el último y la app
+> dice cuántos se colapsaron, para poder revisarlos en la hoja.
 
 También existe `scripts/migrar-a-supabase.mjs`, que hace exactamente lo mismo
 desde la terminal si algún día conviene automatizarlo. Ese sí pide la

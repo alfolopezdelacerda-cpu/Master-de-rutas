@@ -3,7 +3,7 @@
 -- No editar a mano: vuelve a generarse y se pierde. Para cambiar una columna,
 -- cámbiala en el mapa HOJAS y corre de nuevo el generador.
 --
--- 33 tablas. Todas las columnas son text en esta etapa, igual que
+-- 34 tablas. Todas las columnas son text en esta etapa, igual que
 -- en el Sheet, para que la migración se pueda verificar renglón por renglón.
 
 create extension if not exists pgcrypto;
@@ -972,6 +972,26 @@ create table if not exists bitacora (
 create index if not exists bitacora_usuario_idx on bitacora ("USUARIO");
 create index if not exists bitacora_nombre_idx on bitacora ("NOMBRE");
 
+-- ---------------------------------------------------------------------------
+-- PAGO_X_KM (11 columnas)
+-- ---------------------------------------------------------------------------
+create table if not exists pago_x_km (
+  "ID" text primary key default gen_random_uuid()::text,
+  "ORIGEN"                     text,
+  "DESTINO"                    text,
+  "KMS_RED"                    text,
+  "VJS_MES"                    text,
+  "KMS_MES"                    text,
+  "FULL"                       text,
+  "SENCILLO"                   text,
+  "RABON"                      text,
+  "TON_3_5"                    text,
+  "TON_1_5"                    text,
+  "KG_600"                     text,
+  creado_en      timestamptz not null default now(),
+  actualizado_en timestamptz not null default now()
+);
+
 
 -- ---------------------------------------------------------------------------
 -- actualizado_en se sella solo en cada UPDATE
@@ -1081,6 +1101,9 @@ create trigger solicitudes_canceladas_sellar before update on solicitudes_cancel
   for each row execute function sellar_actualizado();
 drop trigger if exists bitacora_sellar on bitacora;
 create trigger bitacora_sellar before update on bitacora
+  for each row execute function sellar_actualizado();
+drop trigger if exists pago_x_km_sellar on pago_x_km;
+create trigger pago_x_km_sellar before update on pago_x_km
   for each row execute function sellar_actualizado();
 
 
