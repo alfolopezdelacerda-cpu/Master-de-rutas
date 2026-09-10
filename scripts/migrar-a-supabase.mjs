@@ -61,7 +61,11 @@ async function sb(ruta, opciones){
     let d=''; try{ const j=await r.json(); d=j.message||j.hint||JSON.stringify(j); }catch(e){}
     throw new Error(`${r.status} ${d}`);
   }
-  return r.status===204? null : r.json();
+  /* Un POST sin `return=representation` responde 201 con el cuerpo vacío, no
+     204: hay que leerlo como texto antes de intentar parsearlo. */
+  const txt = await r.text();
+  if(!txt) return null;
+  try{ return JSON.parse(txt); }catch(e){ return null; }
 }
 
 /* ---------- 1 · Leer el Sheet completo ---------- */

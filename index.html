@@ -2603,7 +2603,12 @@ async function sbFetch(ruta, opciones){
     try{ const j = await r.json(); detalle = j.message || j.hint || j.error || ''; }catch(e){}
     throw new Error(detalle || ('Supabase respondió '+r.status));
   }
-  return r.status===204? null : r.json();
+  /* Un POST sin `return=representation` responde 201 con el cuerpo VACÍO, no
+     204. Parsearlo como JSON tira "Unexpected end of JSON input", así que se
+     lee como texto y solo se parsea si trae algo. */
+  const txt = await r.text();
+  if(!txt) return null;
+  try{ return JSON.parse(txt); }catch(e){ return null; }
 }
 /* La sesión de Supabase Auth. Mientras no exista, se trabaja con la llave
    anónima y las políticas que le correspondan. */
