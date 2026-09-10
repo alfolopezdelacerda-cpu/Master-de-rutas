@@ -39,6 +39,18 @@ if(!WEBHOOK || !URL_SB || !KEY_SB){
 const TABLAS = JSON.parse(readFileSync(join(raiz,'supabase/tablas.json'),'utf8'));
 const tablaDe = h => h.toLowerCase();
 
+/* A un renglón sin ID hay que inventarle uno, y tiene que ser el MISMO en cada
+   corrida: con un ID al azar, repetir la migración lo metía otra vez en vez de
+   actualizarlo. Se deriva del contenido (FNV-1a). Si ese renglón se edita en el
+   Sheet entre una corrida y otra, cambia su huella y entra como nuevo: un
+   renglón sin ID no tiene identidad propia. */
+function huellaFila(fila){
+  const txt = JSON.stringify(fila, Object.keys(fila).sort());
+  let h = 0x811c9dc5;
+  for(let i=0;i<txt.length;i++){ h ^= txt.charCodeAt(i); h = Math.imul(h, 0x01000193) >>> 0; }
+  return h.toString(36);
+}
+
 async function sb(ruta, opciones){
   const o = Object.assign({ headers:{} }, opciones||{});
   o.headers = Object.assign({
@@ -97,7 +109,7 @@ for(const hoja of aMigrar){
         if(k==='creado_en' || k==='actualizado_en') continue;
         o[k] = f[k]==null? '' : String(f[k]);
       }
-      if(!o.ID) o.ID = `mig-${t}-${i}-${Math.random().toString(36).slice(2,9)}`;
+      if(!o.ID) o.ID = `mig-${t}-${huellaFila(f)}`;
       return o;
     });
     try{

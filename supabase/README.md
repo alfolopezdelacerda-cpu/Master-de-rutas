@@ -49,8 +49,9 @@ De *Project Settings → API* salen los tres datos que se usan más abajo:
 
 - **URL del proyecto** — `https://xxxxxxxx.supabase.co`
 - **anon key** — la pública, la que va en la app
-- **service_role key** — la de administrador. **Solo para la migración, nunca
-  en la app ni en el repositorio.**
+- **service_role key** — la de administrador, salta todos los permisos. **No
+  hace falta para nada de esto.** No la pegues en la app, ni en el repositorio,
+  ni en un chat. Solo la pide el script de terminal, que es opcional.
 
 ### 2 · Aplicar el esquema
 
@@ -68,35 +69,46 @@ agregar una columna, se agrega ahí y se vuelve a generar:
 node scripts/generar-esquema.mjs
 ```
 
-### 3 · Copiar los datos
+### 3 · Capturar la conexión en la app
 
-```bash
-node scripts/migrar-a-supabase.mjs \
-  --webhook "https://script.google.com/macros/s/.../exec" \
-  --url     "https://xxxxxxxx.supabase.co" \
-  --key     "SERVICE_ROLE_KEY"
-```
+*Administración → Base de datos*: pegar la **URL del proyecto** y la **anon
+key** —la pública, nunca la `service_role`— y darle a **Probar conexión**.
+Debe decir que la tabla `servicios` respondió, todavía vacía.
 
-Lee el Sheet completo —incluidas bitácora, canceladas y evidencias, que no
-viajan en la carga normal— y lo escribe tabla por tabla. Al final compara el
-número de renglones de los dos lados y marca lo que no cuadre.
+**Todavía no le des a «Guardar y conectar».** Primero van los datos.
 
-Es **idempotente**: cada renglón se escribe por su ID, así que correrlo de nuevo
-actualiza en vez de duplicar. Eso permite hacer el corte sin parar la operación:
+### 4 · Copiar los datos, desde la misma app
 
-1. Correrlo una vez con el Sheet todavía en uso, para ver que todo pase bien.
+En esa misma pantalla, **Copiar datos ahora**. Lee el Sheet completo —incluidas
+bitácora, canceladas y evidencias, que no viajan en la carga normal— y lo
+escribe tabla por tabla, mostrando el avance y comparando al final cuántos
+renglones quedaron de cada lado. No hace falta terminal ni instalar nada.
+
+Es **idempotente**: cada renglón se escribe por su ID, así que repetirlo
+actualiza en vez de duplicar. Eso permite hacer el corte sin parar la
+operación:
+
+1. Copiar una vez con el Sheet todavía en uso, para ver que todo pase bien.
 2. Revisar en Supabase que los datos se vean como deben.
-3. Volver a correrlo al final del día para alcanzar lo último.
-4. Recién ahí, capturar la URL y la llave en Administración.
+3. Volver a copiar al final del día para alcanzar lo último.
+4. Recién ahí, **Guardar y conectar**.
 
-Para verificar sin escribir nada: `--verificar`. Para una sola tabla:
-`--solo SERVICIOS`.
+**Solo verificar** compara los conteos sin escribir nada.
 
-### 4 · Conectar la app
+> A un renglón que venga del Sheet **sin ID** se le inventa uno derivado de su
+> contenido, no al azar, justamente para que repetir la copia lo actualice en
+> vez de meterlo de nuevo. El límite: si ese renglón se edita en el Sheet entre
+> una copia y otra, cambia su huella y entra como nuevo — un renglón sin ID no
+> tiene identidad propia y no hay de dónde agarrarse.
 
-*Administración → Base de datos*: capturar la **URL** y la **anon key**, y darle
-a **Probar conexión** antes de guardar. Al guardar, la app recarga todo desde
-Postgres y la píldora de arriba dice *Conectado a Supabase*.
+También existe `scripts/migrar-a-supabase.mjs`, que hace exactamente lo mismo
+desde la terminal si algún día conviene automatizarlo. Ese sí pide la
+`service_role key`.
+
+### 5 · Hacer el cambio
+
+**Guardar y conectar**. La app recarga todo desde Postgres y la píldora de
+arriba dice *Conectado a Supabase*.
 
 Si algo sale mal, **Volver al Google Sheet** regresa a como estaba. Lo capturado
 en Supabase se queda en Supabase: no se copia de regreso, así que conviene

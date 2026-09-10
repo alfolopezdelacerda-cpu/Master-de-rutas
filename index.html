@@ -1482,6 +1482,29 @@ body.locked>header,body.locked>nav,body.locked>main{display:none}
         <button class="btn btn-s" id="btnVolverSheet">Volver al Google Sheet</button>
       </div>
       <div class="mini" id="sbEstado" style="margin-bottom:12px"></div>
+
+      <div style="background:var(--surface2);border:1px dashed var(--road);border-radius:10px;padding:14px;margin-bottom:12px">
+        <h3 style="margin-bottom:4px">Copiar los datos del Sheet a Supabase</h3>
+        <div class="sub" style="margin-bottom:10px">Lee el Google Sheet completo y lo escribe en Postgres, tabla por tabla. Al final compara cuántos renglones quedaron de cada lado.<br>
+        Se puede correr <b>las veces que haga falta</b>: cada renglón se escribe por su ID, así que repetirlo actualiza en vez de duplicar. Por eso conviene correrlo una vez para revisar, y otra al final del día para alcanzar lo último antes de hacer el cambio.</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:10px">
+          <button class="btn btn-p" id="btnMigrarSb">Copiar datos ahora</button>
+          <button class="btn btn-s" id="btnVerificarSb">Solo verificar</button>
+        </div>
+        <div id="migProgreso" style="display:none">
+          <div style="height:8px;background:var(--line);border-radius:5px;overflow:hidden;margin-bottom:10px">
+            <div id="migBarra" style="height:100%;width:0;background:var(--ok);transition:width .2s"></div>
+          </div>
+          <div class="twrap" style="max-height:320px;overflow-y:auto"><table>
+            <thead style="position:sticky;top:0;background:var(--surface);z-index:2"><tr>
+              <th>Tabla</th><th class="right">En el Sheet</th><th class="right">En Supabase</th><th></th>
+            </tr></thead>
+            <tbody id="migTabla"></tbody>
+          </table></div>
+          <div class="mini" id="migResumen" style="margin-top:10px"></div>
+        </div>
+      </div>
+
       <hr class="sep">
       <label>URL de conexión (Google Apps Script /exec)</label>
       <div style="display:flex;gap:10px;flex-wrap:wrap">
@@ -9402,6 +9425,136 @@ $('btnProbarSb').addEventListener('click', async ()=>{
   }
   SUPABASE_URL = antesU; SUPABASE_KEY = antesK;
 });
+/* ---------- Copiar el Sheet a Supabase, desde la propia app ----------
+   Hace lo mismo que scripts/migrar-a-supabase.mjs, pero sin terminal: lee el
+   Google Sheet por Apps Script y escribe en Postgres con la llave que ya está
+   capturada. Es idempotente —cada renglón se escribe por su ID— así que se
+   puede repetir para alcanzar lo último antes de hacer el cambio. */
+let migEnCurso = false;
+/* A un renglón que viene del Sheet sin ID hay que inventarle uno, y tiene que
+   ser SIEMPRE EL MISMO para el mismo contenido: con un ID al azar, repetir la
+   copia lo metía otra vez como renglón nuevo en vez de actualizarlo, y era
+   justo lo que rompía la promesa de poder correrla las veces que hiciera
+   falta. Se deriva del contenido (FNV-1a), así que dos corridas coinciden.
+   El límite, dicho claro: si ese renglón se edita en el Sheet entre una copia
+   y otra, cambia su huella y entra como nuevo — un renglón sin ID no tiene
+   identidad propia y no hay de dónde agarrarse. */
+function huellaFila(fila){
+  const txt = JSON.stringify(fila, Object.keys(fila).sort());
+  let h = 0x811c9dc5;
+  for(let i=0;i<txt.length;i++){
+    h ^= txt.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  return h.toString(36);
+}
+function idDeMigracion(hoja, fila){ return `mig-${tablaDe(hoja)}-${huellaFila(fila)}`; }
+function migFila(tabla, enSheet, enSb, estado){
+  const tb = $('migTabla');
+  let tr = tb.querySelector(`[data-migt="${tabla}"]`);
+  if(!tr){ tr = document.createElement('tr'); tr.dataset.migt = tabla; tb.appendChild(tr); }
+  const color = estado==='error'? 'var(--bad)' : estado==='ok'? 'var(--ok)' : 'var(--ink2)';
+  tr.innerHTML = `<td><b>${esc(tabla)}</b></td>
+    <td class="right num">${enSheet==null? '—' : num(enSheet)}</td>
+    <td class="right num">${enSb==null? '…' : num(enSb)}</td>
+    <td style="color:${color}">${esc(estado||'')}</td>`;
+}
+async function migrarSheetASupabase(soloVerificar){
+  if(migEnCurso) return;
+  const url = $('cfgSbUrl').value.trim().replace(/\/+$/,'');
+  const key = $('cfgSbKey').value.trim();
+  if(!url || !key){ toast('Primero captura la URL y la llave de Supabase.', true); return; }
+  if(!WEBHOOK){ toast('Falta la URL del Apps Script para poder leer el Sheet.', true); return; }
+
+  if(!soloVerificar){
+    const ok = await preguntar('Copiar los datos',
+      'Se va a leer <b>todo</b> el Google Sheet y escribirlo en Supabase. Los renglones que ya existan allá se actualizan; no se duplica nada.<br><br>'+
+      'Esto <b>no</b> cambia dónde guarda la app: para eso está «Guardar y conectar». ¿Continuar?', '📦');
+    if(!ok) return;
+  }
+
+  migEnCurso = true;
+  $('migProgreso').style.display = '';
+  $('migTabla').innerHTML = '';
+  $('migResumen').textContent = 'Leyendo el Google Sheet…';
+  $('migBarra').style.width = '0';
+
+  // Mientras dura la copia se apunta a la URL/llave capturadas
+  const antesU = SUPABASE_URL, antesK = SUPABASE_KEY;
+  SUPABASE_URL = url; SUPABASE_KEY = key;
+
+  const terminar = () => { SUPABASE_URL = antesU; SUPABASE_KEY = antesK; migEnCurso = false; };
+
+  let datos;
+  try{
+    const j = await BACKEND.appsScript.cargar();
+    datos = j.data || {};
+    // Las hojas de archivo no vienen en la carga normal: se piden aparte
+    const faltan = HOJAS_ARCHIVO.filter(h=>datos[h]===undefined);
+    if(faltan.length){
+      $('migResumen').textContent = 'Pidiendo bitácora, canceladas y evidencias…';
+      Object.assign(datos, await BACKEND.appsScript.leerHojas(faltan));
+    }
+  }catch(e){
+    $('migResumen').innerHTML = `<span style="color:var(--bad)">No se pudo leer el Google Sheet: ${esc(e.message)}</span>`;
+    terminar(); return;
+  }
+
+  const tablas = TABLAS_SUPABASE;
+  let desiguales = 0, errores = 0;
+  for(let i=0; i<tablas.length; i++){
+    const hoja = tablas[i];
+    const filas = datos[hoja] || [];
+    migFila(hoja, filas.length, null, soloVerificar? 'contando…' : 'copiando…');
+    $('migBarra').style.width = Math.round((i/tablas.length)*100)+'%';
+
+    try{
+      if(!soloVerificar && filas.length){
+        const BLOQUE = 300;
+        for(let k=0; k<filas.length; k+=BLOQUE){
+          const lote = filas.slice(k, k+BLOQUE).map(f=>{
+            const r = paraEscribir(f);
+            if(!r.ID) r.ID = idDeMigracion(hoja, f);
+            return r;
+          });
+          await sbFetch(`/rest/v1/${tablaDe(hoja)}`, { method:'POST', body: JSON.stringify(lote),
+            headers:{ 'Prefer':'resolution=merge-duplicates' } });
+          migFila(hoja, filas.length, null, `copiando ${Math.min(k+BLOQUE, filas.length)} de ${filas.length}…`);
+        }
+      }
+      // Se relee para confirmar que quedó, en vez de confiar en el guardado
+      const enSb = await sbFetch(`/rest/v1/${tablaDe(hoja)}?select=ID`);
+      const n = (enSb||[]).length;
+      const igual = n === filas.length;
+      if(!igual) desiguales++;
+      migFila(hoja, filas.length, n, igual? 'ok' : 'no cuadra');
+    }catch(e){
+      errores++;
+      migFila(hoja, filas.length, null, 'error: '+e.message.slice(0,60));
+    }
+  }
+
+  // CONFIG va aparte: es clave/valor, no una tabla de renglones
+  if(!soloVerificar && datos.CONFIG){
+    try{
+      const filas = Object.entries(datos.CONFIG).map(([clave,valor])=>({ clave, valor: valor==null?'':String(valor) }));
+      if(filas.length) await sbFetch('/rest/v1/config', { method:'POST', body: JSON.stringify(filas),
+        headers:{ 'Prefer':'resolution=merge-duplicates' } });
+      migFila('CONFIG (parámetros)', filas.length, filas.length, 'ok');
+    }catch(e){ errores++; migFila('CONFIG (parámetros)', null, null, 'error: '+e.message.slice(0,60)); }
+  }
+
+  $('migBarra').style.width = '100%';
+  $('migResumen').innerHTML = (desiguales||errores)
+    ? `<span style="color:var(--bad)">${desiguales} tabla(s) con distinto número de renglones y ${errores} con error.</span> `+
+      'Vuelve a darle a «Copiar datos ahora»: repetirlo solo alcanza lo que falta, no duplica nada. Si una tabla marca error de tabla inexistente, falta aplicar el esquema en Supabase.'
+    : `<span style="color:var(--ok)">Todo cuadra.</span> Las ${tablas.length} tablas tienen el mismo número de renglones de los dos lados. `+
+      (soloVerificar? '' : 'Ya puedes darle a «Guardar y conectar» para que la app empiece a trabajar contra Supabase.');
+  terminar();
+}
+$('btnMigrarSb').addEventListener('click', ()=>migrarSheetASupabase(false));
+$('btnVerificarSb').addEventListener('click', ()=>migrarSheetASupabase(true));
+
 $('btnVolverSheet').addEventListener('click', async ()=>{
   const ok = await preguntar('Volver al Google Sheet',
     'La plataforma vuelve a guardar en el Google Sheet. Lo que se haya capturado en Supabase <b>se queda en Supabase</b>: no se copia de regreso. ¿Continuar?', '↩');
